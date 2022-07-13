@@ -1,2 +1,2 @@
-import './commands';
-import './customAssertions';
+import './commands'
+import './customAssertions'

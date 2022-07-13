@@ -1,14 +1,14 @@
-import React from 'react';
-import { Participant, Track } from 'twilio-video';
-import Publication from '../Publication/Publication';
-import usePublications from '../../hooks/usePublications/usePublications';
+import React from 'react'
+import { Participant, Track } from 'twilio-video'
+import Publication from '../Publication/Publication'
+import usePublications from '../../hooks/usePublications/usePublications'
 
 interface ParticipantTracksProps {
-  participant: Participant;
-  videoOnly?: boolean;
-  enableScreenShare?: boolean;
-  videoPriority?: Track.Priority | null;
-  isLocalParticipant?: boolean;
+    participant: Participant
+    videoOnly?: boolean
+    enableScreenShare?: boolean
+    videoPriority?: Track.Priority | null
+    isLocalParticipant?: boolean
 }
 
 /*
@@ -20,37 +20,44 @@ interface ParticipantTracksProps {
  */
 
 export default function ParticipantTracks({
-  participant,
-  videoOnly,
-  enableScreenShare,
-  videoPriority,
-  isLocalParticipant,
+    participant,
+    videoOnly,
+    enableScreenShare,
+    videoPriority,
+    isLocalParticipant,
 }: ParticipantTracksProps) {
-  const publications = usePublications(participant);
+    const publications = usePublications(participant)
 
-  let filteredPublications;
+    let filteredPublications
 
-  if (enableScreenShare && publications.some(p => p.trackName.includes('screen'))) {
-    // When displaying a screenshare track is allowed, and a screen share track exists,
-    // remove all video tracks without the name 'screen'.
-    filteredPublications = publications.filter(p => p.trackName.includes('screen') || p.kind !== 'video');
-  } else {
-    // Else, remove all screenshare tracks
-    filteredPublications = publications.filter(p => !p.trackName.includes('screen'));
-  }
+    if (
+        enableScreenShare &&
+        publications.some(p => p.trackName.includes('screen'))
+    ) {
+        // When displaying a screenshare track is allowed, and a screen share track exists,
+        // remove all video tracks without the name 'screen'.
+        filteredPublications = publications.filter(
+            p => p.trackName.includes('screen') || p.kind !== 'video'
+        )
+    } else {
+        // Else, remove all screenshare tracks
+        filteredPublications = publications.filter(
+            p => !p.trackName.includes('screen')
+        )
+    }
 
-  return (
-    <>
-      {filteredPublications.map(publication => (
-        <Publication
-          key={publication.kind}
-          publication={publication}
-          participant={participant}
-          isLocalParticipant={isLocalParticipant}
-          videoOnly={videoOnly}
-          videoPriority={videoPriority}
-        />
-      ))}
-    </>
-  );
+    return (
+        <>
+            {filteredPublications.map(publication => (
+                <Publication
+                    key={publication.kind}
+                    publication={publication}
+                    participant={participant}
+                    isLocalParticipant={isLocalParticipant}
+                    videoOnly={videoOnly}
+                    videoPriority={videoPriority}
+                />
+            ))}
+        </>
+    )
 }

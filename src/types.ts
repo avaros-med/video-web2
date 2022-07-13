@@ -1,41 +1,43 @@
-import { LocalVideoTrack, RemoteVideoTrack, TwilioError } from 'twilio-video';
+import { LocalVideoTrack, RemoteVideoTrack, TwilioError } from 'twilio-video'
 
 declare module 'twilio-video' {
-  // These help to create union types between Local and Remote VideoTracks
-  interface LocalVideoTrack {
-    isSwitchedOff: undefined;
-    setPriority: undefined;
-  }
+    // These help to create union types between Local and Remote VideoTracks
+    interface LocalVideoTrack {
+        isSwitchedOff: undefined
+        setPriority: undefined
+    }
 }
 
 declare global {
-  interface MediaDevices {
-    getDisplayMedia(constraints: MediaStreamConstraints): Promise<MediaStream>;
-  }
+    interface MediaDevices {
+        getDisplayMedia(
+            constraints: MediaStreamConstraints
+        ): Promise<MediaStream>
+    }
 
-  interface HTMLMediaElement {
-    setSinkId?(sinkId: string): Promise<undefined>;
-  }
+    interface HTMLMediaElement {
+        setSinkId?(sinkId: string): Promise<undefined>
+    }
 
-  // Helps create a union type with TwilioError
-  interface Error {
-    code: undefined;
-  }
+    // Helps create a union type with TwilioError
+    interface Error {
+        code: undefined
+    }
 }
 
-export type Callback = (...args: any[]) => void;
+export type Callback = (...args: any[]) => void
 
-export type ErrorCallback = (error: TwilioError | Error) => void;
+export type ErrorCallback = (error: TwilioError | Error) => void
 
-export type IVideoTrack = LocalVideoTrack | RemoteVideoTrack;
+export type IVideoTrack = LocalVideoTrack | RemoteVideoTrack
 
-export type RoomType = 'group' | 'group-small' | 'peer-to-peer' | 'go';
+export type RoomType = 'group' | 'group-small' | 'peer-to-peer' | 'go'
 
 export type RecordingRule = {
-  type: 'include' | 'exclude';
-  all?: boolean;
-  kind?: 'audio' | 'video';
-  publisher?: string;
-};
+    type: 'include' | 'exclude'
+    all?: boolean
+    kind?: 'audio' | 'video'
+    publisher?: string
+}
 
-export type RecordingRules = RecordingRule[];
+export type RecordingRules = RecordingRule[]

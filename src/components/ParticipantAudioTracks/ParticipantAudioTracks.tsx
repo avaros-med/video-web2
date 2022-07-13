@@ -1,15 +1,17 @@
-import { RemoteAudioTrack, RemoteParticipant } from 'twilio-video';
-import useParticipants from '../../hooks/useParticipants/useParticipants';
-import useTracks from '../../hooks/useTracks/useTracks';
-import AudioTrack from '../AudioTrack/AudioTrack';
+import { RemoteAudioTrack, RemoteParticipant } from 'twilio-video'
+import useParticipants from '../../hooks/useParticipants/useParticipants'
+import useTracks from '../../hooks/useTracks/useTracks'
+import AudioTrack from '../AudioTrack/AudioTrack'
 
 function Participant({ participant }: { participant: RemoteParticipant }) {
-  const tracks = useTracks(participant);
-  const audioTrack = tracks.find(track => track.kind === 'audio') as RemoteAudioTrack | undefined;
+    const tracks = useTracks(participant)
+    const audioTrack = tracks.find(track => track.kind === 'audio') as
+        | RemoteAudioTrack
+        | undefined
 
-  if (audioTrack?.kind === 'audio') return <AudioTrack track={audioTrack} />;
+    if (audioTrack?.kind === 'audio') return <AudioTrack track={audioTrack} />
 
-  return null;
+    return null
 }
 
 /*
@@ -18,13 +20,13 @@ function Participant({ participant }: { participant: RemoteParticipant }) {
   unnecessarily unmounted/mounted as the user switches between Gallery View and Speaker View.
 */
 export function ParticipantAudioTracks() {
-  const participants = useParticipants();
+    const participants = useParticipants()
 
-  return (
-    <>
-      {participants.map(participant => (
-        <Participant key={participant.sid} participant={participant} />
-      ))}
-    </>
-  );
+    return (
+        <>
+            {participants.map(participant => (
+                <Participant key={participant.sid} participant={participant} />
+            ))}
+        </>
+    )
 }
