@@ -1,21 +1,19 @@
-import React from 'react'
-
-import AudioInputList from './AudioInputList/AudioInputList'
-import AudioOutputList from './AudioOutputList/AudioOutputList'
 import {
-    DialogContent,
-    Typography,
-    Divider,
     Dialog,
     DialogActions,
-    Button,
-    Theme,
+    DialogContent,
     DialogTitle,
+    Divider,
     Hidden,
+    Theme,
+    Typography,
 } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
-import VideoInputList from './VideoInputList/VideoInputList'
+import { Button } from '../UI/Button'
+import AudioInputList from './AudioInputList/AudioInputList'
+import AudioOutputList from './AudioOutputList/AudioOutputList'
 import MaxGalleryViewParticipants from './MaxGalleryViewParticipants/MaxGalleryViewParticipants'
+import VideoInputList from './VideoInputList/VideoInputList'
 
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
@@ -25,7 +23,7 @@ const useStyles = makeStyles((theme: Theme) => ({
             width: 'calc(100vw - 32px)',
         },
         '& .inputSelect': {
-            width: 'calc(100% - 35px)',
+            width: '100%',
         },
     },
     button: {
@@ -94,14 +92,7 @@ export default function DeviceSelectionDialog({
             </DialogContent>
             <Divider />
             <DialogActions>
-                <Button
-                    color="primary"
-                    variant="contained"
-                    className={classes.button}
-                    onClick={onClose}
-                >
-                    Done
-                </Button>
+                <Button label="Done" onClick={onClose} />
             </DialogActions>
         </Dialog>
     )

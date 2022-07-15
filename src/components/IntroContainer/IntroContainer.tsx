@@ -21,7 +21,7 @@ const useStyles = makeStyles((theme: Theme) => ({
         },
     },
     innerContainer: {
-        width: '350px',
+        width: '400px',
         borderRadius: '5px',
         boxShadow: '0px 2px 4px 0px rgba(0, 0, 0, 0.07)',
         overflow: 'hidden',

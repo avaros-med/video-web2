@@ -1,6 +1,4 @@
-import React, { useCallback } from 'react'
 import {
-    Button,
     Dialog,
     DialogActions,
     DialogContent,
@@ -16,9 +14,11 @@ import {
     Typography,
 } from '@material-ui/core'
 import { makeStyles } from '@material-ui/core/styles'
-import { inputLabels, Settings } from '../../state/settings/settingsReducer'
-import { useAppState } from '../../state'
+import React, { useCallback } from 'react'
 import useRoomState from '../../hooks/useRoomState/useRoomState'
+import { useAppState } from '../../state'
+import { inputLabels, Settings } from '../../state/settings/settingsReducer'
+import { Button } from '../UI/Button'
 
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
@@ -234,14 +234,7 @@ export default function ConnectionOptionsDialog({
             </DialogContent>
             <Divider />
             <DialogActions>
-                <Button
-                    className={classes.button}
-                    color="primary"
-                    variant="contained"
-                    onClick={onClose}
-                >
-                    Done
-                </Button>
+                <Button label="Done" onClick={onClose} />
             </DialogActions>
         </Dialog>
     )
