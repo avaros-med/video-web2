@@ -1,25 +1,19 @@
-import React from 'react'
-import {
-    makeStyles,
-    Typography,
-    Grid,
-    Button,
-    Theme,
-    Hidden,
-} from '@material-ui/core'
+import { Grid, Hidden, makeStyles, Theme, Typography } from '@material-ui/core'
 import CircularProgress from '@material-ui/core/CircularProgress'
-import LocalVideoPreview from './LocalVideoPreview/LocalVideoPreview'
-import SettingsMenu from './SettingsMenu/SettingsMenu'
-import { Steps } from '../PreJoinScreens'
-import ToggleAudioButton from '../../Buttons/ToggleAudioButton/ToggleAudioButton'
-import ToggleVideoButton from '../../Buttons/ToggleVideoButton/ToggleVideoButton'
-import { useAppState } from '../../../state'
 import useChatContext from '../../../hooks/useChatContext/useChatContext'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { useAppState } from '../../../state'
+import ToggleAudioButton from '../../Buttons/ToggleAudioButton/ToggleAudioButton'
+import ToggleVideoButton from '../../Buttons/ToggleVideoButton/ToggleVideoButton'
+import { Button } from '../../UI/Button'
+import { Steps } from '../PreJoinScreens'
+import LocalVideoPreview from './LocalVideoPreview/LocalVideoPreview'
+import SettingsMenu from './SettingsMenu/SettingsMenu'
 
 const useStyles = makeStyles((theme: Theme) => ({
     gutterBottom: {
         marginBottom: '1em',
+        fontWeight: 500,
     },
     marginTop: {
         marginTop: '1em',
@@ -29,13 +23,9 @@ const useStyles = makeStyles((theme: Theme) => ({
         border: '2px solid #aaa',
         margin: '1em 0',
     },
-    localPreviewContainer: {
-        paddingRight: '2em',
-        [theme.breakpoints.down('sm')]: {
-            padding: '0 2.5em',
-        },
-    },
+    localPreviewContainer: {},
     joinButtons: {
+        marginTop: '1em',
         display: 'flex',
         justifyContent: 'space-between',
         [theme.breakpoints.down('sm')]: {
@@ -114,12 +104,12 @@ export default function DeviceSelectionScreen({
 
     return (
         <>
-            <Typography variant="h5" className={classes.gutterBottom}>
-                Join {roomName}
+            <Typography variant="subtitle1" className={classes.gutterBottom}>
+                Media Devices
             </Typography>
 
             <Grid container justifyContent="center">
-                <Grid item md={7} sm={12} xs={12}>
+                <Grid item md={12} sm={12} xs={12}>
                     <div className={classes.localPreviewContainer}>
                         <LocalVideoPreview identity={name} />
                     </div>
@@ -139,7 +129,7 @@ export default function DeviceSelectionScreen({
                         />
                     </div>
                 </Grid>
-                <Grid item md={5} sm={12} xs={12}>
+                <Grid item md={12} sm={12} xs={12}>
                     <Grid
                         container
                         direction="column"
@@ -160,21 +150,16 @@ export default function DeviceSelectionScreen({
                         </div>
                         <div className={classes.joinButtons}>
                             <Button
-                                variant="outlined"
-                                color="primary"
+                                intent="secondary"
+                                label="Cancel"
                                 onClick={() => setStep(Steps.roomNameStep)}
-                            >
-                                Cancel
-                            </Button>
+                            />
                             <Button
-                                variant="contained"
-                                color="primary"
+                                label="Join Now"
                                 data-cy-join-now
                                 onClick={handleJoin}
                                 disabled={disableButtons}
-                            >
-                                Join Now
-                            </Button>
+                            />
                         </div>
                     </Grid>
                 </Grid>
