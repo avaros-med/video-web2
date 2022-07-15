@@ -6,6 +6,7 @@ import RoomNameScreen from './RoomNameScreen/RoomNameScreen'
 import { useAppState } from '../../state'
 import { useParams } from 'react-router-dom'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
+import { ErrorScreens } from './ErrorScreens'
 
 export enum Steps {
     roomNameStep,
@@ -61,26 +62,34 @@ export default function PreJoinScreens() {
         setStep(Steps.deviceSelectionStep)
     }
 
+    const hasError = !!!roomName
+
     return (
         <IntroContainer>
             <MediaErrorSnackbar error={mediaError} />
-            {step === Steps.roomNameStep && (
-                <RoomNameScreen
-                    name={name}
-                    roomName={roomName}
-                    setName={setName}
-                    setRoomName={setRoomName}
-                    handleSubmit={handleSubmit}
-                />
+            {!hasError && (
+                <>
+                    {step === Steps.roomNameStep && (
+                        <RoomNameScreen
+                            name={name}
+                            roomName={roomName}
+                            setName={setName}
+                            setRoomName={setRoomName}
+                            handleSubmit={handleSubmit}
+                        />
+                    )}
+
+                    {step === Steps.deviceSelectionStep && (
+                        <DeviceSelectionScreen
+                            name={name}
+                            roomName={roomName}
+                            setStep={setStep}
+                        />
+                    )}
+                </>
             )}
 
-            {step === Steps.deviceSelectionStep && (
-                <DeviceSelectionScreen
-                    name={name}
-                    roomName={roomName}
-                    setStep={setStep}
-                />
-            )}
+            {hasError && <ErrorScreens />}
         </IntroContainer>
     )
 }
