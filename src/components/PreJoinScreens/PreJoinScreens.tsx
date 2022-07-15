@@ -74,7 +74,6 @@ export default function PreJoinScreens() {
                             name={name}
                             roomName={roomName}
                             setName={setName}
-                            setRoomName={setRoomName}
                             handleSubmit={handleSubmit}
                         />
                     )}

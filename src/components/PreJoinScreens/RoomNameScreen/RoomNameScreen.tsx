@@ -22,7 +22,6 @@ interface RoomNameScreenProps {
     name: string
     roomName: string
     setName: (name: string) => void
-    setRoomName: (roomName: string) => void
     handleSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
 
@@ -30,7 +29,6 @@ export default function RoomNameScreen({
     name,
     roomName,
     setName,
-    setRoomName,
     handleSubmit,
 }: RoomNameScreenProps) {
     const classes = useStyles()
@@ -50,16 +48,6 @@ export default function RoomNameScreen({
                                 placeholder="Name"
                                 value={name}
                                 onChange={(_name: string) => setName(_name)}
-                            />
-                        </div>
-                        <div>
-                            <InputLabel shrink>Room Name</InputLabel>
-                            <Input
-                                placeholder="Room ID"
-                                value={roomName}
-                                onChange={(_roomName: string) =>
-                                    setRoomName(_roomName)
-                                }
                             />
                         </div>
                     </div>
