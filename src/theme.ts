@@ -129,5 +129,5 @@ export default createTheme({
     participantBorderWidth: 2,
     mobileTopBarHeight: 52,
     rightDrawerWidth: 320,
-    galleryViewBackgroundColor: '#121C2D',
+    galleryViewBackgroundColor: 'black',
 })

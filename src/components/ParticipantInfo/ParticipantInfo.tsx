@@ -42,7 +42,7 @@ const useStyles = makeStyles((theme: Theme) =>
             paddingTop: `calc(${(9 / 16) * 100}% - ${
                 theme.participantBorderWidth
             }px)`,
-            background: 'black',
+            background: '#333333',
             [theme.breakpoints.down('sm')]: {
                 height: theme.sidebarMobileHeight,
                 width: `${(theme.sidebarMobileHeight * 16) / 9}px`,
@@ -74,7 +74,7 @@ const useStyles = makeStyles((theme: Theme) =>
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'black',
+            background: '#333333',
             position: 'absolute',
             top: 0,
             right: 0,

@@ -68,7 +68,7 @@ const useStyles = makeStyles((theme: Theme) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'black',
+        background: '#333333',
         position: 'absolute',
         top: 0,
         right: 0,
