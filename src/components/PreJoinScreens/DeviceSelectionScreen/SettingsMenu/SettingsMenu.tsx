@@ -70,9 +70,9 @@ export default function SettingsMenu({
                     horizontal: 'center',
                 }}
             >
-                <MenuItem onClick={() => setAboutOpen(true)}>
+                {/* <MenuItem onClick={() => setAboutOpen(true)}>
                     <Typography variant="body1">About</Typography>
-                </MenuItem>
+                </MenuItem> */}
                 <MenuItem onClick={() => setDeviceSettingsOpen(true)}>
                     <Typography variant="body1">Media Devices</Typography>
                 </MenuItem>
