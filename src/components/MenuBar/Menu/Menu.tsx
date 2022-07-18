@@ -29,6 +29,7 @@ import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import FlipCameraIcon from '../../../icons/FlipCameraIcon'
 import useFlipCameraToggle from '../../../hooks/useFlipCameraToggle/useFlipCameraToggle'
 import { VideoRoomMonitor } from '@twilio/video-room-monitor'
+import { IconButton } from '../../UI/IconButton'
 
 export const IconContainer = styled('div')({
     display: 'flex',
@@ -57,7 +58,7 @@ export default function Menu(props: { buttonClassName?: string }) {
     const isRecording = useIsRecording()
     const { room, setIsBackgroundSelectionOpen } = useVideoContext()
 
-    const anchorRef = useRef<HTMLButtonElement>(null)
+    const anchorRef = useRef<any>(null)
     const {
         flipCameraDisabled,
         toggleFacingMode,
@@ -66,21 +67,16 @@ export default function Menu(props: { buttonClassName?: string }) {
 
     return (
         <>
-            <Button
-                onClick={() => setMenuOpen(isOpen => !isOpen)}
-                ref={anchorRef}
-                className={props.buttonClassName}
-                data-cy-more-button
-            >
-                {isMobile ? (
-                    <MoreIcon />
-                ) : (
-                    <>
-                        More
-                        <ExpandMoreIcon />
-                    </>
-                )}
-            </Button>
+            <div ref={anchorRef}>
+                <IconButton
+                    classes={props.buttonClassName}
+                    intent="text"
+                    icon="settings"
+                    onClick={() => setMenuOpen(isOpen => !isOpen)}
+                    tooltipContent="Settings"
+                    data-cy-more-button
+                />
+            </div>
             <MenuContainer
                 open={menuOpen}
                 onClose={() => setMenuOpen(isOpen => !isOpen)}

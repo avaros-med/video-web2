@@ -1,27 +1,32 @@
-import React from 'react'
 import ReactDOM from 'react-dom'
 
 import { CssBaseline } from '@material-ui/core'
 import { MuiThemeProvider } from '@material-ui/core/styles'
 
-import App from './App'
-import AppStateProvider, { useAppState } from './state'
+// using node-style package resolution in a CSS file:
+import '@blueprintjs/core/lib/css/blueprint.css'
+import '@blueprintjs/icons/lib/css/blueprint-icons.css'
+import '@blueprintjs/popover2/lib/css/blueprint-popover2.css'
+import 'normalize.css'
+
 import {
     BrowserRouter as Router,
     Redirect,
     Route,
     Switch,
 } from 'react-router-dom'
+import App from './App'
+import { ChatProvider } from './components/ChatProvider'
 import ErrorDialog from './components/ErrorDialog/ErrorDialog'
 import LoginPage from './components/LoginPage/LoginPage'
+import { ParticipantProvider } from './components/ParticipantProvider'
 import PrivateRoute from './components/PrivateRoute/PrivateRoute'
+import UnsupportedBrowserWarning from './components/UnsupportedBrowserWarning/UnsupportedBrowserWarning'
+import { VideoProvider } from './components/VideoProvider'
+import AppStateProvider, { useAppState } from './state'
 import theme from './theme'
 import './types'
-import { ChatProvider } from './components/ChatProvider'
-import { ParticipantProvider } from './components/ParticipantProvider'
-import { VideoProvider } from './components/VideoProvider'
 import useConnectionOptions from './utils/useConnectionOptions/useConnectionOptions'
-import UnsupportedBrowserWarning from './components/UnsupportedBrowserWarning/UnsupportedBrowserWarning'
 
 const VideoApp = () => {
     const { error, setError } = useAppState()

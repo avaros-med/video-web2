@@ -121,7 +121,7 @@ export default createTheme({
         },
     },
     brand: '#E22525',
-    footerHeight: 72,
+    footerHeight: 56,
     mobileFooterHeight: 56,
     sidebarWidth: 300,
     sidebarMobileHeight: 90,

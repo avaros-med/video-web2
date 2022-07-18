@@ -6,9 +6,9 @@ export default function AppLogo(props: SVGProps<SVGSVGElement>) {
             <g
                 id="Main"
                 stroke="none"
-                stroke-width="1"
+                strokeWidth="1"
                 fill="none"
-                fill-rule="evenodd"
+                fillRule="evenodd"
             >
                 <g
                     id="VV---Create-Video"
@@ -41,7 +41,7 @@ export default function AppLogo(props: SVGProps<SVGSVGElement>) {
                                 >
                                     <polygon
                                         id="Fill-43"
-                                        fill-opacity="0.12"
+                                        fillOpacity="0.12"
                                         fill="#124564"
                                         points="5.79297521 20.3999988 0 20.3999988 8.61713913 0 14.3999991 0"
                                     ></polygon>
@@ -57,7 +57,7 @@ export default function AppLogo(props: SVGProps<SVGSVGElement>) {
                                     ></polygon>
                                     <polygon
                                         id="Fill-46"
-                                        fill-opacity="0.12"
+                                        fillOpacity="0.12"
                                         fill="#124564"
                                         points="38.0076268 0 43.7999974 0 35.1832645 20.3999988 29.3999982 20.3999988"
                                     ></polygon>
