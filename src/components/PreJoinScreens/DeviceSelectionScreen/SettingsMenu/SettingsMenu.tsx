@@ -1,16 +1,16 @@
-import React, { useState, useRef } from 'react'
+import { makeStyles, Theme, useMediaQuery } from '@material-ui/core'
 import Button from '@material-ui/core/Button'
 import MenuContainer from '@material-ui/core/Menu'
 import MenuItem from '@material-ui/core/MenuItem'
-import MoreIcon from '@material-ui/icons/MoreVert'
 import Typography from '@material-ui/core/Typography'
-import { makeStyles, Theme, useMediaQuery } from '@material-ui/core'
+import MoreIcon from '@material-ui/icons/MoreVert'
+import { useRef, useState } from 'react'
 
+import SettingsIcon from '../../../../icons/SettingsIcon'
+import { useAppState } from '../../../../state'
 import AboutDialog from '../../../AboutDialog/AboutDialog'
 import ConnectionOptionsDialog from '../../../ConnectionOptionsDialog/ConnectionOptionsDialog'
 import DeviceSelectionDialog from '../../../DeviceSelectionDialog/DeviceSelectionDialog'
-import SettingsIcon from '../../../../icons/SettingsIcon'
-import { useAppState } from '../../../../state'
 
 const useStyles = makeStyles({
     settingsButton: {
@@ -74,9 +74,7 @@ export default function SettingsMenu({
                     <Typography variant="body1">About</Typography>
                 </MenuItem>
                 <MenuItem onClick={() => setDeviceSettingsOpen(true)}>
-                    <Typography variant="body1">
-                        Audio and Video Settings
-                    </Typography>
+                    <Typography variant="body1">Media Devices</Typography>
                 </MenuItem>
                 {roomType !== 'peer-to-peer' && roomType !== 'go' && (
                     <MenuItem onClick={() => setConnectionSettingsOpen(true)}>

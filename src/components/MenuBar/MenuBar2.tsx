@@ -24,7 +24,7 @@ const useStyles = makeStyles((theme: Theme) =>
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '0 1.43em',
+            padding: '1em 1.43em',
             zIndex: 10,
             [theme.breakpoints.down('sm')]: {
                 height: `${theme.mobileFooterHeight}px`,
