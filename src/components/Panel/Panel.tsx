@@ -35,6 +35,8 @@ const useStyles = makeStyles((theme: Theme) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            fontWeight: 500,
+            textTransform: 'uppercase',
         },
     }
 })
