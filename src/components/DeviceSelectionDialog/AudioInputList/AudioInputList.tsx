@@ -1,17 +1,17 @@
-import React from 'react'
-import AudioLevelIndicator from '../../AudioLevelIndicator/AudioLevelIndicator'
-import { LocalAudioTrack } from 'twilio-video'
 import {
     FormControl,
-    MenuItem,
-    Typography,
-    Select,
     Grid,
+    MenuItem,
+    Select,
+    Typography,
 } from '@material-ui/core'
+import { LocalAudioTrack } from 'twilio-video'
 import { SELECTED_AUDIO_INPUT_KEY } from '../../../constants'
 import useDevices from '../../../hooks/useDevices/useDevices'
 import useMediaStreamTrack from '../../../hooks/useMediaStreamTrack/useMediaStreamTrack'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import AudioLevelIndicator from '../../AudioLevelIndicator/AudioLevelIndicator'
+import { TextHintStyles } from '../../UI/styles/styles'
 
 export default function AudioInputList() {
     const { audioInputDevices } = useDevices()
@@ -34,7 +34,7 @@ export default function AudioInputList() {
                 Audio Input
             </Typography>
             <Grid container alignItems="center" justifyContent="space-between">
-                <div className="inputSelect">
+                <div className="inputSelect w-75">
                     {audioInputDevices.length > 1 ? (
                         <FormControl fullWidth>
                             <Select
@@ -56,8 +56,9 @@ export default function AudioInputList() {
                         </FormControl>
                     ) : (
                         <Typography>
-                            {localAudioTrack?.mediaStreamTrack.label ||
-                                'No Local Audio'}
+                            {localAudioTrack?.mediaStreamTrack.label || (
+                                <TextHintStyles>No Local Audio</TextHintStyles>
+                            )}
                         </Typography>
                     )}
                 </div>

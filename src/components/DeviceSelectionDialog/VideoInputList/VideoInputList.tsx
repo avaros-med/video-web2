@@ -1,19 +1,20 @@
-import React, { useState } from 'react'
+import { FormControl, MenuItem, Select, Typography } from '@material-ui/core'
+import { makeStyles } from '@material-ui/core/styles'
+import { useState } from 'react'
+import { LocalVideoTrack } from 'twilio-video'
 import {
     DEFAULT_VIDEO_CONSTRAINTS,
     SELECTED_VIDEO_INPUT_KEY,
 } from '../../../constants'
-import { FormControl, MenuItem, Typography, Select } from '@material-ui/core'
-import { LocalVideoTrack } from 'twilio-video'
-import { makeStyles } from '@material-ui/core/styles'
-import VideoTrack from '../../VideoTrack/VideoTrack'
 import useDevices from '../../../hooks/useDevices/useDevices'
 import useMediaStreamTrack from '../../../hooks/useMediaStreamTrack/useMediaStreamTrack'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { TextHintStyles } from '../../UI/styles/styles'
+import VideoTrack from '../../VideoTrack/VideoTrack'
 
 const useStyles = makeStyles({
     preview: {
-        width: '300px',
+        width: '100%',
         maxHeight: '200px',
         margin: '0.5em auto',
         '& video': {
@@ -81,8 +82,9 @@ export default function VideoInputList() {
                         Video Input
                     </Typography>
                     <Typography>
-                        {localVideoTrack?.mediaStreamTrack.label ||
-                            'No Local Video'}
+                        {localVideoTrack?.mediaStreamTrack.label || (
+                            <TextHintStyles>No Local Video</TextHintStyles>
+                        )}
                     </Typography>
                 </>
             )}

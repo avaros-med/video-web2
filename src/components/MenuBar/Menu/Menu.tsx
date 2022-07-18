@@ -39,7 +39,11 @@ export default function Menu(props: { buttonClassName?: string }) {
 
     const { setIsGalleryViewActive, isGalleryViewActive } = useAppState()
     const { setIsChatWindowOpen } = useChatContext()
-    const { showJoiningInfo, showBackgroundSelection } = usePanelContext().panel
+    const {
+        showJoiningInfo,
+        showBackgroundSelection,
+        showMediaDevices,
+    } = usePanelContext().panel
 
     const anchorRef = useRef<any>(null)
     const {
@@ -80,7 +84,7 @@ export default function Menu(props: { buttonClassName?: string }) {
                     <Typography variant="body1">Joining Info</Typography>
                 </MenuItem>
 
-                <MenuItem onClick={() => setSettingsOpen(true)}>
+                <MenuItem onClick={showMediaDevices}>
                     <IconContainer>
                         <i className="material-icons">settings</i>
                     </IconContainer>
