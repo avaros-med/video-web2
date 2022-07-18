@@ -7,11 +7,12 @@ interface Props {}
 
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
-        display: 'flex',
-        width: theme.rightPanelWidth,
+        width: '100%',
         height: `calc(100% - ${theme.footerHeight}px)`,
+        display: 'flex',
     },
     thumbnailContainer: {
+        width: '100%',
         display: 'flex',
         flexWrap: 'wrap',
         padding: '4px',
