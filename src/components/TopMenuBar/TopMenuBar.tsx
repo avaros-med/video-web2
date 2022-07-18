@@ -42,7 +42,7 @@ export const TopMenuBar = () => {
                         intent="text-white"
                         icon="info"
                         onClick={showJoiningInfo}
-                        tooltipContent={'Joining Info'}
+                        tooltipContent={'Room Info'}
                     />
                 </Hidden>
                 <Button

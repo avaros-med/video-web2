@@ -3,7 +3,6 @@ import { forwardRef, useImperativeHandle } from 'react'
 
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
-        width: theme.rightPanelWidth,
         height: `calc(100% - ${theme.footerHeight}px)`,
         padding: '1em',
         display: 'flex',

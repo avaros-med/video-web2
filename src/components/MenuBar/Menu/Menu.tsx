@@ -81,7 +81,7 @@ export default function Menu(props: { buttonClassName?: string }) {
                     <IconContainer>
                         <i className="material-icons">info</i>
                     </IconContainer>
-                    <Typography variant="body1">Joining Info</Typography>
+                    <Typography variant="body1">Room Info</Typography>
                 </MenuItem>
 
                 <MenuItem onClick={showMediaDevices}>

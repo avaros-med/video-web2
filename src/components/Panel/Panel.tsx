@@ -5,7 +5,7 @@ import { usePanelContext } from './usePanelContext'
 const useStyles = makeStyles((theme: Theme) => {
     return {
         container: {
-            minWidth: `${theme.rightPanelWidth}px`,
+            width: `${theme.rightPanelWidth}px`,
             margin: '0.5em 2em 2em',
             background: 'white',
             borderRadius: 5,
@@ -15,6 +15,7 @@ const useStyles = makeStyles((theme: Theme) => {
             zIndex: 1,
 
             [theme.breakpoints.down('sm')]: {
+                width: '100%',
                 margin: '8px',
                 position: 'absolute',
                 top: '0',
