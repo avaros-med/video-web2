@@ -7,7 +7,6 @@ const useStyles = makeStyles((theme: Theme) => {
         container: {
             minWidth: `${theme.rightPanelWidth}px`,
             margin: '0.5em 2em 2em',
-            padding: '1em',
             background: 'white',
             borderRadius: 5,
             position: 'relative',
@@ -32,6 +31,7 @@ const useStyles = makeStyles((theme: Theme) => {
             },
         },
         header: {
+            padding: '1em',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -41,11 +41,12 @@ const useStyles = makeStyles((theme: Theme) => {
 
 export const Panel = () => {
     const classes = useStyles()
-    const { isHidden, onClose } = usePanelContext().panel
+    const { panelName, panelNode, isHidden, onClose } = usePanelContext().panel
 
     return (
         <div className={`${classes.container} ${isHidden && 'is-hidden'}`}>
-            <PanelHeader title="Panel" onClose={onClose} />
+            <PanelHeader title={panelName} onClose={onClose} />
+            {panelNode}
         </div>
     )
 }
