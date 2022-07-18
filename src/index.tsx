@@ -19,6 +19,7 @@ import App from './App'
 import { ChatProvider } from './components/ChatProvider'
 import ErrorDialog from './components/ErrorDialog/ErrorDialog'
 import LoginPage from './components/LoginPage/LoginPage'
+import { PanelContextProvider } from './components/Panel/usePanelContext'
 import { ParticipantProvider } from './components/ParticipantProvider'
 import PrivateRoute from './components/PrivateRoute/PrivateRoute'
 import UnsupportedBrowserWarning from './components/UnsupportedBrowserWarning/UnsupportedBrowserWarning'
@@ -37,7 +38,9 @@ const VideoApp = () => {
             <ErrorDialog dismissError={() => setError(null)} error={error} />
             <ParticipantProvider>
                 <ChatProvider>
-                    <App />
+                    <PanelContextProvider>
+                        <App />
+                    </PanelContextProvider>
                 </ChatProvider>
             </ParticipantProvider>
         </VideoProvider>

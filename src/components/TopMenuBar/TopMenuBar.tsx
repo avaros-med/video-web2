@@ -1,6 +1,8 @@
+import { Hidden } from '@material-ui/core'
 import styled from 'styled-components'
 import Colors from '../../colors'
 import theme from '../../theme'
+import { usePanelContext } from '../Panel/usePanelContext'
 import { AppLogoBlock } from '../UI/AppLogoBlock'
 import { Button } from '../UI/Button'
 import { IconButton } from '../UI/IconButton'
@@ -16,6 +18,8 @@ const Styles = styled.div`
         &.primary-fade {
             padding: 8px 12px;
             background: ${Colors.BLUE}5F;
+            border: 1px solid ${Colors.BLUE}6F;
+            color: white;
 
             &:hover {
                 background: ${Colors.BLUE}5F;
@@ -25,23 +29,27 @@ const Styles = styled.div`
 `
 
 export const TopMenuBar = () => {
+    const { showJoiningInfo, showEChart } = usePanelContext().panel
+
     return (
         <Styles>
             <AppLogoBlock isLight />
 
             <div className="d-flex align-items-center">
-                <IconButton
-                    classes="mr-3"
-                    intent="text-white"
-                    icon="info"
-                    onClick={() => {}}
-                    tooltipContent={'Joining Info'}
-                />
+                <Hidden smDown>
+                    <IconButton
+                        classes="mr-3"
+                        intent="text-white"
+                        icon="info"
+                        onClick={showJoiningInfo}
+                        tooltipContent={'Joining Info'}
+                    />
+                </Hidden>
                 <Button
                     intent="primary-fade"
                     leftIconName="assignment"
                     label="eChart"
-                    onClick={() => {}}
+                    onClick={showEChart}
                 />
             </div>
         </Styles>

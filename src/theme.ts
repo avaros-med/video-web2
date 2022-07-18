@@ -11,7 +11,7 @@ declare module '@material-ui/core/styles/createTheme' {
         mobileFooterHeight: number
         sidebarMobilePadding: number
         participantBorderWidth: number
-        rightDrawerWidth: number
+        rightPanelWidth: number
         galleryViewBackgroundColor: string
     }
 
@@ -26,7 +26,7 @@ declare module '@material-ui/core/styles/createTheme' {
         mobileFooterHeight: number
         sidebarMobilePadding: number
         participantBorderWidth: number
-        rightDrawerWidth?: number
+        rightPanelWidth?: number
         galleryViewBackgroundColor: string
     }
 }
@@ -131,6 +131,6 @@ export default createTheme({
     sidebarMobilePadding: 8,
     participantBorderWidth: 2,
     mobileTopBarHeight: 52,
-    rightDrawerWidth: 320,
+    rightPanelWidth: 320,
     galleryViewBackgroundColor: 'black',
 })

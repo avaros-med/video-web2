@@ -20,6 +20,7 @@ const useStyles = makeStyles((theme: Theme) => {
         theme.participantBorderWidth}px`
     return {
         container: {
+            flex: 1,
             position: 'relative',
             height: '100%',
             display: 'grid',
@@ -31,7 +32,7 @@ const useStyles = makeStyles((theme: Theme) => {
             },
         },
         rightDrawerOpen: {
-            gridTemplateColumns: `1fr ${theme.sidebarWidth}px ${theme.rightDrawerWidth}px`,
+            gridTemplateColumns: `1fr ${theme.sidebarWidth}px ${theme.rightPanelWidth}px`,
         },
     }
 })

@@ -15,6 +15,7 @@ import useChatContext from '../../../hooks/useChatContext/useChatContext'
 import useFlipCameraToggle from '../../../hooks/useFlipCameraToggle/useFlipCameraToggle'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import { useAppState } from '../../../state'
+import { usePanelContext } from '../../Panel/usePanelContext'
 import { IconButton } from '../../UI/IconButton'
 
 export const IconContainer = styled('div')({
@@ -40,6 +41,7 @@ export default function Menu(props: { buttonClassName?: string }) {
     const { setIsGalleryViewActive, isGalleryViewActive } = useAppState()
     const { setIsChatWindowOpen } = useChatContext()
     const { setIsBackgroundSelectionOpen } = useVideoContext()
+    const { showJoiningInfo } = usePanelContext().panel
 
     const anchorRef = useRef<any>(null)
     const {
@@ -73,7 +75,7 @@ export default function Menu(props: { buttonClassName?: string }) {
                     horizontal: 'center',
                 }}
             >
-                <MenuItem onClick={() => {}}>
+                <MenuItem onClick={showJoiningInfo}>
                     <IconContainer>
                         <i className="material-icons">info</i>
                     </IconContainer>

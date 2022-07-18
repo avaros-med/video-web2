@@ -6,20 +6,27 @@ import RecordingNotifications from './components/RecordingNotifications/Recordin
 import Room from './components/Room/Room'
 
 import MenuBar2 from './components/MenuBar/MenuBar2'
+import { TopMenuBar } from './components/TopMenuBar/TopMenuBar'
+import { Panel } from './components/Panel/Panel'
 import useHeight from './hooks/useHeight/useHeight'
 import useRoomState from './hooks/useRoomState/useRoomState'
-import { TopMenuBar } from './components/TopMenuBar/TopMenuBar'
 
-const Container = styled('div')({
+const RootContainer = styled('div')({
     display: 'grid',
     gridTemplateRows: '1fr auto',
 })
 
-const Main = styled('main')(({ theme }: { theme: Theme }) => ({
+const MainContainer = styled('main')(({ theme }: { theme: Theme }) => ({
     overflow: 'hidden',
     paddingBottom: `${theme.topMenuBarHeight + theme.footerHeight}px`, // Leave some space for the footer
     background: 'black',
 }))
+
+const RoomContainer = styled('div')({
+    height: '100%',
+    display: 'flex',
+    position: 'relative',
+})
 
 export default function App() {
     const roomState = useRoomState()
@@ -32,18 +39,21 @@ export default function App() {
     const height = useHeight()
 
     return (
-        <Container style={{ height }}>
+        <RootContainer style={{ height }}>
             {roomState === 'disconnected' ? (
                 <PreJoinScreens />
             ) : (
-                <Main>
+                <MainContainer>
                     <ReconnectingNotification />
                     <RecordingNotifications />
                     <TopMenuBar />
-                    <Room />
+                    <RoomContainer>
+                        <Room />
+                        <Panel />
+                    </RoomContainer>
                     <MenuBar2 />
-                </Main>
+                </MainContainer>
             )}
-        </Container>
+        </RootContainer>
     )
 }
