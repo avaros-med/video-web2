@@ -1,4 +1,4 @@
-import { Typography } from '@material-ui/core'
+import { Grid, Typography } from '@material-ui/core'
 import { makeStyles, Theme } from '@material-ui/core/styles'
 import { forwardRef, useImperativeHandle } from 'react'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
@@ -29,7 +29,12 @@ export const JoiningInfoPanel = forwardRef((_, ref: any) => {
 
     // Pass references to parent component
     useImperativeHandle(ref, () => ({
-        getName: () => 'Room Info',
+        getName: () => (
+            <Grid container alignItems="center">
+                <i className="material-icons mr-2">info</i>
+                <span>Room Info</span>
+            </Grid>
+        ),
     }))
 
     return (

@@ -8,6 +8,7 @@ import { isMobile } from '../../utils'
 import EndCallButton from '../Buttons/EndCallButton/EndCallButton'
 import ToggleAudioButton from '../Buttons/ToggleAudioButton/ToggleAudioButton'
 import ToggleChatButton from '../Buttons/ToggleChatButton/ToggleChatButton'
+import ToggleMessagesButton from '../Buttons/ToggleMessagesButton/ToggleMessagesButton'
 import ToggleVideoButton from '../Buttons/ToggleVideoButton/ToggleVideoButton'
 import ToggleScreenShareButton from '../Buttons/ToogleScreenShareButton/ToggleScreenShareButton'
 import Menu from './Menu/Menu'
@@ -89,6 +90,7 @@ export default function MenuBar2() {
             <footer className={classes.container}>
                 <ToggleAudioButton className="mr-2" disabled={isReconnecting} />
                 <ToggleVideoButton className="mr-2" disabled={isReconnecting} />
+                <ToggleMessagesButton className="mr-2" />
                 {!isSharingScreen && !isMobile && (
                     <ToggleScreenShareButton
                         className="mr-2"

@@ -49,7 +49,7 @@ export const TopMenuBar = () => {
                     intent="primary-fade"
                     leftIconName="assignment"
                     label="eChart"
-                    onClick={showEChart}
+                    onClick={() => showEChart(true)}
                 />
             </div>
         </Styles>

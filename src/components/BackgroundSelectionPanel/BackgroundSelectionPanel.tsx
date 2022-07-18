@@ -1,3 +1,4 @@
+import { Grid } from '@material-ui/core'
 import { makeStyles, Theme } from '@material-ui/core/styles'
 import { forwardRef, useImperativeHandle } from 'react'
 import BackgroundThumbnail from '../BackgroundSelectionDialog/BackgroundThumbnail/BackgroundThumbnail'
@@ -30,7 +31,12 @@ export const BackgroundSelectionPanel = forwardRef((_, ref: any) => {
 
     // Pass references to parent component
     useImperativeHandle(ref, () => ({
-        getName: () => 'Backgrounds',
+        getName: () => (
+            <Grid container alignItems="center">
+                <i className="material-icons mr-2">wallpaper</i>
+                <span>Backgrounds</span>
+            </Grid>
+        ),
     }))
 
     return (

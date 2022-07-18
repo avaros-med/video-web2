@@ -41,7 +41,10 @@ export const ParticipantsList = ({
                 isLocalParticipant
             />
             {remoteParticipants.map((participant: Participant) => (
-                <ParticipantItem name={participant.identity} />
+                <ParticipantItem
+                    key={participant.sid}
+                    name={participant.identity}
+                />
             ))}
         </div>
     )

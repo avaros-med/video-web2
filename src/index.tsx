@@ -17,6 +17,7 @@ import {
 } from 'react-router-dom'
 import App from './App'
 import { ChatProvider } from './components/ChatProvider'
+import { EChartContextProvider } from './components/EChartPanel/useEChartContext'
 import ErrorDialog from './components/ErrorDialog/ErrorDialog'
 import LoginPage from './components/LoginPage/LoginPage'
 import { PanelContextProvider } from './components/Panel/usePanelContext'
@@ -39,7 +40,9 @@ const VideoApp = () => {
             <ParticipantProvider>
                 <ChatProvider>
                     <PanelContextProvider>
-                        <App />
+                        <EChartContextProvider>
+                            <App />
+                        </EChartContextProvider>
                     </PanelContextProvider>
                 </ChatProvider>
             </ParticipantProvider>

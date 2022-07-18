@@ -1,4 +1,4 @@
-import { Divider, Hidden, Typography } from '@material-ui/core'
+import { Divider, Grid, Hidden, Typography } from '@material-ui/core'
 import { makeStyles, Theme } from '@material-ui/core/styles'
 import { forwardRef, useImperativeHandle } from 'react'
 import AudioInputList from '../DeviceSelectionDialog/AudioInputList/AudioInputList'
@@ -41,7 +41,12 @@ export const MediaDevicesPanel = forwardRef((_, ref: any) => {
 
     // Pass references to parent component
     useImperativeHandle(ref, () => ({
-        getName: () => 'Media Devices',
+        getName: () => (
+            <Grid container alignItems="center">
+                <i className="material-icons mr-2">settings</i>
+                <span>Media Devices</span>
+            </Grid>
+        ),
     }))
 
     return (

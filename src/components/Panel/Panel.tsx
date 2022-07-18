@@ -1,4 +1,5 @@
 import { makeStyles, Theme } from '@material-ui/core'
+import { ReactNode } from 'react'
 import { IconButton } from '../UI/IconButton'
 import { usePanelContext } from './usePanelContext'
 
@@ -58,7 +59,7 @@ const PanelHeader = ({
     title,
     onClose,
 }: {
-    title: string
+    title: ReactNode | string
     onClose: () => void
 }) => {
     const classes = useStyles()

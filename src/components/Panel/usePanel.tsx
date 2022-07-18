@@ -7,10 +7,10 @@ import { MediaDevicesPanel } from '../MediaDevicesPanel/MediaDevicesPanel'
 export interface PanelHookState {
     panel: PANEL
     panelNode: ReactNode
-    panelName: string
+    panelName: ReactNode | string
     isHidden: boolean
     showJoiningInfo: () => void
-    showEChart: () => void
+    showEChart: (showEChartTab: boolean) => void
     showMediaDevices: () => void
     showBackgroundSelection: () => void
     onClose: () => void
@@ -27,6 +27,7 @@ enum PANEL {
 export const usePanel = (): PanelHookState => {
     const [panel, setPanel] = useState<PANEL>(PANEL.NONE)
     const [panelRef, setPanelRef] = useState<any>(null)
+    const [showEChartTab, setShowEChartTab] = useState<boolean>(false)
 
     const onClose = () => setPanel(PANEL.NONE)
 
@@ -42,16 +43,23 @@ export const usePanel = (): PanelHookState => {
     )
 
     const showJoiningInfo = () => setPanelHandler(PANEL.JOINING_INFO)
-    const showEChart = () => setPanelHandler(PANEL.ECHART)
+    const showEChart = (_showEChartTab: boolean) => {
+        setShowEChartTab(_showEChartTab)
+        setPanelHandler(PANEL.ECHART)
+    }
     const showBackgroundSelection = () =>
         setPanelHandler(PANEL.BACKGROUND_SELECTION)
     const showMediaDevices = () => setPanelHandler(PANEL.MEDIA_DEVICES)
 
     const isHidden = panel === PANEL.NONE
 
-    const panelName = useMemo((): string => panelRef?.getName() ?? 'Settings', [
-        panelRef,
-    ])
+    const panelName = useMemo(
+        (): string =>
+            panelRef?.getHeaderNode
+                ? panelRef?.getHeaderNode()
+                : panelRef?.getName() ?? 'Settings',
+        [panelRef]
+    )
 
     const panelNode = useMemo((): ReactNode => {
         const props = {
@@ -63,7 +71,7 @@ export const usePanel = (): PanelHookState => {
                 return <JoiningInfoPanel {...props} />
 
             case PANEL.ECHART:
-                return <EChartPanel {...props} />
+                return <EChartPanel {...props} showEChartTab={showEChartTab} />
 
             case PANEL.MEDIA_DEVICES:
                 return <MediaDevicesPanel {...props} />
@@ -74,7 +82,7 @@ export const usePanel = (): PanelHookState => {
             default:
                 return null
         }
-    }, [panel])
+    }, [panel, showEChartTab])
 
     return {
         panel,

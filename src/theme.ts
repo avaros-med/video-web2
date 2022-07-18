@@ -131,6 +131,6 @@ export default createTheme({
     sidebarMobilePadding: 8,
     participantBorderWidth: 2,
     mobileTopBarHeight: 52,
-    rightPanelWidth: 320,
+    rightPanelWidth: 350,
     galleryViewBackgroundColor: 'black',
 })
