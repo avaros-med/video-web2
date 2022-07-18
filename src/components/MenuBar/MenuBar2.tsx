@@ -1,6 +1,6 @@
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
 
-import { Grid, Hidden, Typography } from '@material-ui/core'
+import { Grid, Typography } from '@material-ui/core'
 import Button from '@material-ui/core/Button'
 import useRoomState from '../../hooks/useRoomState/useRoomState'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'

@@ -1,8 +1,6 @@
 import { makeStyles, Theme } from '@material-ui/core/styles'
 import { forwardRef, useImperativeHandle } from 'react'
 
-interface Props {}
-
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
         width: theme.rightPanelWidth,
@@ -12,7 +10,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
 }))
 
-export const EChartPanel = forwardRef(({}: Props, ref: any) => {
+export const EChartPanel = forwardRef((_, ref: any) => {
     const classes = useStyles()
 
     // Pass references to parent component

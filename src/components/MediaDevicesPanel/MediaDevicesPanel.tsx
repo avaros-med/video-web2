@@ -6,8 +6,6 @@ import AudioOutputList from '../DeviceSelectionDialog/AudioOutputList/AudioOutpu
 import MaxGalleryViewParticipants from '../DeviceSelectionDialog/MaxGalleryViewParticipants/MaxGalleryViewParticipants'
 import VideoInputList from '../DeviceSelectionDialog/VideoInputList/VideoInputList'
 
-interface Props {}
-
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
         width: theme.rightPanelWidth,
@@ -39,7 +37,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
 }))
 
-export const MediaDevicesPanel = forwardRef(({}: Props, ref: any) => {
+export const MediaDevicesPanel = forwardRef((_, ref: any) => {
     const classes = useStyles()
 
     // Pass references to parent component

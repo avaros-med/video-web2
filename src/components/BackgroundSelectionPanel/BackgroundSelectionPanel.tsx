@@ -3,8 +3,6 @@ import { forwardRef, useImperativeHandle } from 'react'
 import BackgroundThumbnail from '../BackgroundSelectionDialog/BackgroundThumbnail/BackgroundThumbnail'
 import { backgroundConfig } from '../VideoProvider/useBackgroundSettings/useBackgroundSettings'
 
-interface Props {}
-
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
         width: '100%',
@@ -24,7 +22,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     },
 }))
 
-export const BackgroundSelectionPanel = forwardRef(({}: Props, ref: any) => {
+export const BackgroundSelectionPanel = forwardRef((_, ref: any) => {
     const classes = useStyles()
 
     const imageNames = backgroundConfig.imageNames
