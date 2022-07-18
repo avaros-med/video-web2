@@ -73,6 +73,13 @@ export default function Menu(props: { buttonClassName?: string }) {
                     horizontal: 'center',
                 }}
             >
+                <MenuItem onClick={() => {}}>
+                    <IconContainer>
+                        <i className="material-icons">info</i>
+                    </IconContainer>
+                    <Typography variant="body1">Joining Info</Typography>
+                </MenuItem>
+
                 <MenuItem onClick={() => setSettingsOpen(true)}>
                     <IconContainer>
                         <i className="material-icons">settings</i>

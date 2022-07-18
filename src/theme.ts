@@ -5,6 +5,7 @@ declare module '@material-ui/core/styles/createTheme' {
         sidebarWidth: number
         sidebarMobileHeight: number
         brand: string
+        topMenuBarHeight: number
         footerHeight: number
         mobileTopBarHeight: number
         mobileFooterHeight: number
@@ -19,6 +20,7 @@ declare module '@material-ui/core/styles/createTheme' {
         sidebarWidth?: number
         sidebarMobileHeight?: number
         brand: string
+        topMenuBarHeight: number
         footerHeight: number
         mobileTopBarHeight: number
         mobileFooterHeight: number
@@ -121,6 +123,7 @@ export default createTheme({
         },
     },
     brand: '#E22525',
+    topMenuBarHeight: 75,
     footerHeight: 68,
     mobileFooterHeight: 68,
     sidebarWidth: 300,

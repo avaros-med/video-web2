@@ -9,6 +9,7 @@ interface Props {
     intent?:
         | 'primary'
         | 'text'
+        | 'text-white'
         | 'secondary'
         | 'hint'
         | 'orange'
@@ -42,6 +43,16 @@ const Styles = styled.div`
 
     &.text {
         color: ${Colors.TEXT};
+    }
+
+    &.text-white {
+        background-color: transparent;
+        border-color: transparent;
+        color: white;
+
+        &:hover {
+            background-color: transparent;
+        }
     }
 
     &.secondary {

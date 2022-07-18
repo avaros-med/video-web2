@@ -4,10 +4,12 @@ import Colors from '../../colors'
 
 export type ButtonIntent =
     | 'primary'
+    | 'primary-fade'
     | 'secondary'
     | 'hint'
     | 'text-primary'
     | 'text-secondary'
+    | 'text-white'
     | 'text-hint'
     | 'text-danger'
     | 'text-orange'
@@ -34,56 +36,70 @@ const ButtonStyles = styled.button`
     align-items: center;
 
     &.primary {
-        background: ${() => Colors.BLUE};
+        background: ${Colors.BLUE};
         color: white;
 
         &:hover {
-            background: ${() => Colors.BLUE_TINT};
+            background: ${Colors.BLUE_TINT};
         }
 
         .right-count {
-            background: ${() => Colors.ORANGE};
+            background: ${Colors.ORANGE};
             color: white;
         }
     }
 
+    &.primary-fade {
+        background: ${Colors.BLUE}0F;
+        color: ${Colors.BLUE};
+
+        &:hover {
+            background: ${Colors.BLUE}0F;
+        }
+    }
+
     &.text-primary {
-        color: ${() => Colors.BLUE} !important;
+        color: ${Colors.BLUE} !important;
         background: transparent;
     }
 
     &.secondary {
-        background: ${() => Colors.CONTENT_BACKGROUND};
-        color: ${() => Colors.TEXT_SECONDARY};
+        background: ${Colors.CONTENT_BACKGROUND};
+        color: ${Colors.TEXT_SECONDARY};
 
         &:hover {
             background: #faeded;
         }
     }
 
+    &.text-white {
+        color: white;
+        background: transparent;
+    }
+
     &.text-secondary {
-        color: ${() => Colors.TEXT_SECONDARY};
+        color: ${Colors.TEXT_SECONDARY};
         background: transparent;
     }
 
     &.text-hint {
-        color: ${() => Colors.HINT};
+        color: ${Colors.HINT};
         background: transparent;
     }
 
     &.text-orange {
-        color: ${() => Colors.ORANGE};
+        color: ${Colors.ORANGE};
         background: transparent;
     }
 
     &.text-danger {
-        color: ${() => Colors.RED};
+        color: ${Colors.RED};
         background: transparent;
     }
 
     &.hint {
-        background: ${() => Colors.CONTENT_BACKGROUND};
-        color: ${() => Colors.HINT};
+        background: ${Colors.CONTENT_BACKGROUND};
+        color: ${Colors.HINT};
 
         &:hover {
             background: #efecec;

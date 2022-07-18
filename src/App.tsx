@@ -8,6 +8,7 @@ import Room from './components/Room/Room'
 import MenuBar2 from './components/MenuBar/MenuBar2'
 import useHeight from './hooks/useHeight/useHeight'
 import useRoomState from './hooks/useRoomState/useRoomState'
+import { TopMenuBar } from './components/TopMenuBar/TopMenuBar'
 
 const Container = styled('div')({
     display: 'grid',
@@ -16,7 +17,7 @@ const Container = styled('div')({
 
 const Main = styled('main')(({ theme }: { theme: Theme }) => ({
     overflow: 'hidden',
-    paddingBottom: `${theme.footerHeight}px`, // Leave some space for the footer
+    paddingBottom: `${theme.topMenuBarHeight + theme.footerHeight}px`, // Leave some space for the footer
     background: 'black',
 }))
 
@@ -38,6 +39,7 @@ export default function App() {
                 <Main>
                     <ReconnectingNotification />
                     <RecordingNotifications />
+                    <TopMenuBar />
                     <Room />
                     <MenuBar2 />
                 </Main>

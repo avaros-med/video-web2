@@ -23,7 +23,8 @@ const Styles = styled.div`
         min-height: 90px;
         max-width: 90px;
         max-height: 90px;
-        font-size: 20px;
+        font-size: 32px;
+        font-weight: 500;
     }
 `
 
