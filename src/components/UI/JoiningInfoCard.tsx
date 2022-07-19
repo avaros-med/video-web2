@@ -10,7 +10,7 @@ interface Props {
 const Styles = styled.div`
     padding: 1em;
     border-radius: 5px;
-    background: ${Colors.BORDER_COLOR};
+    background: ${Colors.BLUE}1C;
     font-weight: 500;
 
     &:hover {
