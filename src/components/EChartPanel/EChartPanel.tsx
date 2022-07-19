@@ -1,8 +1,17 @@
 import { Grid } from '@material-ui/core'
 import { makeStyles, Theme } from '@material-ui/core/styles'
-import { forwardRef, useCallback, useImperativeHandle, useMemo } from 'react'
+import {
+    forwardRef,
+    ReactNode,
+    useCallback,
+    useImperativeHandle,
+    useMemo,
+} from 'react'
+import { EChartView } from './EChartView/EChartView'
 import { HeaderTabs } from './HeaderTabs'
+import { MessagesView } from './MessagesView/MessagesView'
 import { useEChartContext } from './useEChartContext'
+import { HEADER_TAB } from './useHeaderTabs'
 
 interface Props {
     showEChartTab: boolean
@@ -45,9 +54,22 @@ export const EChartPanel = forwardRef(({ showEChartTab }: Props, ref: any) => {
         getHeaderNode: canSeeEChartPanel ? getHeaderNode : undefined,
     }))
 
+    const viewNode = useMemo((): ReactNode => {
+        switch (tabSelected.value) {
+            case HEADER_TAB.ECHART:
+                return <EChartView />
+
+            case HEADER_TAB.MESSAGES:
+                return <MessagesView />
+
+            default:
+                return null
+        }
+    }, [tabSelected])
+
     return (
         <div ref={ref} className={classes.container}>
-            <div>eChart Panel; tabSelected: {tabSelected.display}</div>
+            {viewNode}
         </div>
     )
 })
