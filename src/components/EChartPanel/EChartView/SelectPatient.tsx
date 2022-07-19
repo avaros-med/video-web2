@@ -1,5 +1,7 @@
 import styled from 'styled-components'
 import { TextHintStyles } from '../../UI/styles/styles'
+import { useEChartContext } from '../useEChartContext'
+import { SearchPatientTypeahead } from './SearchPatientTypeahead'
 
 const Styles = styled.div`
     display: flex;
@@ -14,8 +16,11 @@ const Styles = styled.div`
 `
 
 export const SelectPatient = () => {
+    const { setDemographic } = useEChartContext().demographic
+
     return (
         <Styles>
+            <SearchPatientTypeahead classes="mb-5" onChange={setDemographic} />
             <img
                 src={`${process.env.PUBLIC_URL}/assets/images/illustration-search.svg`}
                 alt="Search Patient"
