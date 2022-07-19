@@ -23,6 +23,21 @@ const searchDemographic = (searchTerm: string): Promise<Demographic[]> => {
     })
 }
 
+const createNote = (demographicNo: number, note: string): Promise<boolean> => {
+    const url = `${BASE_URL}/demographics/${demographicNo}/notes`
+    const payload = {
+        note,
+    }
+
+    return new Promise((resolve, reject) => {
+        axios
+            .post(url, payload)
+            .then(() => resolve(true))
+            .catch((error: AxiosError) => reject(error))
+    })
+}
+
 export const oscarService = {
     searchDemographic,
+    createNote,
 }

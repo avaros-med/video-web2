@@ -1,6 +1,7 @@
 import styled from 'styled-components'
 import { useEChartContext } from '../useEChartContext'
-import { SelectPatient } from './SelectPatient'
+import { EncounterNoteView } from './EncounterNoteView'
+import { SelectPatientView } from './SelectPatientView'
 
 const Styles = styled.div`
     width: 100%;
@@ -11,7 +12,7 @@ export const EChartView = () => {
 
     return (
         <Styles>
-            {!demographic ? <SelectPatient /> : <div>Encounter note</div>}
+            {!demographic ? <SelectPatientView /> : <EncounterNoteView />}
         </Styles>
     )
 }

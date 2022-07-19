@@ -15,7 +15,7 @@ const Styles = styled.div`
     }
 `
 
-export const SelectPatient = () => {
+export const SelectPatientView = () => {
     const { setDemographic } = useEChartContext().demographic
 
     return (

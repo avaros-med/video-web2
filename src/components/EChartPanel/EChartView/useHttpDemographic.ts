@@ -5,6 +5,7 @@ import { Demographic } from '../../../services/models/Demographic.model'
 
 enum REQUEST {
     SEARCH_DEMOGRAPHICS = 'SEARCH_DEMOGRAPHICS',
+    CREATE_NOTE = 'CREATE_NOTE',
 }
 
 export const useHttpDemographic = () => {
@@ -20,6 +21,16 @@ export const useHttpDemographic = () => {
         [sendRequest]
     )
 
+    const createNote = useCallback(
+        (demographicNo: number, note: string): Promise<Demographic[]> => {
+            return sendRequest(
+                oscarService.createNote.bind({}, demographicNo, note),
+                REQUEST.CREATE_NOTE
+            )
+        },
+        [sendRequest]
+    )
+
     const demographics =
         requestId === REQUEST.SEARCH_DEMOGRAPHICS ? responseData ?? [] : []
 
@@ -27,5 +38,6 @@ export const useHttpDemographic = () => {
         isLoading,
         demographics,
         searchDemographic,
+        createNote,
     }
 }
