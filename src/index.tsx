@@ -25,6 +25,7 @@ import { ParticipantProvider } from './components/ParticipantProvider'
 import PrivateRoute from './components/PrivateRoute/PrivateRoute'
 import UnsupportedBrowserWarning from './components/UnsupportedBrowserWarning/UnsupportedBrowserWarning'
 import { VideoProvider } from './components/VideoProvider'
+import { AvsSocketContextProvider } from './hooks/useAvsSocketContext/useAvsSocketContext'
 import AppStateProvider, { useAppState } from './state'
 import theme from './theme'
 import './types'
@@ -40,9 +41,11 @@ const VideoApp = () => {
             <ParticipantProvider>
                 <ChatProvider>
                     <PanelContextProvider>
-                        <EChartContextProvider>
-                            <App />
-                        </EChartContextProvider>
+                        <AvsSocketContextProvider>
+                            <EChartContextProvider>
+                                <App />
+                            </EChartContextProvider>
+                        </AvsSocketContextProvider>
                     </PanelContextProvider>
                 </ChatProvider>
             </ParticipantProvider>

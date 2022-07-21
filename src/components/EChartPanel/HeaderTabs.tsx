@@ -63,6 +63,7 @@ const ItemStyles = styled.div`
     ${props =>
         props.theme.isActive &&
         css`
+            background: ${Colors.BLUE}0C;
             color: ${Colors.BLUE};
             position: relative;
 

@@ -20,6 +20,9 @@ interface Props {
             | React.ChangeEvent<HTMLInputElement>
             | React.ChangeEvent<HTMLTextAreaElement>
     ) => void
+    onKeyPress?: (
+        event: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>
+    ) => void
 }
 
 const Styles = styled.div`
@@ -49,6 +52,7 @@ export const Input = ({
     maxChars,
     onChange,
     onBlur,
+    onKeyPress,
 }: Props) => {
     const [_value, setValue] = useState<string>(value || '')
 
@@ -91,6 +95,11 @@ export const Input = ({
                                             onBlur(event)
                                         }
                                     }}
+                                    onKeyPress={event => {
+                                        if (onKeyPress) {
+                                            onKeyPress(event)
+                                        }
+                                    }}
                                 ></textarea>
 
                                 {suffix && (
@@ -111,6 +120,11 @@ export const Input = ({
                                     ) => {
                                         if (onBlur) {
                                             onBlur(event)
+                                        }
+                                    }}
+                                    onKeyPress={event => {
+                                        if (onKeyPress) {
+                                            onKeyPress(event)
                                         }
                                     }}
                                 />
