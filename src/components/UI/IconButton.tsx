@@ -8,6 +8,7 @@ interface Props {
     classes?: string
     intent?:
         | 'primary'
+        | 'primary-fade'
         | 'text'
         | 'text-white'
         | 'secondary'
@@ -39,6 +40,16 @@ const Styles = styled.div`
 
     &.primary {
         color: ${Colors.BLUE};
+    }
+
+    &.primary-fade {
+        background: ${Colors.BLUE}0F;
+        color: ${Colors.BLUE};
+        border: 0;
+
+        &:hover {
+            background: ${Colors.BLUE}0F;
+        }
     }
 
     &.text {
@@ -112,12 +123,12 @@ export const IconButton = forwardRef(
         if (tooltipContent) {
             Wrapper = ({ children }: { children: React.ReactNode }) => (
                 <Tooltip2
-                    // autoFocus={false}
-                    // enforceFocus={false}
-                    // openOnTargetFocus={false}
+                    autoFocus={false}
+                    enforceFocus={false}
+                    openOnTargetFocus={false}
                     content={tooltipContent}
                     position={tooltipPosition || 'auto'}
-                    usePortal
+                    usePortal={false}
                 >
                     <div>{children}</div>
                 </Tooltip2>

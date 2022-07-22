@@ -1,3 +1,4 @@
+import { Grid } from '@material-ui/core'
 import { useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
@@ -7,11 +8,10 @@ import { SendMessage } from '../../../services/ws/eventout'
 import { socketService } from '../../../services/ws/socket.service'
 import { Button } from '../../UI/Button'
 import { Input } from '../../UI/Input'
+import { SendPatientAttachment } from './SendPatientAttachment'
 
 const Styles = styled.div`
     width: 100%;
-    display: flex;
-    align-items: center;
 
     input {
         width: 100%;
@@ -34,12 +34,12 @@ export const MessageComposer = () => {
     const senderName = room!.localParticipant.identity
 
     const onSendMessage = useCallback(() => {
-        if (!URLRoomName) {
+        if (!URLRoomName || !message?.trim().length) {
             return
         }
 
         const eventout: SendMessage = {
-            description: message,
+            description: message.trim(),
             fromProvider: true,
             roomName: URLRoomName,
             senderName,
@@ -50,23 +50,26 @@ export const MessageComposer = () => {
 
     return (
         <Styles>
-            <Input
-                classes="flex-1"
-                placeholder="Type a message ..."
-                value={message}
-                onChange={setMessage}
-                onKeyPress={event => {
-                    if (event.key === 'Enter') {
-                        onSendMessage()
-                    }
-                }}
-            />
-            <Button
-                classes="ml-3"
-                intent="primary-fade"
-                label="Send"
-                onClick={onSendMessage}
-            />
+            <Grid container alignItems="center">
+                <Input
+                    classes="flex-1"
+                    placeholder="Type a message ..."
+                    value={message}
+                    onChange={setMessage}
+                    onKeyPress={event => {
+                        if (event.key === 'Enter') {
+                            onSendMessage()
+                        }
+                    }}
+                />
+                <Button
+                    classes="ml-3"
+                    intent="primary-fade"
+                    label="Send"
+                    onClick={onSendMessage}
+                />
+                <SendPatientAttachment classes="ml-3" />
+            </Grid>
         </Styles>
     )
 }

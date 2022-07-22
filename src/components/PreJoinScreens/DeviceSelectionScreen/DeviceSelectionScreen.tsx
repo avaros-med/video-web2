@@ -104,6 +104,7 @@ export default function DeviceSelectionScreen({
                     <Typography
                         variant="body2"
                         style={{ fontWeight: 'bold', fontSize: '16px' }}
+                        className="mt-3"
                     >
                         Joining Meeting
                     </Typography>

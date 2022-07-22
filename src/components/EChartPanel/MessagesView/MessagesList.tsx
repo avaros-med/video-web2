@@ -39,10 +39,10 @@ export const MessagesList = ({ classes }: Props) => {
 
     // On new message, scroll the scroll container to bottom
     useEffect(() => {
-        if (!scrollContainerRef?.current) {
-            return
-        }
         setTimeout(() => {
+            if (!scrollContainerRef?.current) {
+                return
+            }
             scrollContainerRef.current.scrollTop =
                 scrollContainerRef.current.scrollHeight
         }, 10)
