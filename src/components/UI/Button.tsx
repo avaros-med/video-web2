@@ -95,6 +95,10 @@ const ButtonStyles = styled.button`
     &.text-danger {
         color: ${Colors.RED};
         background: transparent;
+
+        &:hover {
+            background: transparent;
+        }
     }
 
     &.hint {
