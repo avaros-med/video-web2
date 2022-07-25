@@ -1,7 +1,10 @@
 import { Grid, Typography } from '@material-ui/core'
 import { makeStyles, Theme } from '@material-ui/core/styles'
-import { forwardRef, useImperativeHandle } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
+import { RemoteParticipant } from 'twilio-video'
+import useParticipantsContext from '../../hooks/useParticipantsContext/useParticipantsContext'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
+import { usePagination } from '../GalleryView/usePagination/usePagination'
 import { JoiningInfoCard } from '../UI/JoiningInfoCard'
 import { ParticipantsList } from './ParticipantsList'
 
@@ -26,6 +29,23 @@ export const JoiningInfoPanel = forwardRef((_, ref: any) => {
     const classes = useStyles()
 
     const { room } = useVideoContext()
+    const { galleryViewParticipants } = useParticipantsContext()
+    const [remoteParticipants, setRemoteParticipants] = useState<
+        RemoteParticipant[]
+    >(Array.from(room!.participants.values() ?? []))
+    const { paginatedParticipants } = usePagination([
+        room!.localParticipant,
+        ...galleryViewParticipants,
+    ])
+
+    // Get latest remote participants
+    useEffect(() => {
+        const newList = Array.from(room!.participants.values() ?? [])
+        if (newList?.length === remoteParticipants?.length) {
+            return
+        }
+        setRemoteParticipants(Array.from(room!.participants.values() ?? []))
+    }, [room, remoteParticipants, paginatedParticipants])
 
     // Pass references to parent component
     useImperativeHandle(ref, () => ({
@@ -48,9 +68,7 @@ export const JoiningInfoPanel = forwardRef((_, ref: any) => {
             </Typography>
             <ParticipantsList
                 localParticipant={room!.localParticipant}
-                remoteParticipants={Array.from(
-                    room!.participants.values() ?? []
-                )}
+                remoteParticipants={remoteParticipants}
             />
         </div>
     )
