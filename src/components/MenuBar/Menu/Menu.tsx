@@ -61,6 +61,7 @@ export default function Menu(props: { buttonClassName?: string }) {
                     icon="settings"
                     onClick={() => setMenuOpen(isOpen => !isOpen)}
                     tooltipContent="Settings"
+                    tooltipPosition="top"
                     data-cy-more-button
                 />
             </div>

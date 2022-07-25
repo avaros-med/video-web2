@@ -29,6 +29,7 @@ export default function ToggleVideoButton(props: {
             tooltipContent={
                 isVideoEnabled ? 'Turn off camera' : 'Turn on camera'
             }
+            tooltipPosition="top"
             data-cy-video-toggle
         />
     )

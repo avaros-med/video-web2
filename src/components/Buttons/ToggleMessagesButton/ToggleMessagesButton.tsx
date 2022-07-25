@@ -11,6 +11,7 @@ export default function ToggleMessagesButton(props: { className?: string }) {
             icon="chat"
             onClick={() => showEChart(false)}
             tooltipContent="Messages"
+            tooltipPosition="top"
         />
     )
 }
