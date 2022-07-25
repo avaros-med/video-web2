@@ -1,7 +1,9 @@
+import { Grid } from '@material-ui/core'
 import { useState } from 'react'
 import styled from 'styled-components'
 import Colors from '../../colors'
 import Snackbar from '../Snackbar/Snackbar'
+import { IconButton } from './IconButton'
 
 interface Props {
     classes?: string
@@ -29,6 +31,12 @@ export const JoiningInfoCard = ({ classes }: Props) => {
 
     const url = window.location.href
 
+    const onEmail = () => {
+        var body = `Navigate to ${url} and enter your name to join video session.`
+        var mailToLink = 'mailto:?body=' + encodeURIComponent(body)
+        window.location.href = mailToLink
+    }
+
     const onCopy = () => {
         navigator.clipboard.writeText(url)
         setShowSnackBar(true)
@@ -36,10 +44,19 @@ export const JoiningInfoCard = ({ classes }: Props) => {
 
     return (
         <>
-            <Styles className={classes ?? ''} onClick={onCopy}>
-                <span>Navigate to&nbsp;</span>
-                <span className="url">{url}</span>
-                <span>,&nbsp;and enter your name to join video session.</span>
+            <Styles className={classes ?? ''}>
+                <div>
+                    <span>Navigate to&nbsp;</span>
+                    <span className="url">{url}</span>
+                    <span>
+                        ,&nbsp;and enter your name to join video session.
+                    </span>
+                </div>
+
+                <Grid className="mt-3" container justifyContent="flex-end">
+                    <IconButton classes="mr-3" icon="email" onClick={onEmail} />
+                    <IconButton icon="content_copy" onClick={onCopy} />
+                </Grid>
             </Styles>
 
             <Snackbar
