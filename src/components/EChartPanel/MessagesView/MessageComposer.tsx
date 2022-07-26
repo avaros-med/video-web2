@@ -43,6 +43,7 @@ export const MessageComposer = () => {
             fromProvider: true,
             roomName: URLRoomName,
             senderName,
+            createdAt: new Date().toISOString(),
         }
         socketService.dispatchEvent('Message', eventout)
         setMessage('')

@@ -3,4 +3,5 @@ export class SendMessage {
     roomName!: string
     fromProvider!: boolean
     senderName!: string
+    createdAt!: string
 }

@@ -63,7 +63,7 @@ export const MessageItem = ({ message, isLocalRecipient }: Props) => {
                     {message.senderName}
                 </SenderNameStyles>
                 <CreatedAtStyles>
-                    {moment(message.createdAt).format('h:MM A')}
+                    {moment(message.createdAt).format('h:mm A')}
                 </CreatedAtStyles>
             </Grid>
             <MessageStyles theme={{ isLocalRecipient }}>
