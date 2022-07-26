@@ -1,7 +1,7 @@
-import React, { createContext } from 'react';
-import { RemoteParticipant } from 'twilio-video';
-import useGalleryViewParticipants from '../../hooks/useGalleryViewParticipants/useGalleryViewParticipants';
-import useSpeakerViewParticipants from '../../hooks/useSpeakerViewParticipants/useSpeakerViewParticipants';
+import React, { createContext } from 'react'
+import { RemoteParticipant } from 'twilio-video'
+import useGalleryViewParticipants from '../../hooks/useGalleryViewParticipants/useGalleryViewParticipants'
+import useSpeakerViewParticipants from '../../hooks/useSpeakerViewParticipants/useSpeakerViewParticipants'
 
 /**
  * The purpose of the ParticipantProvider component is to ensure that the hooks useGalleryViewParticipants
@@ -11,27 +11,27 @@ import useSpeakerViewParticipants from '../../hooks/useSpeakerViewParticipants/u
  */
 
 export interface IParticipantContext {
-  mobileGalleryViewParticipants: RemoteParticipant[];
-  galleryViewParticipants: RemoteParticipant[];
-  speakerViewParticipants: RemoteParticipant[];
+    mobileGalleryViewParticipants: RemoteParticipant[]
+    galleryViewParticipants: RemoteParticipant[]
+    speakerViewParticipants: RemoteParticipant[]
 }
 
-export const ParticipantContext = createContext<IParticipantContext>(null!);
+export const ParticipantContext = createContext<IParticipantContext>(null!)
 
 export const ParticipantProvider: React.FC = ({ children }) => {
-  const mobileGalleryViewParticipants = useGalleryViewParticipants(true);
-  const galleryViewParticipants = useGalleryViewParticipants();
-  const speakerViewParticipants = useSpeakerViewParticipants();
+    const mobileGalleryViewParticipants = useGalleryViewParticipants(true)
+    const galleryViewParticipants = useGalleryViewParticipants()
+    const speakerViewParticipants = useSpeakerViewParticipants()
 
-  return (
-    <ParticipantContext.Provider
-      value={{
-        mobileGalleryViewParticipants,
-        galleryViewParticipants,
-        speakerViewParticipants,
-      }}
-    >
-      {children}
-    </ParticipantContext.Provider>
-  );
-};
+    return (
+        <ParticipantContext.Provider
+            value={{
+                mobileGalleryViewParticipants,
+                galleryViewParticipants,
+                speakerViewParticipants,
+            }}
+        >
+            {children}
+        </ParticipantContext.Provider>
+    )
+}
