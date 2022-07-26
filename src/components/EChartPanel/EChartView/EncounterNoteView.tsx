@@ -5,10 +5,10 @@ import Colors from '../../../colors'
 import { Demographic } from '../../../services/models/Demographic.model'
 import Snackbar from '../../Snackbar/Snackbar'
 import { Button } from '../../UI/Button'
-import { IconButton } from '../../UI/IconButton'
 import { Input } from '../../UI/Input'
 import { FontWeightBoldStyles } from '../../UI/styles/styles'
 import { useEChartContext } from '../useEChartContext'
+import { PatientField } from './PatientField'
 import { useHttpDemographic } from './useHttpDemographic'
 
 const Styles = styled.div`
@@ -99,45 +99,5 @@ export const EncounterNoteView = () => {
                 autoHideDuration={3000}
             />
         </Styles>
-    )
-}
-
-const PatientFieldStyles = styled.div`
-    flex: 1;
-    margin-right: 16px;
-    padding: 12px 16px;
-    background: ${Colors.CONTENT_BACKGROUND};
-    border-radius: 5px;
-    display: flex;
-    align-items: center;
-    font-weight: 500;
-
-    .material-icons {
-        font-size: 20px;
-    }
-`
-
-const PatientField = ({
-    classes,
-    demographicName,
-    onClear,
-}: {
-    classes?: string
-    demographicName: string
-    onClear: () => void
-}) => {
-    return (
-        <Grid container alignItems="center" className={classes ?? ''}>
-            <PatientFieldStyles>
-                <i className="material-icons mr-2">account_circle</i>
-                <span>{demographicName}</span>
-            </PatientFieldStyles>
-            <IconButton
-                intent="hint"
-                icon="cached"
-                onClick={onClear}
-                tooltipContent="Change Patient"
-            />
-        </Grid>
     )
 }

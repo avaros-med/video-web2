@@ -1,7 +1,7 @@
-import React, { createContext, ReactNode, useCallback, useState } from 'react'
+import { createContext, ReactNode, useCallback, useState } from 'react'
 import {
-    CreateLocalTrackOptions,
     ConnectOptions,
+    CreateLocalTrackOptions,
     LocalAudioTrack,
     LocalVideoTrack,
     Room,
@@ -9,6 +9,8 @@ import {
 import { ErrorCallback } from '../../types'
 import { SelectedParticipantProvider } from './useSelectedParticipant/useSelectedParticipant'
 
+import { useCurrentUser } from '../../hooks/useCurrentUser'
+import { CurrentUser } from '../../services/models/CurrentUser.model'
 import AttachVisibilityHandler from './AttachVisibilityHandler/AttachVisibilityHandler'
 import useBackgroundSettings, {
     BackgroundSettings,
@@ -46,6 +48,7 @@ export interface IVideoContext {
     setIsBackgroundSelectionOpen: (value: boolean) => void
     backgroundSettings: BackgroundSettings
     setBackgroundSettings: (settings: BackgroundSettings) => void
+    currentUser: CurrentUser | null
 }
 
 export const VideoContext = createContext<IVideoContext>(null!)
@@ -112,6 +115,8 @@ export function VideoProvider({
         room
     )
 
+    const { currentUser } = useCurrentUser()
+
     return (
         <VideoContext.Provider
             value={{
@@ -131,6 +136,7 @@ export function VideoProvider({
                 setIsBackgroundSelectionOpen,
                 backgroundSettings,
                 setBackgroundSettings,
+                currentUser,
             }}
         >
             <SelectedParticipantProvider room={room}>

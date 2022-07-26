@@ -28,7 +28,7 @@ const Styles = styled.div`
 
 export const MessageComposer = () => {
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
-    const { room } = useVideoContext()
+    const { room, currentUser } = useVideoContext()
     const [message, setMessage] = useState<string>('')
 
     const senderName = room!.localParticipant.identity
@@ -68,7 +68,11 @@ export const MessageComposer = () => {
                     label="Send"
                     onClick={onSendMessage}
                 />
-                <SendPatientAttachment classes="ml-3" />
+                {currentUser ? (
+                    <SendPatientAttachment classes="ml-3" />
+                ) : (
+                    <div>[patient-doc-uploader]</div>
+                )}
             </Grid>
         </Styles>
     )

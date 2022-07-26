@@ -1,5 +1,7 @@
 import { Grid, InputLabel, makeStyles, Theme } from '@material-ui/core'
-import { FormEvent } from 'react'
+import { FormEvent, useEffect } from 'react'
+import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { CurrentUser } from '../../../services/models/CurrentUser.model'
 import { AppLogoBlock } from '../../UI/AppLogoBlock'
 import { Button } from '../../UI/Button'
 import { Input } from '../../UI/Input'
@@ -32,6 +34,14 @@ export default function RoomNameScreen({
     handleSubmit,
 }: RoomNameScreenProps) {
     const classes = useStyles()
+    const { currentUser } = useVideoContext()
+
+    useEffect(() => {
+        if (!currentUser) {
+            return
+        }
+        setName(CurrentUser.getFullName(currentUser))
+    }, [currentUser, setName])
 
     return (
         <>

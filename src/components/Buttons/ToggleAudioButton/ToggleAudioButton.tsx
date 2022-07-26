@@ -20,6 +20,7 @@ export default function ToggleAudioButton(props: {
             tooltipContent={
                 isAudioEnabled ? 'Mute microphone' : 'Unmute microphone'
             }
+            tooltipPosition="top"
             data-cy-audio-toggle
         />
     )

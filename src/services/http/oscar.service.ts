@@ -1,8 +1,26 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
+import { CurrentUser } from '../models/CurrentUser.model'
 import { Demographic } from '../models/Demographic.model'
 import { DemographicDocument } from '../models/PatientDocument.model'
 
 const BASE_URL = `${process.env.REACT_APP_OSCAR_BASE_URL}/ws/rs/video/v2`
+
+const getCurrentUser = (): Promise<CurrentUser> => {
+    const url = `${BASE_URL}/user`
+
+    return new Promise((resolve, reject) => {
+        axios
+            .get(url)
+            .then((response: AxiosResponse) => {
+                if (response?.data) {
+                    resolve(CurrentUser.deserialize(response.data))
+                } else {
+                    reject('Unable to get current user')
+                }
+            })
+            .catch((error: AxiosError) => reject(error))
+    })
+}
 
 const searchDemographic = (searchTerm: string): Promise<Demographic[]> => {
     const url = `${BASE_URL}/demographics/search?search_term=${searchTerm}`
@@ -70,6 +88,7 @@ const getDemographicDocuments = (
 }
 
 export const oscarService = {
+    getCurrentUser,
     searchDemographic,
     createNote,
     getDemographicDocuments,

@@ -11,6 +11,7 @@ export default function EndCallButton(props: { className?: string }) {
             icon="call_end"
             onClick={() => room!.disconnect()}
             tooltipContent="End call"
+            tooltipPosition="top"
             data-cy-disconnect
         />
     )

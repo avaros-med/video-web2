@@ -39,6 +39,7 @@ export default function ToggleScreenShareButton(props: {
             onClick={toggleScreenShare}
             disabled={isDisabled}
             tooltipContent={tooltipMessage || SCREEN_SHARE_TEXT}
+            tooltipPosition="top"
             data-cy-share-screen
         />
     )
