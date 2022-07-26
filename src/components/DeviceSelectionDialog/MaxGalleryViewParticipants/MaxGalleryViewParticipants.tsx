@@ -21,9 +21,10 @@ export default function MaxGalleryViewParticipants() {
                 Max Gallery View Participants
             </Typography>
             <Grid container alignItems="center" justifyContent="space-between">
-                <div className="inputSelect">
+                <div className="inputSelect w-100">
                     <FormControl fullWidth>
                         <Select
+                            className="w-100"
                             onChange={e =>
                                 setMaxGalleryViewParticipants(
                                     parseInt(e.target.value as string)

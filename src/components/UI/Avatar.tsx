@@ -2,6 +2,7 @@ import styled from 'styled-components'
 
 interface Props {
     classes?: string
+    intent?: 'sm' | 'lg'
     name: string
 }
 
@@ -16,9 +17,18 @@ const Styles = styled.div`
     align-items: center;
     justify-content: center;
     font-weight: 600;
+
+    &.lg {
+        min-width: 90px;
+        min-height: 90px;
+        max-width: 90px;
+        max-height: 90px;
+        font-size: 32px;
+        font-weight: 500;
+    }
 `
 
-export const Avatar = ({ classes, name }: Props) => {
+export const Avatar = ({ classes, intent, name }: Props) => {
     const nameParts = name?.split(' ')
     const initials = (name?.length
         ? nameParts
@@ -29,7 +39,7 @@ export const Avatar = ({ classes, name }: Props) => {
     ).toUpperCase()
 
     return (
-        <Styles className={classes ?? ''}>
+        <Styles className={`${classes ?? ''} ${intent ?? 'sm'}`}>
             <span>{initials}</span>
         </Styles>
     )

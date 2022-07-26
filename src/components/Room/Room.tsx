@@ -1,18 +1,21 @@
-import React, { useEffect, useRef } from 'react'
-import BackgroundSelectionDialog from '../BackgroundSelectionDialog/BackgroundSelectionDialog'
-import ChatWindow from '../ChatWindow/ChatWindow'
-import clsx from 'clsx'
-import { GalleryView } from '../GalleryView/GalleryView'
-import { MobileGalleryView } from '../MobileGalleryView/MobileGalleryView'
-import MainParticipant from '../MainParticipant/MainParticipant'
 import { makeStyles, Theme, useMediaQuery, useTheme } from '@material-ui/core'
+import clsx from 'clsx'
+import React, { useEffect, useRef } from 'react'
+import { useParams } from 'react-router-dom'
 import { Participant, Room as IRoom } from 'twilio-video'
-import { ParticipantAudioTracks } from '../ParticipantAudioTracks/ParticipantAudioTracks'
-import ParticipantList from '../ParticipantList/ParticipantList'
-import { useAppState } from '../../state'
+import { useAvsSocketContext } from '../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useChatContext from '../../hooks/useChatContext/useChatContext'
 import useScreenShareParticipant from '../../hooks/useScreenShareParticipant/useScreenShareParticipant'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
+import { socketService } from '../../services/ws/socket.service'
+import { useAppState } from '../../state'
+import BackgroundSelectionDialog from '../BackgroundSelectionDialog/BackgroundSelectionDialog'
+import ChatWindow from '../ChatWindow/ChatWindow'
+import { GalleryView } from '../GalleryView/GalleryView'
+import MainParticipant from '../MainParticipant/MainParticipant'
+import { MobileGalleryView } from '../MobileGalleryView/MobileGalleryView'
+import { ParticipantAudioTracks } from '../ParticipantAudioTracks/ParticipantAudioTracks'
+import ParticipantList from '../ParticipantList/ParticipantList'
 
 const useStyles = makeStyles((theme: Theme) => {
     const totalMobileSidebarHeight = `${theme.sidebarMobileHeight +
@@ -20,6 +23,7 @@ const useStyles = makeStyles((theme: Theme) => {
         theme.participantBorderWidth}px`
     return {
         container: {
+            flex: 1,
             position: 'relative',
             height: '100%',
             display: 'grid',
@@ -31,7 +35,7 @@ const useStyles = makeStyles((theme: Theme) => {
             },
         },
         rightDrawerOpen: {
-            gridTemplateColumns: `1fr ${theme.sidebarWidth}px ${theme.rightDrawerWidth}px`,
+            gridTemplateColumns: `1fr ${theme.sidebarWidth}px ${theme.rightPanelWidth}px`,
         },
     }
 })
@@ -77,6 +81,9 @@ export function useSetSpeakerViewOnScreenShare(
 
 export default function Room() {
     const classes = useStyles()
+    const { URLRoomName } = useParams<{ URLRoomName?: string }>()
+    const { socketEventHandler } = useAvsSocketContext()
+    const { onNetworkError } = useAvsSocketContext().networkError
     const { isChatWindowOpen } = useChatContext()
     const { isBackgroundSelectionOpen, room } = useVideoContext()
     const { isGalleryViewActive, setIsGalleryViewActive } = useAppState()
@@ -92,6 +99,18 @@ export default function Room() {
         setIsGalleryViewActive,
         isGalleryViewActive
     )
+
+    // Initialize Avaros video socket service
+    useEffect(() => {
+        if (!URLRoomName) {
+            return
+        }
+        socketService.initSocket(
+            URLRoomName,
+            socketEventHandler,
+            onNetworkError
+        )
+    }, [URLRoomName, socketEventHandler, onNetworkError])
 
     return (
         <div

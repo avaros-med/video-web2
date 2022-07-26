@@ -1,6 +1,6 @@
-import React from 'react'
-import clsx from 'clsx'
 import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
+import clsx from 'clsx'
+import React from 'react'
 import {
     LocalAudioTrack,
     LocalVideoTrack,
@@ -9,18 +9,18 @@ import {
     RemoteVideoTrack,
 } from 'twilio-video'
 
+import Typography from '@material-ui/core/Typography'
+import ScreenShareIcon from '../../icons/ScreenShareIcon'
 import AudioLevelIndicator from '../AudioLevelIndicator/AudioLevelIndicator'
-import AvatarIcon from '../../icons/AvatarIcon'
 import NetworkQualityLevel from '../NetworkQualityLevel/NetworkQualityLevel'
 import PinIcon from './PinIcon/PinIcon'
-import ScreenShareIcon from '../../icons/ScreenShareIcon'
-import Typography from '@material-ui/core/Typography'
 
 import useIsTrackSwitchedOff from '../../hooks/useIsTrackSwitchedOff/useIsTrackSwitchedOff'
+import useParticipantIsReconnecting from '../../hooks/useParticipantIsReconnecting/useParticipantIsReconnecting'
 import usePublications from '../../hooks/usePublications/usePublications'
 import useTrack from '../../hooks/useTrack/useTrack'
-import useParticipantIsReconnecting from '../../hooks/useParticipantIsReconnecting/useParticipantIsReconnecting'
 import { useAppState } from '../../state'
+import { Avatar } from '../UI/Avatar'
 
 const borderWidth = 2
 
@@ -238,7 +238,7 @@ export default function ParticipantInfo({
             <div className={classes.innerContainer}>
                 {(!isVideoEnabled || isVideoSwitchedOff) && (
                     <div className={classes.avatarContainer}>
-                        <AvatarIcon />
+                        <Avatar intent="lg" name={participant.identity} />
                     </div>
                 )}
                 {isParticipantReconnecting && (

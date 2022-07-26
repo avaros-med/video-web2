@@ -12,6 +12,7 @@ interface SnackbarProps {
     message: string | React.ReactNode
     variant?: 'error' | 'warning' | 'info'
     open: boolean
+    autoHideDuration?: number
     handleClose?: () => void
 }
 
@@ -57,6 +58,7 @@ export default function Snackbar({
     message,
     variant,
     open,
+    autoHideDuration,
     handleClose,
 }: SnackbarProps) {
     const classes = useStyles()
@@ -80,7 +82,7 @@ export default function Snackbar({
             }}
             open={open}
             onClose={handleOnClose}
-            autoHideDuration={10000}
+            autoHideDuration={autoHideDuration ?? 10000}
         >
             <div
                 className={clsx(classes.container, {

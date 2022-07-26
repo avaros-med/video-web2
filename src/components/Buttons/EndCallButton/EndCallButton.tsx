@@ -1,34 +1,17 @@
-import React from 'react'
-import clsx from 'clsx'
-import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
-
-import { Button } from '@material-ui/core'
-
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
-
-const useStyles = makeStyles((theme: Theme) =>
-    createStyles({
-        button: {
-            background: theme.brand,
-            color: 'white',
-            '&:hover': {
-                background: '#600101',
-            },
-        },
-    })
-)
+import { IconButton } from '../../UI/IconButton'
 
 export default function EndCallButton(props: { className?: string }) {
-    const classes = useStyles()
     const { room } = useVideoContext()
 
     return (
-        <Button
+        <IconButton
+            classes={props.className}
+            intent={'endcall'}
+            icon="call_end"
             onClick={() => room!.disconnect()}
-            className={clsx(classes.button, props.className)}
+            tooltipContent="End call"
             data-cy-disconnect
-        >
-            Disconnect
-        </Button>
+        />
     )
 }

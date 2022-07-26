@@ -1,11 +1,6 @@
-import React from 'react'
-
-import Button from '@material-ui/core/Button'
-import MicIcon from '../../../icons/MicIcon'
-import MicOffIcon from '../../../icons/MicOffIcon'
-
 import useLocalAudioToggle from '../../../hooks/useLocalAudioToggle/useLocalAudioToggle'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { IconButton } from '../../UI/IconButton'
 
 export default function ToggleAudioButton(props: {
     disabled?: boolean
@@ -16,14 +11,16 @@ export default function ToggleAudioButton(props: {
     const hasAudioTrack = localTracks.some(track => track.kind === 'audio')
 
     return (
-        <Button
-            className={props.className}
+        <IconButton
+            classes={props.className}
+            intent={isAudioEnabled ? 'text' : 'danger'}
+            icon={isAudioEnabled ? 'mic' : 'mic_off'}
             onClick={toggleAudioEnabled}
             disabled={!hasAudioTrack || props.disabled}
-            startIcon={isAudioEnabled ? <MicIcon /> : <MicOffIcon />}
+            tooltipContent={
+                isAudioEnabled ? 'Mute microphone' : 'Unmute microphone'
+            }
             data-cy-audio-toggle
-        >
-            {!hasAudioTrack ? 'No Audio' : isAudioEnabled ? 'Mute' : 'Unmute'}
-        </Button>
+        />
     )
 }

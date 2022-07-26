@@ -1,40 +1,31 @@
-import React, { useState, useRef } from 'react'
-import AboutDialog from '../../AboutDialog/AboutDialog'
-import BackgroundIcon from '../../../icons/BackgroundIcon'
-import CollaborationViewIcon from '@material-ui/icons/AccountBox'
-import DeviceSelectionDialog from '../../DeviceSelectionDialog/DeviceSelectionDialog'
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore'
-import GridViewIcon from '@material-ui/icons/Apps'
-import InfoIconOutlined from '../../../icons/InfoIconOutlined'
-import MoreIcon from '@material-ui/icons/MoreVert'
-import StartRecordingIcon from '../../../icons/StartRecordingIcon'
-import StopRecordingIcon from '../../../icons/StopRecordingIcon'
-import SearchIcon from '@material-ui/icons/Search'
-import SettingsIcon from '../../../icons/SettingsIcon'
 import {
-    Button,
-    styled,
-    Theme,
-    useMediaQuery,
     Menu as MenuContainer,
     MenuItem,
+    styled,
+    Theme,
     Typography,
+    useMediaQuery,
 } from '@material-ui/core'
 import { isSupported } from '@twilio/video-processors'
+import { useRef, useState } from 'react'
+import AboutDialog from '../../AboutDialog/AboutDialog'
+import DeviceSelectionDialog from '../../DeviceSelectionDialog/DeviceSelectionDialog'
 
-import { useAppState } from '../../../state'
 import useChatContext from '../../../hooks/useChatContext/useChatContext'
-import useIsRecording from '../../../hooks/useIsRecording/useIsRecording'
-import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
-import FlipCameraIcon from '../../../icons/FlipCameraIcon'
 import useFlipCameraToggle from '../../../hooks/useFlipCameraToggle/useFlipCameraToggle'
-import { VideoRoomMonitor } from '@twilio/video-room-monitor'
+import { useAppState } from '../../../state'
+import { usePanelContext } from '../../Panel/usePanelContext'
+import { IconButton } from '../../UI/IconButton'
 
 export const IconContainer = styled('div')({
     display: 'flex',
     justifyContent: 'center',
     width: '1.5em',
-    marginRight: '0.3em',
+    marginRight: '0.7em',
+})
+
+const FontWeightBold = styled('span')({
+    fontWeight: 500,
 })
 
 export default function Menu(props: { buttonClassName?: string }) {
@@ -46,18 +37,15 @@ export default function Menu(props: { buttonClassName?: string }) {
     const [menuOpen, setMenuOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
 
-    const {
-        isFetching,
-        updateRecordingRules,
-        roomType,
-        setIsGalleryViewActive,
-        isGalleryViewActive,
-    } = useAppState()
+    const { setIsGalleryViewActive, isGalleryViewActive } = useAppState()
     const { setIsChatWindowOpen } = useChatContext()
-    const isRecording = useIsRecording()
-    const { room, setIsBackgroundSelectionOpen } = useVideoContext()
+    const {
+        showJoiningInfo,
+        showBackgroundSelection,
+        showMediaDevices,
+    } = usePanelContext().panel
 
-    const anchorRef = useRef<HTMLButtonElement>(null)
+    const anchorRef = useRef<any>(null)
     const {
         flipCameraDisabled,
         toggleFacingMode,
@@ -66,21 +54,16 @@ export default function Menu(props: { buttonClassName?: string }) {
 
     return (
         <>
-            <Button
-                onClick={() => setMenuOpen(isOpen => !isOpen)}
-                ref={anchorRef}
-                className={props.buttonClassName}
-                data-cy-more-button
-            >
-                {isMobile ? (
-                    <MoreIcon />
-                ) : (
-                    <>
-                        More
-                        <ExpandMoreIcon />
-                    </>
-                )}
-            </Button>
+            <div ref={anchorRef}>
+                <IconButton
+                    classes={props.buttonClassName}
+                    intent="text"
+                    icon="settings"
+                    onClick={() => setMenuOpen(isOpen => !isOpen)}
+                    tooltipContent="Settings"
+                    data-cy-more-button
+                />
+            </div>
             <MenuContainer
                 open={menuOpen}
                 onClose={() => setMenuOpen(isOpen => !isOpen)}
@@ -94,27 +77,34 @@ export default function Menu(props: { buttonClassName?: string }) {
                     horizontal: 'center',
                 }}
             >
-                <MenuItem onClick={() => setSettingsOpen(true)}>
+                <MenuItem onClick={showJoiningInfo}>
                     <IconContainer>
-                        <SettingsIcon />
+                        <i className="material-icons">info</i>
                     </IconContainer>
-                    <Typography variant="body1">
-                        Audio and Video Settings
-                    </Typography>
+                    <Typography variant="body1">Room Info</Typography>
+                </MenuItem>
+
+                <MenuItem onClick={showMediaDevices}>
+                    <IconContainer>
+                        <i className="material-icons">settings</i>
+                    </IconContainer>
+                    <Typography variant="body1">Media Devices</Typography>
                 </MenuItem>
 
                 {isSupported && (
                     <MenuItem
                         onClick={() => {
-                            setIsBackgroundSelectionOpen(true)
+                            showBackgroundSelection()
                             setIsChatWindowOpen(false)
                             setMenuOpen(false)
                         }}
                     >
                         <IconContainer>
-                            <BackgroundIcon />
+                            <i className="material-icons">wallpaper</i>
                         </IconContainer>
-                        <Typography variant="body1">Backgrounds</Typography>
+                        <Typography variant="body1">
+                            <FontWeightBold>Backgrounds</FontWeightBold>
+                        </Typography>
                     </MenuItem>
                 )}
 
@@ -124,13 +114,16 @@ export default function Menu(props: { buttonClassName?: string }) {
                         onClick={toggleFacingMode}
                     >
                         <IconContainer>
-                            <FlipCameraIcon />
+                            <i className="material-icons">cameraswitch</i>
                         </IconContainer>
-                        <Typography variant="body1">Flip Camera</Typography>
+                        <Typography variant="body1">
+                            <FontWeightBold>Flip Camera</FontWeightBold>
+                        </Typography>
                     </MenuItem>
                 )}
 
-                {roomType !== 'peer-to-peer' && roomType !== 'go' && (
+                {/* Recording */}
+                {/* {roomType !== 'peer-to-peer' && roomType !== 'go' && (
                     <MenuItem
                         disabled={isFetching}
                         onClick={() => {
@@ -155,12 +148,15 @@ export default function Menu(props: { buttonClassName?: string }) {
                             )}
                         </IconContainer>
                         <Typography variant="body1">
+                        <FontWeightBold>
                             {isRecording ? 'Stop' : 'Start'} Recording
+                            </FontWeightBold>
                         </Typography>
                     </MenuItem>
-                )}
+                )} */}
 
-                <MenuItem
+                {/* Monitoring */}
+                {/* <MenuItem
                     onClick={() => {
                         VideoRoomMonitor.toggleMonitor()
                         setMenuOpen(false)
@@ -171,8 +167,12 @@ export default function Menu(props: { buttonClassName?: string }) {
                             style={{ fill: '#707578', width: '0.9em' }}
                         />
                     </IconContainer>
-                    <Typography variant="body1">Room Monitor</Typography>
-                </MenuItem>
+                    <Typography variant="body1">
+                    <FontWeightBold>
+                            Room Monitor
+                            </FontWeightBold>
+                            </Typography>
+                </MenuItem> */}
 
                 <MenuItem
                     onClick={() => {
@@ -182,26 +182,31 @@ export default function Menu(props: { buttonClassName?: string }) {
                 >
                     <IconContainer>
                         {isGalleryViewActive ? (
-                            <CollaborationViewIcon
-                                style={{ fill: '#707578', width: '0.9em' }}
-                            />
+                            <i className="material-icons">account_box</i>
                         ) : (
-                            <GridViewIcon
-                                style={{ fill: '#707578', width: '0.9em' }}
-                            />
+                            <i className="material-icons">grid_view</i>
                         )}
                     </IconContainer>
                     <Typography variant="body1">
-                        {isGalleryViewActive ? 'Speaker View' : 'Gallery View'}
+                        <FontWeightBold>
+                            {isGalleryViewActive
+                                ? 'Speaker View'
+                                : 'Gallery View'}
+                        </FontWeightBold>
                     </Typography>
                 </MenuItem>
 
-                <MenuItem onClick={() => setAboutOpen(true)}>
+                {/* About */}
+                {/* <MenuItem onClick={() => setAboutOpen(true)}>
                     <IconContainer>
                         <InfoIconOutlined />
                     </IconContainer>
-                    <Typography variant="body1">About</Typography>
-                </MenuItem>
+                    <Typography variant="body1">
+                    <FontWeightBold>
+                    About
+                    </FontWeightBold>
+                    </Typography>
+                </MenuItem> */}
             </MenuContainer>
             <AboutDialog
                 open={aboutOpen}

@@ -1,30 +1,32 @@
-import React from 'react'
 import { styled, Theme } from '@material-ui/core/styles'
 
-import MenuBar from './components/MenuBar/MenuBar'
-import MobileTopMenuBar from './components/MobileTopMenuBar/MobileTopMenuBar'
 import PreJoinScreens from './components/PreJoinScreens/PreJoinScreens'
 import ReconnectingNotification from './components/ReconnectingNotification/ReconnectingNotification'
 import RecordingNotifications from './components/RecordingNotifications/RecordingNotifications'
 import Room from './components/Room/Room'
 
+import MenuBar2 from './components/MenuBar/MenuBar2'
+import { TopMenuBar } from './components/TopMenuBar/TopMenuBar'
+import { Panel } from './components/Panel/Panel'
 import useHeight from './hooks/useHeight/useHeight'
 import useRoomState from './hooks/useRoomState/useRoomState'
 
-const Container = styled('div')({
+const RootContainer = styled('div')({
     display: 'grid',
     gridTemplateRows: '1fr auto',
 })
 
-const Main = styled('main')(({ theme }: { theme: Theme }) => ({
+const MainContainer = styled('main')(({ theme }: { theme: Theme }) => ({
     overflow: 'hidden',
-    paddingBottom: `${theme.footerHeight}px`, // Leave some space for the footer
+    paddingBottom: `${theme.topMenuBarHeight + theme.footerHeight}px`, // Leave some space for the footer
     background: 'black',
-    [theme.breakpoints.down('sm')]: {
-        paddingBottom: `${theme.mobileFooterHeight +
-            theme.mobileTopBarHeight}px`, // Leave some space for the mobile header and footer
-    },
 }))
+
+const RoomContainer = styled('div')({
+    height: '100%',
+    display: 'flex',
+    position: 'relative',
+})
 
 export default function App() {
     const roomState = useRoomState()
@@ -37,18 +39,21 @@ export default function App() {
     const height = useHeight()
 
     return (
-        <Container style={{ height }}>
+        <RootContainer style={{ height }}>
             {roomState === 'disconnected' ? (
                 <PreJoinScreens />
             ) : (
-                <Main>
+                <MainContainer>
                     <ReconnectingNotification />
                     <RecordingNotifications />
-                    <MobileTopMenuBar />
-                    <Room />
-                    <MenuBar />
-                </Main>
+                    <TopMenuBar />
+                    <RoomContainer>
+                        <Room />
+                        <Panel />
+                    </RoomContainer>
+                    <MenuBar2 />
+                </MainContainer>
             )}
-        </Container>
+        </RootContainer>
     )
 }

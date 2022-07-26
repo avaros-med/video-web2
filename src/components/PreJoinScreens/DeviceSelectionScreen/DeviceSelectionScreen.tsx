@@ -6,6 +6,7 @@ import { useAppState } from '../../../state'
 import ToggleAudioButton from '../../Buttons/ToggleAudioButton/ToggleAudioButton'
 import ToggleVideoButton from '../../Buttons/ToggleVideoButton/ToggleVideoButton'
 import { Button } from '../../UI/Button'
+import { FontWeightBoldStyles } from '../../UI/styles/styles'
 import { Steps } from '../PreJoinScreens'
 import LocalVideoPreview from './LocalVideoPreview/LocalVideoPreview'
 import SettingsMenu from './SettingsMenu/SettingsMenu'
@@ -24,6 +25,15 @@ const useStyles = makeStyles((theme: Theme) => ({
         margin: '1em 0',
     },
     localPreviewContainer: {},
+    toggleButtonContainerWrapper: {
+        display: 'flex',
+        alignItems: 'center',
+    },
+    toggleButtonContainer: {
+        marginRight: '2em',
+        display: 'flex',
+        alignItems: 'center',
+    },
     joinButtons: {
         marginTop: '1em',
         display: 'flex',
@@ -94,6 +104,7 @@ export default function DeviceSelectionScreen({
                     <Typography
                         variant="body2"
                         style={{ fontWeight: 'bold', fontSize: '16px' }}
+                        className="mt-3"
                     >
                         Joining Meeting
                     </Typography>
@@ -115,18 +126,25 @@ export default function DeviceSelectionScreen({
                     </div>
                     <div className={classes.mobileButtonBar}>
                         <Hidden mdUp>
-                            <ToggleAudioButton
-                                className={classes.mobileButton}
-                                disabled={disableButtons}
-                            />
-                            <ToggleVideoButton
-                                className={classes.mobileButton}
-                                disabled={disableButtons}
-                            />
+                            <div className={classes.toggleButtonContainer}>
+                                <ToggleAudioButton
+                                    className={classes.mobileButton}
+                                    disabled={disableButtons}
+                                />
+                                <FontWeightBoldStyles className="ml-2">
+                                    Audio
+                                </FontWeightBoldStyles>
+                            </div>
+                            <div className={classes.toggleButtonContainer}>
+                                <ToggleVideoButton
+                                    className={classes.mobileButton}
+                                    disabled={disableButtons}
+                                />
+                                <FontWeightBoldStyles className="ml-2">
+                                    Video
+                                </FontWeightBoldStyles>
+                            </div>
                         </Hidden>
-                        <SettingsMenu
-                            mobileButtonClass={classes.mobileButton}
-                        />
                     </div>
                 </Grid>
                 <Grid item md={12} sm={12} xs={12}>
@@ -138,16 +156,45 @@ export default function DeviceSelectionScreen({
                     >
                         <div>
                             <Hidden smDown>
-                                <ToggleAudioButton
-                                    className={classes.deviceButton}
-                                    disabled={disableButtons}
-                                />
-                                <ToggleVideoButton
-                                    className={classes.deviceButton}
-                                    disabled={disableButtons}
-                                />
+                                <div
+                                    className={
+                                        classes.toggleButtonContainerWrapper
+                                    }
+                                >
+                                    <div
+                                        className={
+                                            classes.toggleButtonContainer
+                                        }
+                                    >
+                                        <ToggleAudioButton
+                                            className={classes.deviceButton}
+                                            disabled={disableButtons}
+                                        />
+                                        <FontWeightBoldStyles className="ml-2">
+                                            Audio
+                                        </FontWeightBoldStyles>
+                                    </div>
+                                    <div
+                                        className={
+                                            classes.toggleButtonContainer
+                                        }
+                                    >
+                                        <ToggleVideoButton
+                                            className={classes.deviceButton}
+                                            disabled={disableButtons}
+                                        />
+                                        <FontWeightBoldStyles className="ml-2">
+                                            Video
+                                        </FontWeightBoldStyles>
+                                    </div>
+                                </div>
                             </Hidden>
+
+                            <SettingsMenu
+                                mobileButtonClass={classes.mobileButton}
+                            />
                         </div>
+
                         <div className={classes.joinButtons}>
                             <Button
                                 intent="secondary"

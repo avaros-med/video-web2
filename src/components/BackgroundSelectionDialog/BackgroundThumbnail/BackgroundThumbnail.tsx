@@ -1,8 +1,8 @@
-import React from 'react'
-import clsx from 'clsx'
+import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
 import BlurIcon from '@material-ui/icons/BlurOnOutlined'
-import { makeStyles, Theme, createStyles } from '@material-ui/core/styles'
 import NoneIcon from '@material-ui/icons/NotInterestedOutlined'
+import clsx from 'clsx'
+import Colors from '../../../colors'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 
 export type Thumbnail = 'none' | 'blur' | 'image'
@@ -31,21 +31,21 @@ const useStyles = makeStyles((theme: Theme) =>
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            borderRadius: '10px',
-            border: `solid ${theme.palette.grey[400]}`,
+            borderRadius: '5px',
+            border: `solid ${Colors.BORDER_COLOR}`,
             '&.selected': {
-                border: `solid ${theme.palette.primary.main}`,
+                border: `3px solid ${Colors.BLUE}`,
                 '& svg': {
-                    color: `${theme.palette.primary.main}`,
+                    color: `${Colors.BLUE}`,
                 },
             },
         },
         thumbIcon: {
             height: 50,
             width: 50,
-            color: `${theme.palette.grey[400]}`,
+            color: `${Colors.BORDER_COLOR}`,
             '&.selected': {
-                color: `${theme.palette.primary.main}`,
+                color: `${Colors.BLUE}`,
             },
         },
         thumbImage: {
@@ -57,21 +57,21 @@ const useStyles = makeStyles((theme: Theme) =>
             left: 0,
             right: 0,
             objectFit: 'cover',
-            borderRadius: '10px',
-            border: `solid ${theme.palette.grey[400]}`,
+            borderRadius: '5px',
+            border: `solid ${Colors.BORDER_COLOR}`,
             '&:hover': {
                 cursor: 'pointer',
                 '& svg': {
-                    color: `${theme.palette.primary.main}`,
+                    color: `${Colors.BLUE}`,
                 },
                 '& $thumbOverlay': {
                     visibility: 'visible',
                 },
             },
             '&.selected': {
-                border: `solid ${theme.palette.primary.main}`,
+                border: `3px solid ${Colors.BLUE}`,
                 '& svg': {
-                    color: `${theme.palette.primary.main}`,
+                    color: `${Colors.BLUE}`,
                 },
             },
         },

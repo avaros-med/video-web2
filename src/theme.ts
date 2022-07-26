@@ -5,12 +5,13 @@ declare module '@material-ui/core/styles/createTheme' {
         sidebarWidth: number
         sidebarMobileHeight: number
         brand: string
+        topMenuBarHeight: number
         footerHeight: number
         mobileTopBarHeight: number
         mobileFooterHeight: number
         sidebarMobilePadding: number
         participantBorderWidth: number
-        rightDrawerWidth: number
+        rightPanelWidth: number
         galleryViewBackgroundColor: string
     }
 
@@ -19,12 +20,13 @@ declare module '@material-ui/core/styles/createTheme' {
         sidebarWidth?: number
         sidebarMobileHeight?: number
         brand: string
+        topMenuBarHeight: number
         footerHeight: number
         mobileTopBarHeight: number
         mobileFooterHeight: number
         sidebarMobilePadding: number
         participantBorderWidth: number
-        rightDrawerWidth?: number
+        rightPanelWidth?: number
         galleryViewBackgroundColor: string
     }
 }
@@ -121,13 +123,14 @@ export default createTheme({
         },
     },
     brand: '#E22525',
-    footerHeight: 72,
-    mobileFooterHeight: 56,
+    topMenuBarHeight: 75,
+    footerHeight: 68,
+    mobileFooterHeight: 68,
     sidebarWidth: 300,
     sidebarMobileHeight: 90,
     sidebarMobilePadding: 8,
     participantBorderWidth: 2,
     mobileTopBarHeight: 52,
-    rightDrawerWidth: 320,
+    rightPanelWidth: 350,
     galleryViewBackgroundColor: 'black',
 })

@@ -61,7 +61,7 @@ export default function DeviceSelectionDialog({
             onClose={onClose}
             classes={{ paper: classes.paper }}
         >
-            <DialogTitle>Audio and Video Settings</DialogTitle>
+            <DialogTitle>Media Devices</DialogTitle>
             <Divider />
             <DialogContent className={classes.container}>
                 <div className={classes.listSection}>

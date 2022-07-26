@@ -8,7 +8,7 @@ interface Props {
 
 const Styles = styled.div`
     padding: 12px 16px;
-    background: ${Colors.CONTENT_BACKGROUND};
+    background: ${Colors.BLUE}1C;
     border-radius: 5px;
     font-weight: 500;
 

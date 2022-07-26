@@ -39,7 +39,7 @@ export default function RoomNameScreen({
                 <form onSubmit={handleSubmit}>
                     <AppLogoBlock classes="mb-4" />
                     <AppointmentCard classes="mb-4" />
-                    <ProviderCard classes="mb-4" />
+                    <ProviderCard classes="mb-5" />
 
                     <div className={`${classes.inputContainer} mb-4`}>
                         <div className="mb-3">

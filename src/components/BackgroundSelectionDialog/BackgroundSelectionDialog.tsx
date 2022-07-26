@@ -9,7 +9,6 @@ import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 const useStyles = makeStyles((theme: Theme) => ({
     drawer: {
         display: 'flex',
-        width: theme.rightDrawerWidth,
         height: `calc(100% - ${theme.footerHeight}px)`,
     },
     thumbnailContainer: {

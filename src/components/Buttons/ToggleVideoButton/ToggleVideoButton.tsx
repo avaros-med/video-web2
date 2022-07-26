@@ -1,11 +1,8 @@
-import React, { useCallback, useRef } from 'react'
-
-import Button from '@material-ui/core/Button'
-import VideoOffIcon from '../../../icons/VideoOffIcon'
-import VideoOnIcon from '../../../icons/VideoOnIcon'
+import { useCallback, useRef } from 'react'
 
 import useDevices from '../../../hooks/useDevices/useDevices'
 import useLocalVideoToggle from '../../../hooks/useLocalVideoToggle/useLocalVideoToggle'
+import { IconButton } from '../../UI/IconButton'
 
 export default function ToggleVideoButton(props: {
     disabled?: boolean
@@ -23,17 +20,16 @@ export default function ToggleVideoButton(props: {
     }, [toggleVideoEnabled])
 
     return (
-        <Button
-            className={props.className}
+        <IconButton
+            classes={props.className}
+            intent={isVideoEnabled ? 'text' : 'danger'}
+            icon={isVideoEnabled ? 'videocam' : 'videocam_off'}
             onClick={toggleVideo}
             disabled={!hasVideoInputDevices || props.disabled}
-            startIcon={isVideoEnabled ? <VideoOnIcon /> : <VideoOffIcon />}
-        >
-            {!hasVideoInputDevices
-                ? 'No Video'
-                : isVideoEnabled
-                ? 'Stop Video'
-                : 'Start Video'}
-        </Button>
+            tooltipContent={
+                isVideoEnabled ? 'Turn off camera' : 'Turn on camera'
+            }
+            data-cy-video-toggle
+        />
     )
 }
