@@ -155,7 +155,7 @@ export default function AppStateProvider(props: React.PropsWithChildren<{}>) {
         return contextValue
             .getToken(name, room)
             .then(res => {
-                setRoomType(res.room_type)
+                setRoomType(res.room_type ?? process.env.REACT_APP_ROOM_TYPE)
                 setIsFetching(false)
                 return res
             })
