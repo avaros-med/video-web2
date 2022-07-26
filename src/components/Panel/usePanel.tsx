@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useMemo, useState } from 'react'
+import { useAvsSocketContext } from '../../hooks/useAvsSocketContext/useAvsSocketContext'
 import { BackgroundSelectionPanel } from '../BackgroundSelectionPanel/BackgroundSelectionPanel'
 import { EChartPanel } from '../EChartPanel/EChartPanel'
 import { JoiningInfoPanel } from '../JoiningInfoPanel/JoiningInfoPanel'
@@ -26,11 +27,19 @@ enum PANEL {
 }
 
 export const usePanel = (): PanelHookState => {
+    const { setHasNewMessages } = useAvsSocketContext().messages
     const [panel, setPanel] = useState<PANEL>(PANEL.NONE)
     const [panelRef, setPanelRef] = useState<any>(null)
     const [showEChartTab, setShowEChartTab] = useState<boolean>(false)
 
-    const onClose = () => setPanel(PANEL.NONE)
+    const onClose = useCallback(() => {
+        setPanel(PANEL.NONE)
+
+        // If closing echart panel, then set new-messages flag to false
+        if (panel === PANEL.ECHART) {
+            setHasNewMessages(false)
+        }
+    }, [panel, setHasNewMessages])
 
     const setPanelHandler = useCallback(
         (_panel: PANEL) => {
@@ -40,7 +49,7 @@ export const usePanel = (): PanelHookState => {
                 setPanel(_panel)
             }
         },
-        [panel]
+        [panel, onClose]
     )
 
     const showJoiningInfo = () => setPanelHandler(PANEL.JOINING_INFO)
