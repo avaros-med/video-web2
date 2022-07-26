@@ -53,6 +53,8 @@ const VideoApp = () => {
     )
 }
 
+const baseHref = process.env.REACT_APP_BASE_HREF
+
 export const ReactApp = () => (
     <MuiThemeProvider theme={theme}>
         <CssBaseline />
@@ -60,16 +62,16 @@ export const ReactApp = () => (
             <Router>
                 <AppStateProvider>
                     <Switch>
-                        <PrivateRoute exact path="/">
+                        <PrivateRoute exact path={`${baseHref}/`}>
                             <VideoApp />
                         </PrivateRoute>
-                        <PrivateRoute path="/room/:URLRoomName">
+                        <PrivateRoute path={`${baseHref}/room/:URLRoomName`}>
                             <VideoApp />
                         </PrivateRoute>
-                        <Route path="/login">
+                        <Route path={`${baseHref}/login`}>
                             <LoginPage />
                         </Route>
-                        <Redirect to="/" />
+                        <Redirect to={`${baseHref}/`} />
                     </Switch>
                 </AppStateProvider>
             </Router>
