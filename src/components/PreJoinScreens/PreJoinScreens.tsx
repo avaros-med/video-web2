@@ -55,7 +55,8 @@ export default function PreJoinScreens() {
                 null,
                 '',
                 window.encodeURI(
-                    `/room/${roomName}${window.location.search || ''}`
+                    `${process.env.REACT_APP_BASE_HREF}/room/${roomName}${window
+                        .location.search || ''}`
                 )
             )
         }
