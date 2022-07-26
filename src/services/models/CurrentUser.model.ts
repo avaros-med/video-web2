@@ -13,6 +13,8 @@ export class CurrentUser {
     }
 
     static getFullName(currentUser: CurrentUser): string {
-        return `${currentUser.firstName} ${currentUser.lastName}`
+        const firstName = currentUser?.firstName ?? ''
+        const lastName = currentUser?.lastName ?? ''
+        return [firstName, lastName].join(' ').trim()
     }
 }
