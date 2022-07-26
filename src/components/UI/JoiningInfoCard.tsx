@@ -23,6 +23,7 @@ const Styles = styled.div`
         color: ${Colors.BLUE};
         text-decoration: underline;
         font-weight: 600;
+        word-break: break-all;
     }
 `
 

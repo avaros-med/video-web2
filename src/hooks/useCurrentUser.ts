@@ -6,9 +6,10 @@ export const useCurrentUser = () => {
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
 
     const getCurrentUser = useCallback(() => {
-        oscarService.getCurrentUser().then(_currentUser => {
-            setCurrentUser(_currentUser)
-        })
+        oscarService
+            .getCurrentUser()
+            .then(_currentUser => setCurrentUser(_currentUser))
+            .catch(() => setCurrentUser(null))
     }, [])
 
     // Get current user on load

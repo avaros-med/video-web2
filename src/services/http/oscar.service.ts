@@ -12,7 +12,7 @@ const getCurrentUser = (): Promise<CurrentUser> => {
         axios
             .get(url)
             .then((response: AxiosResponse) => {
-                if (response?.data) {
+                if (response?.data?.provider_no) {
                     resolve(CurrentUser.deserialize(response.data))
                 } else {
                     reject('Unable to get current user')
