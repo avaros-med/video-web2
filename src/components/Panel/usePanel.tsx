@@ -9,6 +9,7 @@ export interface PanelHookState {
     panelNode: ReactNode
     panelName: ReactNode | string
     isHidden: boolean
+    isEChartPanelOpen: boolean
     showJoiningInfo: () => void
     showEChart: (showEChartTab: boolean) => void
     showMediaDevices: () => void
@@ -84,11 +85,14 @@ export const usePanel = (): PanelHookState => {
         }
     }, [panel, showEChartTab])
 
+    const isEChartPanelOpen = useMemo(() => panel === PANEL.ECHART, [panel])
+
     return {
         panel,
         isHidden,
         panelNode,
         panelName,
+        isEChartPanelOpen,
         showJoiningInfo,
         showEChart,
         showMediaDevices,

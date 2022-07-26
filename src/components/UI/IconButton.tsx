@@ -1,7 +1,7 @@
 import { PopoverPosition } from '@blueprintjs/core'
 import { Tooltip2 } from '@blueprintjs/popover2'
 import React, { forwardRef } from 'react'
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
 import Colors from '../../colors'
 
 interface Props {
@@ -20,6 +20,8 @@ interface Props {
     tooltipContent?: string
     tooltipPosition?: PopoverPosition
     disabled?: boolean
+    hasNotification?: boolean
+    animateOnNotification?: boolean
     onClick?: (event: React.MouseEvent) => void
     onMouseEnter?: (event: React.MouseEvent) => void
     onMouseLeave?: (event: React.MouseEvent) => void
@@ -100,6 +102,57 @@ const Styles = styled.div`
         cursor: ${props => (props.theme.hasHover ? 'pointer' : 'default')};
         background: #efecec;
     }
+
+    ${props =>
+        props.theme.hasNotification &&
+        css`
+            position: relative;
+
+            &:before {
+                min-width: 16px;
+                min-height: 16px;
+                max-width: 16px;
+                max-height: 16px;
+                border-radius: 100%;
+                content: '';
+                position: absolute;
+                top: -6px;
+                right: -4px;
+                background: ${Colors.BLUE};
+            }
+        `}
+
+    ${props =>
+        props.theme.animateOnNotification &&
+        css`
+            -webkit-animation: slide-top 0.4s
+                cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite alternate-reverse
+                both;
+            animation: slide-top 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)
+                infinite alternate-reverse both;
+        `}
+
+    @-webkit-keyframes slide-top {
+        0% {
+            -webkit-transform: translateY(0);
+            transform: translateY(0);
+        }
+        100% {
+            -webkit-transform: translateY(-8px);
+            transform: translateY(-8px);
+        }
+    }
+
+    @keyframes slide-top {
+        0% {
+            -webkit-transform: translateY(0);
+            transform: translateY(0);
+        }
+        100% {
+            -webkit-transform: translateY(-8px);
+            transform: translateY(-8px);
+        }
+    }
 `
 
 export const IconButton = forwardRef(
@@ -111,6 +164,8 @@ export const IconButton = forwardRef(
             tooltipContent,
             tooltipPosition,
             disabled,
+            hasNotification,
+            animateOnNotification,
             onClick,
             onMouseEnter,
             onMouseLeave,
@@ -138,7 +193,11 @@ export const IconButton = forwardRef(
         return (
             <Wrapper>
                 <Styles
-                    theme={{ hasHover: onClick }}
+                    theme={{
+                        hasHover: onClick,
+                        hasNotification,
+                        animateOnNotification,
+                    }}
                     className={`${classes || ''} ${intent || 'primary'}`}
                     onClick={(event: React.MouseEvent) =>
                         !disabled && onClick && onClick(event)

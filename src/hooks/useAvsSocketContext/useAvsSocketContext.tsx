@@ -5,6 +5,7 @@ import {
 } from '../../components/EChartPanel/useMessages'
 import { Message } from '../../services/models/Message.model'
 import { BaseEvent } from '../../services/ws/socket.service'
+import useVideoContext from '../useVideoContext/useVideoContext'
 
 interface ContextState {
     messages: MessagesHookState
@@ -25,7 +26,13 @@ const LocalStateContext = createContext<ContextState>(initialState)
 
 // Provider
 export function AvsSocketContextProvider({ children }: any) {
-    const { messages, addMessage } = useMessages()
+    const { room } = useVideoContext()
+    const {
+        messages,
+        hasNewMessages,
+        addMessage,
+        setHasNewMessages,
+    } = useMessages()
     const [hasNetworkError, setHasNetworkError] = useState<boolean>(false)
 
     const socketEventHandler = useCallback(
@@ -34,10 +41,18 @@ export function AvsSocketContextProvider({ children }: any) {
                 case 'Message': {
                     const newMessage = Message.deserialize(event.payload)
                     addMessage(newMessage)
+
+                    // Set new-messages flag if new message is not from the local participant
+                    if (
+                        newMessage.senderName !==
+                        room?.localParticipant?.identity
+                    ) {
+                        setHasNewMessages(true)
+                    }
                 }
             }
         },
-        [addMessage]
+        [room, addMessage, setHasNewMessages]
     )
 
     const onNetworkError = useCallback(() => {
@@ -47,7 +62,12 @@ export function AvsSocketContextProvider({ children }: any) {
     return (
         <LocalStateContext.Provider
             value={{
-                messages: { messages, addMessage },
+                messages: {
+                    messages,
+                    hasNewMessages,
+                    addMessage,
+                    setHasNewMessages,
+                },
                 networkError: { hasNetworkError, onNetworkError },
                 socketEventHandler,
             }}
