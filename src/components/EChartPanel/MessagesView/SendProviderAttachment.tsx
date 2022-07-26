@@ -9,7 +9,7 @@ interface Props {
 
 const Styles = styled.div``
 
-export const SendPatientAttachment = ({ classes }: Props) => {
+export const SendProviderAttachment = ({ classes }: Props) => {
     const [showDialog, setShowDialog] = useState<boolean>(false)
 
     return (

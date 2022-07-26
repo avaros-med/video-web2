@@ -8,7 +8,7 @@ import { SendMessage } from '../../../services/ws/eventout'
 import { socketService } from '../../../services/ws/socket.service'
 import { Button } from '../../UI/Button'
 import { Input } from '../../UI/Input'
-import { SendPatientAttachment } from './SendPatientAttachment'
+import { SendProviderAttachment } from './SendProviderAttachment'
 
 const Styles = styled.div`
     width: 100%;
@@ -70,7 +70,7 @@ export const MessageComposer = () => {
                     onClick={onSendMessage}
                 />
                 {currentUser ? (
-                    <SendPatientAttachment classes="ml-3" />
+                    <SendProviderAttachment classes="ml-3" />
                 ) : (
                     <div>[patient-doc-uploader]</div>
                 )}
