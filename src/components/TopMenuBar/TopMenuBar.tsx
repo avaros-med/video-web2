@@ -1,6 +1,7 @@
 import { Hidden } from '@material-ui/core'
 import styled from 'styled-components'
 import Colors from '../../colors'
+import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import theme from '../../theme'
 import { usePanelContext } from '../Panel/usePanelContext'
 import { AppLogoBlock } from '../UI/AppLogoBlock'
@@ -29,6 +30,7 @@ const Styles = styled.div`
 `
 
 export const TopMenuBar = () => {
+    const { currentUser } = useVideoContext()
     const { showJoiningInfo, showEChart } = usePanelContext().panel
 
     return (
@@ -45,12 +47,14 @@ export const TopMenuBar = () => {
                         tooltipContent={'Room Info'}
                     />
                 </Hidden>
-                <Button
-                    intent="primary-fade"
-                    leftIconName="assignment"
-                    label="eChart"
-                    onClick={() => showEChart(true)}
-                />
+                {currentUser && (
+                    <Button
+                        intent="primary-fade"
+                        leftIconName="assignment"
+                        label="eChart"
+                        onClick={() => showEChart(true)}
+                    />
+                )}
             </div>
         </Styles>
     )

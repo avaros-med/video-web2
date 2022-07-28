@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import styled, { css } from 'styled-components'
 import Colors from '../../colors'
+import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import { useEChartContext } from './useEChartContext'
-import { HeaderTab } from './useHeaderTabs'
+import { HeaderTab, HEADER_TAB } from './useHeaderTabs'
 
 interface Props {
     classes?: string
@@ -17,6 +18,7 @@ const Styles = styled.div`
 `
 
 export const HeaderTabs = ({ classes, showEChartTab }: Props) => {
+    const { currentUser } = useVideoContext()
     const {
         tabs,
         tabSelected,
@@ -40,14 +42,20 @@ export const HeaderTabs = ({ classes, showEChartTab }: Props) => {
 
     return (
         <Styles className={classes ?? ''}>
-            {tabs?.map((tab: HeaderTab) => (
-                <Item
-                    key={tab.value}
-                    tab={tab}
-                    isActive={tab.value === tabSelected.value}
-                    onClick={() => setTabSelected(tab)}
-                />
-            ))}
+            {tabs?.map((tab: HeaderTab) => {
+                const canShow =
+                    tab.value !== HEADER_TAB.ECHART ||
+                    (tab.value === HEADER_TAB.ECHART && currentUser)
+
+                return canShow ? (
+                    <Item
+                        key={tab.value}
+                        tab={tab}
+                        isActive={tab.value === tabSelected.value}
+                        onClick={() => setTabSelected(tab)}
+                    />
+                ) : null
+            })}
         </Styles>
     )
 }
