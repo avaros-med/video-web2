@@ -20,6 +20,24 @@ const getAppointmentByRoomName = (roomName: string): Promise<Appointment> => {
     })
 }
 
+const validateRoomExists = (roomName: string): Promise<boolean> => {
+    const url = `${BASE_URL}/room-exists/${roomName}`
+
+    return new Promise((resolve, reject) => {
+        axios
+            .get(url)
+            .then((response: AxiosResponse) => {
+                if (response?.data) {
+                    resolve(response.data.roomExists)
+                } else {
+                    reject('Unable to validate room exists')
+                }
+            })
+            .catch((error: AxiosError) => reject(error))
+    })
+}
+
 export const videoService = {
     getAppointmentByRoomName,
+    validateRoomExists,
 }

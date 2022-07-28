@@ -1,12 +1,13 @@
-import React, { useState, useEffect, FormEvent } from 'react'
-import DeviceSelectionScreen from './DeviceSelectionScreen/DeviceSelectionScreen'
-import IntroContainer from '../IntroContainer/IntroContainer'
-import MediaErrorSnackbar from './MediaErrorSnackbar/MediaErrorSnackbar'
-import RoomNameScreen from './RoomNameScreen/RoomNameScreen'
-import { useAppState } from '../../state'
+import { FormEvent, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
+import { videoService } from '../../services/http/video.service'
+import { useAppState } from '../../state'
+import IntroContainer from '../IntroContainer/IntroContainer'
+import DeviceSelectionScreen from './DeviceSelectionScreen/DeviceSelectionScreen'
 import { ErrorScreens } from './ErrorScreens'
+import MediaErrorSnackbar from './MediaErrorSnackbar/MediaErrorSnackbar'
+import RoomNameScreen from './RoomNameScreen/RoomNameScreen'
 
 export enum Steps {
     roomNameStep,
@@ -23,6 +24,18 @@ export default function PreJoinScreens() {
     const [roomName, setRoomName] = useState<string>('')
 
     const [mediaError, setMediaError] = useState<Error>()
+    const [roomExists, setRoomExists] = useState<boolean>(true)
+
+    // Validate room name exists
+    useEffect(() => {
+        if (!URLRoomName) {
+            setRoomExists(false)
+            return
+        }
+        videoService.validateRoomExists(URLRoomName).then(exists => {
+            setRoomExists(exists)
+        })
+    }, [URLRoomName])
 
     useEffect(() => {
         if (URLRoomName) {
@@ -68,7 +81,7 @@ export default function PreJoinScreens() {
     return (
         <IntroContainer>
             <MediaErrorSnackbar error={mediaError} />
-            {!hasError && (
+            {!hasError && roomExists && (
                 <>
                     {step === Steps.roomNameStep && (
                         <RoomNameScreen
@@ -89,7 +102,7 @@ export default function PreJoinScreens() {
                 </>
             )}
 
-            {hasError && <ErrorScreens />}
+            {(hasError || !roomExists) && <ErrorScreens />}
         </IntroContainer>
     )
 }
