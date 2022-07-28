@@ -1,9 +1,11 @@
 import styled from 'styled-components'
 import Colors from '../../colors'
+import { Appointment } from '../../services/models/Appointment.model'
 import { Avatar } from '../UI/Avatar'
 
 interface Props {
     classes?: string
+    appointment: Appointment
 }
 
 const Styles = styled.div`
@@ -23,16 +25,15 @@ const Styles = styled.div`
     }
 `
 
-export const ProviderCard = ({ classes }: Props) => {
+export const ProviderCard = ({ classes, appointment }: Props) => {
+    const providerName = appointment.details.providerName ?? ''
+
     return (
         <Styles className={classes ?? ''}>
             <div className="d-flex align-items-center mb-1">
-                <Avatar classes="mr-2" name="Bernard Brock" />
-                <span className="name">Bernard Brock</span>
+                <Avatar classes="mr-2" name={providerName} />
+                <span className="name">{providerName}</span>
             </div>
-            <div className="font-weight-600">London Family Medical Centre</div>
-            <div>771 Petra Heights Suite 123</div>
-            <div>London ON A1A 2B2</div>
         </Styles>
     )
 }
