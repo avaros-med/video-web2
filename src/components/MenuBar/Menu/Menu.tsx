@@ -6,12 +6,10 @@ import {
     Typography,
     useMediaQuery,
 } from '@material-ui/core'
-import { isSupported } from '@twilio/video-processors'
 import { useRef, useState } from 'react'
 import AboutDialog from '../../AboutDialog/AboutDialog'
 import DeviceSelectionDialog from '../../DeviceSelectionDialog/DeviceSelectionDialog'
 
-import useChatContext from '../../../hooks/useChatContext/useChatContext'
 import useFlipCameraToggle from '../../../hooks/useFlipCameraToggle/useFlipCameraToggle'
 import { useAppState } from '../../../state'
 import { usePanelContext } from '../../Panel/usePanelContext'
@@ -38,12 +36,7 @@ export default function Menu(props: { buttonClassName?: string }) {
     const [settingsOpen, setSettingsOpen] = useState(false)
 
     const { setIsGalleryViewActive, isGalleryViewActive } = useAppState()
-    const { setIsChatWindowOpen } = useChatContext()
-    const {
-        showJoiningInfo,
-        showBackgroundSelection,
-        showMediaDevices,
-    } = usePanelContext().panel
+    const { showJoiningInfo, showMediaDevices } = usePanelContext().panel
 
     const anchorRef = useRef<any>(null)
     const {
@@ -92,7 +85,8 @@ export default function Menu(props: { buttonClassName?: string }) {
                     <Typography variant="body1">Media Devices</Typography>
                 </MenuItem>
 
-                {isSupported && (
+                {/* Background */}
+                {/* {isSupported && (
                     <MenuItem
                         onClick={() => {
                             showBackgroundSelection()
@@ -107,7 +101,7 @@ export default function Menu(props: { buttonClassName?: string }) {
                             <FontWeightBold>Backgrounds</FontWeightBold>
                         </Typography>
                     </MenuItem>
-                )}
+                )} */}
 
                 {flipCameraSupported && (
                     <MenuItem
