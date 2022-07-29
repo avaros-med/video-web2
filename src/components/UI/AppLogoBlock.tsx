@@ -24,7 +24,7 @@ export const AppLogoBlock = ({ classes, isLight }: Props) => {
         <Styles className={classes ?? ''} theme={{ isLight }}>
             <AppLogo width="47px" height="40px" />
             <Typography className="ml-3 mb-1 font-weight-bold" variant="button">
-                Video Chat
+                Video Visit
             </Typography>
         </Styles>
     )
