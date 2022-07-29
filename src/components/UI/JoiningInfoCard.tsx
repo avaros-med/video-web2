@@ -35,7 +35,7 @@ export const JoiningInfoCard = ({ classes }: Props) => {
     const onEmail = () => {
         var body = `Navigate to ${url} and enter your name to join video session.`
         var mailToLink = 'mailto:?body=' + encodeURIComponent(body)
-        window.location.href = mailToLink
+        window.open(mailToLink, '_blank')
     }
 
     const onCopy = () => {
