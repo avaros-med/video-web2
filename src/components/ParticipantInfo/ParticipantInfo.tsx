@@ -15,12 +15,14 @@ import AudioLevelIndicator from '../AudioLevelIndicator/AudioLevelIndicator'
 import NetworkQualityLevel from '../NetworkQualityLevel/NetworkQualityLevel'
 import PinIcon from './PinIcon/PinIcon'
 
+import Colors from '../../colors'
 import useIsTrackSwitchedOff from '../../hooks/useIsTrackSwitchedOff/useIsTrackSwitchedOff'
 import useParticipantIsReconnecting from '../../hooks/useParticipantIsReconnecting/useParticipantIsReconnecting'
 import usePublications from '../../hooks/usePublications/usePublications'
 import useTrack from '../../hooks/useTrack/useTrack'
 import { useAppState } from '../../state'
 import { Avatar } from '../UI/Avatar'
+import { useAudioVolume } from './useAudioVolume'
 
 const borderWidth = 2
 
@@ -69,6 +71,12 @@ const useStyles = makeStyles((theme: Theme) =>
             width: '100%',
             background: 'transparent',
             top: 0,
+            border: `4px solid black`,
+            transition: 'border 0.5s ease',
+
+            '&.is-speaking': {
+                borderColor: `${Colors.BLUE}`,
+            },
         },
         avatarContainer: {
             display: 'flex',
@@ -196,6 +204,8 @@ export default function ParticipantInfo({
         | LocalAudioTrack
         | RemoteAudioTrack
         | undefined
+    const { volume } = useAudioVolume(audioTrack)
+    const isSpeaking = volume > 0
     const isParticipantReconnecting = useParticipantIsReconnecting(participant)
 
     const { isGalleryViewActive } = useAppState()
@@ -213,7 +223,11 @@ export default function ParticipantInfo({
             onClick={onClick}
             data-cy-participant={participant.identity}
         >
-            <div className={classes.infoContainer}>
+            <div
+                className={`${classes.infoContainer} ${
+                    isSpeaking ? 'is-speaking' : ''
+                }`}
+            >
                 <NetworkQualityLevel participant={participant} />
                 <div className={classes.infoRowBottom}>
                     {isScreenShareEnabled && (
