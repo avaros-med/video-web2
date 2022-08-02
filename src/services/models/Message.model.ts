@@ -1,4 +1,5 @@
 export class Message {
+    ID!: number
     message!: string
     roomName!: string
     fromProvider!: boolean

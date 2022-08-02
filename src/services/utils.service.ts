@@ -24,6 +24,13 @@ const getTimeRemaining = (date: Date): string | null => {
     return [hours, minutes, seconds].join(':')
 }
 
+const getRandomNumber = (min: number, max: number) => {
+    min = Math.ceil(min)
+    max = Math.floor(max)
+    return Math.floor(Math.random() * (max - min) + min)
+}
+
 export const utilsService = {
     getTimeRemaining,
+    getRandomNumber,
 }

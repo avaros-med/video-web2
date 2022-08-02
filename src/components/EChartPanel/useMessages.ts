@@ -14,7 +14,8 @@ export const useMessages = (): MessagesHookState => {
 
     const addMessage = useCallback((newMessage: Message) => {
         setMessages(draft => {
-            return [...draft, newMessage]
+            const hasMessage = draft?.find(i => i.ID === newMessage.ID)
+            return !hasMessage ? [...draft, newMessage] : draft
         })
     }, [])
 

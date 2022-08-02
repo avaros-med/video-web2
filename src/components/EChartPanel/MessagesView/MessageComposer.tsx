@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import Colors from '../../../colors'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { utilsService } from '../../../services/utils.service'
 import { SendMessage } from '../../../services/ws/eventout'
 import { socketService } from '../../../services/ws/socket.service'
 import { Button } from '../../UI/Button'
@@ -40,6 +41,7 @@ export const MessageComposer = () => {
         }
 
         const eventout: SendMessage = {
+            ID: utilsService.getRandomNumber(100000, 999999),
             description: message.trim(),
             fromProvider: true,
             roomName: URLRoomName,
