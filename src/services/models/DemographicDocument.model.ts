@@ -1,7 +1,7 @@
 export class DemographicDocument {
     id!: number
     title!: string
-    type!: 'document' | 'eform' | 'forms'
+    type!: DemographicDocumentType
     createdAt!: Date
 
     static deserialize(obj: any): DemographicDocument {
@@ -13,3 +13,5 @@ export class DemographicDocument {
         return model
     }
 }
+
+export type DemographicDocumentType = 'document' | 'eform' | 'forms'

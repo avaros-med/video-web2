@@ -1,4 +1,4 @@
-import React from 'react'
+import { Spinner, SpinnerSize } from '@blueprintjs/core'
 import styled from 'styled-components'
 import Colors from '../../colors'
 
@@ -22,6 +22,7 @@ interface Props {
     intent?: ButtonIntent
     type?: 'button' | 'submit' | 'reset' | undefined
     disabled?: boolean
+    isLoading?: boolean
     onClick: () => void
 }
 
@@ -131,6 +132,7 @@ export const Button = ({
     rightIconName,
     intent,
     disabled,
+    isLoading,
     onClick,
 }: Props) => {
     return (
@@ -140,18 +142,24 @@ export const Button = ({
             onClick={onClick}
             disabled={disabled}
         >
-            {leftIconName && (
-                <LeftIconStyles className="material-icons md-18">
-                    {leftIconName}
-                </LeftIconStyles>
-            )}
+            {isLoading ? (
+                <Spinner size={SpinnerSize.SMALL} />
+            ) : (
+                <>
+                    {leftIconName && (
+                        <LeftIconStyles className="material-icons md-18">
+                            {leftIconName}
+                        </LeftIconStyles>
+                    )}
 
-            <span className="flex-1">{label}</span>
+                    <span className="flex-1">{label}</span>
 
-            {rightIconName && (
-                <RightIconStyles className="material-icons md-18">
-                    {rightIconName}
-                </RightIconStyles>
+                    {rightIconName && (
+                        <RightIconStyles className="material-icons md-18">
+                            {rightIconName}
+                        </RightIconStyles>
+                    )}
+                </>
             )}
         </ButtonStyles>
     )

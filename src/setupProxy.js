@@ -1,6 +1,6 @@
 const { createProxyMiddleware } = require('http-proxy-middleware')
 
-const oscarBaseUrl = 'http://localhost:9001'
+const oscarBaseUrl = 'http://localhosteliyar.ngrok.io'
 
 module.exports = function(app) {
     app.use(

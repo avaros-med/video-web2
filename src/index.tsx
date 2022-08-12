@@ -40,13 +40,13 @@ const VideoApp = () => {
             <ErrorDialog dismissError={() => setError(null)} error={error} />
             <ParticipantProvider>
                 <ChatProvider>
-                    <AvsSocketContextProvider>
-                        <PanelContextProvider>
-                            <EChartContextProvider>
+                    <EChartContextProvider>
+                        <AvsSocketContextProvider>
+                            <PanelContextProvider>
                                 <App />
-                            </EChartContextProvider>
-                        </PanelContextProvider>
-                    </AvsSocketContextProvider>
+                            </PanelContextProvider>
+                        </AvsSocketContextProvider>
+                    </EChartContextProvider>
                 </ChatProvider>
             </ParticipantProvider>
         </VideoProvider>

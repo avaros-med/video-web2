@@ -1,10 +1,25 @@
-import { createContext, useCallback, useContext, useState } from 'react'
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useMemo,
+    useState,
+} from 'react'
+import { useParams } from 'react-router-dom'
+import { useHttpDemographic } from '../../components/EChartPanel/EChartView/useHttpDemographic'
+import { useEChartContext } from '../../components/EChartPanel/useEChartContext'
 import {
     MessagesHookState,
     useMessages,
 } from '../../components/EChartPanel/useMessages'
-import { Message } from '../../services/models/Message.model'
-import { BaseEvent } from '../../services/ws/socket.service'
+import { AttachmentAuthenticated } from '../../services/event-bus/events'
+import { AttachmentMessage, Message } from '../../services/models/Message.model'
+import { utilsService } from '../../services/utils.service'
+import {
+    AuthenticateAttachment,
+    SendAttachment,
+} from '../../services/ws/eventout'
+import { BaseEvent, socketService } from '../../services/ws/socket.service'
 import useVideoContext from '../useVideoContext/useVideoContext'
 
 interface ContextState {
@@ -26,6 +41,7 @@ const LocalStateContext = createContext<ContextState>(initialState)
 
 // Provider
 export function AvsSocketContextProvider({ children }: any) {
+    const { URLRoomName } = useParams<{ URLRoomName?: string }>()
     const { room } = useVideoContext()
     const {
         messages,
@@ -33,26 +49,185 @@ export function AvsSocketContextProvider({ children }: any) {
         addMessage,
         setHasNewMessages,
     } = useMessages()
+    const {
+        getDocumentUrl,
+        authenticateDemographicDocument,
+    } = useHttpDemographic()
+    const { demographic } = useEChartContext().demographic
     const [hasNetworkError, setHasNetworkError] = useState<boolean>(false)
+
+    const localParticipantName = useMemo(
+        () => room?.localParticipant.identity ?? '',
+        [room]
+    )
+
+    const addMessageHandler = useCallback(
+        (message: Message) => {
+            addMessage(message)
+
+            // Set new-messages flag if new message is not from the local participant
+            if (message.senderName !== room?.localParticipant?.identity) {
+                setHasNewMessages(true)
+            }
+        },
+        [room, addMessage, setHasNewMessages]
+    )
+
+    const attachmentRequestHandler = useCallback(
+        (attachmentMessage: AttachmentMessage) => {
+            addMessage(attachmentMessage)
+
+            // Set new-messages flag if new message is not from the local participant
+            if (
+                attachmentMessage.senderName !==
+                room?.localParticipant?.identity
+            ) {
+                setHasNewMessages(true)
+            }
+        },
+        [room, addMessage, setHasNewMessages]
+    )
+
+    const authenticateAttachmentHandler = useCallback(
+        (authenticateAttachment: AuthenticateAttachment) => {
+            if (!demographic) {
+                return
+            }
+
+            // Authenticate the attachment
+            ;((): Promise<boolean> => {
+                return authenticateDemographicDocument(
+                    authenticateAttachment.ID,
+                    authenticateAttachment.name,
+                    authenticateAttachment.type,
+                    authenticateAttachment.patientDOB
+                )
+            })()
+                // Get attachment url
+                .then(
+                    (isAuthenticated: boolean): Promise<string | null> => {
+                        if (!isAuthenticated) {
+                            return Promise.resolve(null)
+                        }
+
+                        return getDocumentUrl(
+                            demographic.demographicNo,
+                            authenticateAttachment.ID,
+                            authenticateAttachment.name,
+                            authenticateAttachment.type
+                        )
+                    }
+                )
+
+                // Get attachment file object
+                .then(
+                    (url: string | null): Promise<File | null> => {
+                        if (!url) {
+                            return Promise.resolve(null)
+                        }
+
+                        return utilsService.downloadDocument(
+                            url,
+                            authenticateAttachment.name
+                        )
+                    }
+                )
+
+                // Send attachment bytes to participants
+                .then((file: File | null) => {
+                    if (!file) {
+                        return
+                    }
+
+                    utilsService
+                        .getFileContentAsText(file)
+                        .then((filecontent: string) => {
+                            const eventout: SendAttachment = {
+                                name: authenticateAttachment.name,
+                                bytes: filecontent,
+                                senderName: localParticipantName,
+                                roomName: URLRoomName!,
+                            }
+                            socketService.dispatchEvent(
+                                'SendAttachment',
+                                eventout
+                            )
+                        })
+                })
+        },
+        [
+            URLRoomName,
+            demographic,
+            localParticipantName,
+            getDocumentUrl,
+            authenticateDemographicDocument,
+        ]
+    )
+
+    const sendAttachmentHandler = useCallback(
+        (sentAttachment: SendAttachment) => {
+            const blob = new Blob([sentAttachment.bytes], {
+                type: 'application/pdf',
+            })
+            const url = window.URL.createObjectURL(blob)
+            utilsService.downloadByUrl(url, sentAttachment.name)
+
+            // Emit an AttachmentAuthenticated event to notify authentication dialog
+            AttachmentAuthenticated.emit()
+        },
+        []
+    )
 
     const socketEventHandler = useCallback(
         (event: BaseEvent) => {
             switch (event.type) {
                 case 'Message': {
-                    const newMessage = Message.deserialize(event.payload)
-                    addMessage(newMessage)
+                    const newMessage = new Message(
+                        Message.deserialize(event.payload)
+                    )
+                    addMessageHandler(newMessage)
+                    break
+                }
 
-                    // Set new-messages flag if new message is not from the local participant
+                case 'SendAttachmentRequest': {
+                    const newAttachmentMessage = new AttachmentMessage(
+                        AttachmentMessage.deserialize(event.payload)
+                    )
+                    attachmentRequestHandler(newAttachmentMessage)
+                    break
+                }
+
+                case 'AuthenticateAttachment': {
+                    const authenticateAttachment = event.payload as AuthenticateAttachment
+
+                    // Continue if the local participant is the original attachment sender
                     if (
-                        newMessage.senderName !==
-                        room?.localParticipant?.identity
+                        localParticipantName ===
+                        authenticateAttachment.senderName
                     ) {
-                        setHasNewMessages(true)
+                        authenticateAttachmentHandler(authenticateAttachment)
                     }
+                    break
+                }
+
+                case 'SendAttachment': {
+                    const sentAttachment = event.payload as SendAttachment
+
+                    // Open the attachment if the local participant is not the original attachment sender
+                    if (localParticipantName !== sentAttachment.senderName) {
+                        sendAttachmentHandler(sentAttachment)
+                    }
+                    break
                 }
             }
         },
-        [room, addMessage, setHasNewMessages]
+        [
+            localParticipantName,
+            addMessageHandler,
+            attachmentRequestHandler,
+            authenticateAttachmentHandler,
+            sendAttachmentHandler,
+        ]
     )
 
     const onNetworkError = useCallback(() => {

@@ -2,13 +2,17 @@ import { Spinner, SpinnerSize } from '@blueprintjs/core'
 import moment from 'moment'
 import { useEffect, useMemo } from 'react'
 import styled from 'styled-components'
-import { DemographicDocument } from '../../../services/models/PatientDocument.model'
+import { DemographicDocument } from '../../../services/models/DemographicDocument.model'
 import { IconButton } from '../../UI/IconButton'
 import { FontWeightBoldStyles, TextHintStyles } from '../../UI/styles/styles'
 import { useHttpDemographic } from '../EChartView/useHttpDemographic'
 import { useEChartContext } from '../useEChartContext'
 import { HeaderTabs } from './HeaderTabs'
 import { defaultTab, HEADER_TAB, useHeaderTabs } from './useHeaderTabs'
+
+interface Props {
+    onSend(demographicDemographic: DemographicDocument): void
+}
 
 const Styles = styled.div`
     .scroll-container {
@@ -17,7 +21,7 @@ const Styles = styled.div`
     }
 `
 
-export default function PatientDocumentsList() {
+export default function PatientDocumentsList({ onSend }: Props) {
     const { demographic } = useEChartContext().demographic
     const {
         demographicDocuments,
@@ -72,7 +76,7 @@ export default function PatientDocumentsList() {
                     <DocumentItem
                         key={document.id}
                         document={document}
-                        onClick={() => {}}
+                        onClick={() => onSend(document)}
                     />
                 ))}
                 {!list.length && !isLoading && (

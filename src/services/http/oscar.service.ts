@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 import { CurrentUser } from '../models/CurrentUser.model'
 import { Demographic } from '../models/Demographic.model'
-import { DemographicDocument } from '../models/PatientDocument.model'
+import { DemographicDocument } from '../models/DemographicDocument.model'
 
 const BASE_URL = `${process.env.REACT_APP_OSCAR_BASE_URL}/ws/rs/video/v2`
 
@@ -87,9 +87,61 @@ const getDemographicDocuments = (
     })
 }
 
+const getDemographicDocumentUrl = (
+    demographicNo: number,
+    id: number,
+    name: string,
+    type: string
+): Promise<string> => {
+    const url = `${BASE_URL}/documents/url`
+    const payload = {
+        demographicNo,
+        id,
+        name,
+        type,
+    }
+
+    return new Promise((resolve, reject) => {
+        axios
+            .post(url, payload)
+            .then((response: AxiosResponse) => {
+                if (response.data?.url) {
+                    resolve(response.data.url)
+                } else {
+                    reject('Unable to get url')
+                }
+            })
+            .catch((error: AxiosError) => reject(error))
+    })
+}
+
+const authenticateDemographicDocument = (
+    id: number,
+    name: string,
+    type: string,
+    patientDOB: string
+): Promise<boolean> => {
+    const url = `${BASE_URL}/documents/authenticate`
+    const payload = {
+        id,
+        name,
+        type,
+        patientDOB,
+    }
+
+    return new Promise(resolve => {
+        axios
+            .post(url, payload)
+            .then(() => resolve(true))
+            .catch(() => resolve(false))
+    })
+}
+
 export const oscarService = {
     getCurrentUser,
     searchDemographic,
     createNote,
     getDemographicDocuments,
+    getDemographicDocumentUrl,
+    authenticateDemographicDocument,
 }

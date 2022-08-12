@@ -127,7 +127,11 @@ export class BaseEvent {
     }
 }
 
-type BaseEventType = 'Message'
+type BaseEventType =
+    | 'Message'
+    | 'SendAttachmentRequest'
+    | 'AuthenticateAttachment'
+    | 'SendAttachment'
 
 const getRandomNumber = (min: number, max: number) => {
     return Math.random() * (max - min) + min

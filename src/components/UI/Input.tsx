@@ -12,7 +12,6 @@ interface Props {
     value: string
     error?: FieldError
     isLabel?: boolean
-    suffix?: string
     maxChars?: number
     onChange: (value: string) => void
     onBlur?: (
@@ -48,7 +47,6 @@ export const Input = ({
     value,
     isLabel,
     error,
-    suffix,
     maxChars,
     onChange,
     onBlur,
@@ -76,63 +74,49 @@ export const Input = ({
             {!isLabel ? (
                 <>
                     <div
-                        className={`input-wrapper d-flex align-items-center ${hasError &&
+                        className={`input-wrapper ${hasError &&
                             'invalid-state'}`}
                     >
                         {multiline ? (
-                            <>
-                                <textarea
-                                    placeholder={placeholder || ''}
-                                    value={value}
-                                    rows={3}
-                                    onChange={changeHandler}
-                                    onBlur={(
-                                        event: React.ChangeEvent<
-                                            HTMLTextAreaElement
-                                        >
-                                    ) => {
-                                        if (onBlur) {
-                                            onBlur(event)
-                                        }
-                                    }}
-                                    onKeyPress={event => {
-                                        if (onKeyPress) {
-                                            onKeyPress(event)
-                                        }
-                                    }}
-                                ></textarea>
-
-                                {suffix && (
-                                    <div className="suffix">{suffix}</div>
-                                )}
-                            </>
+                            <textarea
+                                placeholder={placeholder || ''}
+                                value={value}
+                                rows={3}
+                                onChange={changeHandler}
+                                onBlur={(
+                                    event: React.ChangeEvent<
+                                        HTMLTextAreaElement
+                                    >
+                                ) => {
+                                    if (onBlur) {
+                                        onBlur(event)
+                                    }
+                                }}
+                                onKeyPress={event => {
+                                    if (onKeyPress) {
+                                        onKeyPress(event)
+                                    }
+                                }}
+                            ></textarea>
                         ) : (
-                            <>
-                                <input
-                                    type={type || 'text'}
-                                    placeholder={placeholder || ''}
-                                    value={value}
-                                    onChange={changeHandler}
-                                    onBlur={(
-                                        event: React.ChangeEvent<
-                                            HTMLInputElement
-                                        >
-                                    ) => {
-                                        if (onBlur) {
-                                            onBlur(event)
-                                        }
-                                    }}
-                                    onKeyPress={event => {
-                                        if (onKeyPress) {
-                                            onKeyPress(event)
-                                        }
-                                    }}
-                                />
-
-                                {suffix && (
-                                    <div className="suffix">{suffix}</div>
-                                )}
-                            </>
+                            <input
+                                type={type || 'text'}
+                                placeholder={placeholder || ''}
+                                value={value}
+                                onChange={changeHandler}
+                                onBlur={(
+                                    event: React.ChangeEvent<HTMLInputElement>
+                                ) => {
+                                    if (onBlur) {
+                                        onBlur(event)
+                                    }
+                                }}
+                                onKeyPress={event => {
+                                    if (onKeyPress) {
+                                        onKeyPress(event)
+                                    }
+                                }}
+                            />
                         )}
                     </div>
 
