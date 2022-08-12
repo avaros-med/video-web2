@@ -18,7 +18,7 @@ import { DemographicDocumentType } from '../../../services/models/DemographicDoc
 import { AuthenticateAttachment } from '../../../services/ws/eventout'
 import { socketService } from '../../../services/ws/socket.service'
 import { Button } from '../../UI/Button'
-import { Input } from '../../UI/Input'
+import { InputMask } from '../../UI/InputMask'
 
 interface Props {
     open: boolean
@@ -129,8 +129,9 @@ export const PatientAuthenticationDialog = ({
                                 Please enter the Date of Birth of{' '}
                                 <b>{demographicName}</b> to download attachment
                             </div>
-                            <Input
+                            <InputMask
                                 classes="p-1 mt-3"
+                                mask="9999-99-99"
                                 placeholder="YYYY-MM-DD"
                                 value={dob}
                                 onChange={value => {
