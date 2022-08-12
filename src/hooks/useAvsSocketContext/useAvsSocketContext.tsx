@@ -140,8 +140,8 @@ export function AvsSocketContextProvider({ children }: any) {
                     }
 
                     utilsService
-                        .getFileContentAsText(file)
-                        .then((filecontent: string) => {
+                        .getFileContent(file)
+                        .then((filecontent: any) => {
                             const eventout: SendAttachment = {
                                 name: authenticateAttachment.name,
                                 bytes: filecontent,
@@ -166,20 +166,23 @@ export function AvsSocketContextProvider({ children }: any) {
 
     const sendAttachmentHandler = useCallback(
         (sentAttachment: SendAttachment) => {
-            const blob = new Blob([sentAttachment.bytes], {
-                type: 'application/pdf',
-            })
-            const url = window.URL.createObjectURL(blob)
-            utilsService.downloadByUrl(url, sentAttachment.name)
+            fetch(sentAttachment.bytes)
+                .then(res => res.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob)
+                    utilsService.downloadByUrl(url, sentAttachment.name)
 
-            // Emit an AttachmentAuthenticated event to notify authentication dialog
-            AttachmentAuthenticated.emit()
+                    // Emit an AttachmentAuthenticated event to notify authentication dialog
+                    AttachmentAuthenticated.emit()
+                })
         },
         []
     )
 
     const socketEventHandler = useCallback(
         (event: BaseEvent) => {
+            console.log('event:', event)
+
             switch (event.type) {
                 case 'Message': {
                     const newMessage = new Message(

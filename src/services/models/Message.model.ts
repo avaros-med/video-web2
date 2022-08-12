@@ -48,7 +48,7 @@ export class AttachmentMessage {
 
     static deserialize(obj: any): AttachmentMessage {
         const model: AttachmentMessage = {
-            ID: obj.id,
+            ID: obj.ID,
             demographicDocumentID: obj.id ?? obj.ID,
             documentName: obj.name,
             documentType: obj.type,

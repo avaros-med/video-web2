@@ -103,10 +103,11 @@ export const PatientAuthenticationDialog = ({
         socketService.dispatchEvent('AuthenticateAttachment', eventout)
         setIsLoading(true)
 
+        // Set error state if not authenticated by a certain number of seconds
         const timer = setTimeout(() => {
             setHasError(true)
             setIsLoading(false)
-        }, 5000)
+        }, 10000)
         setErrorTimer(timer)
     }, [documentId, documentName, documentType, verifierName, URLRoomName, dob])
 

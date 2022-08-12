@@ -32,6 +32,10 @@ const getRandomNumber = (min: number, max: number) => {
 }
 
 const downloadByUrl = (url: string, filename: string) => {
+    if (!filename.endsWith('.pdf')) {
+        filename += '.pdf'
+    }
+
     const anchorEl = document.createElement('a')
     anchorEl.href = url
     anchorEl.target = '_blank'
@@ -70,17 +74,17 @@ const downloadDocument = (url: string, fileName: string): Promise<File> => {
     })
 }
 
-const getFileContentAsText = (file: File): Promise<string> => {
+const getFileContent = (file: File): Promise<any> => {
     if (!file) {
         return Promise.reject('Missing file')
     }
 
     return new Promise((resolve, reject) => {
         var reader = new FileReader()
-        reader.readAsBinaryString(file)
+        reader.readAsDataURL(file)
         reader.onload = function() {
-            const text = reader.result || ''
-            resolve(text as string)
+            const content = reader.result || ''
+            resolve(content)
         }
         reader.onerror = function(error) {
             reject(error)
@@ -93,5 +97,5 @@ export const utilsService = {
     getRandomNumber,
     downloadByUrl,
     downloadDocument,
-    getFileContentAsText,
+    getFileContent,
 }
