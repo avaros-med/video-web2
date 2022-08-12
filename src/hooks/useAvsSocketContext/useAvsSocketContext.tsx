@@ -175,14 +175,13 @@ export function AvsSocketContextProvider({ children }: any) {
                     // Emit an AttachmentAuthenticated event to notify authentication dialog
                     AttachmentAuthenticated.emit()
                 })
+                .catch(() => {})
         },
         []
     )
 
     const socketEventHandler = useCallback(
         (event: BaseEvent) => {
-            console.log('event:', event)
-
             switch (event.type) {
                 case 'Message': {
                     const newMessage = new Message(
