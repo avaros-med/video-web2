@@ -32,9 +32,12 @@ export default function PreJoinScreens() {
             setRoomExists(false)
             return
         }
-        videoService.validateRoomExists(URLRoomName).then(exists => {
-            setRoomExists(exists)
-        })
+        videoService
+            .validateRoomExists(URLRoomName)
+            .then(exists => {
+                setRoomExists(exists)
+            })
+            .catch(() => setRoomExists(false))
     }, [URLRoomName])
 
     useEffect(() => {
