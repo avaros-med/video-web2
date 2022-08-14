@@ -19,7 +19,7 @@ interface Props {
 
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
-        height: `calc(100% - ${theme.footerHeight}px)`,
+        height: '100%',
         padding: '1em',
         display: 'flex',
     },

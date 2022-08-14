@@ -14,6 +14,8 @@ const useStyles = makeStyles((theme: Theme) => {
             right: '0',
             transition: 'right 0.15s ease',
             zIndex: 1,
+            display: 'flex',
+            flexDirection: 'column',
 
             [theme.breakpoints.down('sm')]: {
                 width: 'calc(100% - 16px)',
@@ -40,6 +42,10 @@ const useStyles = makeStyles((theme: Theme) => {
             fontWeight: 500,
             textTransform: 'uppercase',
         },
+        scrollContainer: {
+            flex: 1,
+            overflowY: 'auto',
+        },
     }
 })
 
@@ -50,7 +56,7 @@ export const Panel = () => {
     return (
         <div className={`${classes.container} ${isHidden && 'is-hidden'}`}>
             <PanelHeader title={panelName} onClose={onClose} />
-            {panelNode}
+            <div className={classes.scrollContainer}>{panelNode}</div>
         </div>
     )
 }

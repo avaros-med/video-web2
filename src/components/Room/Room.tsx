@@ -25,6 +25,7 @@ const useStyles = makeStyles((theme: Theme) => {
         container: {
             flex: 1,
             position: 'relative',
+            zIndex: 1,
             height: '100%',
             display: 'grid',
             gridTemplateColumns: `1fr ${theme.sidebarWidth}px`,
