@@ -48,6 +48,7 @@ export function AvsSocketContextProvider({ children }: any) {
         hasNewMessages,
         addMessage,
         setHasNewMessages,
+        reset: resetMessages,
     } = useMessages()
     const {
         getDocumentUrl,
@@ -244,6 +245,7 @@ export function AvsSocketContextProvider({ children }: any) {
                     hasNewMessages,
                     addMessage,
                     setHasNewMessages,
+                    reset: resetMessages,
                 },
                 networkError: { hasNetworkError, onNetworkError },
                 socketEventHandler,

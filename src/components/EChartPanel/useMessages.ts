@@ -6,6 +6,7 @@ export interface MessagesHookState {
     hasNewMessages: boolean
     addMessage(message: Message | AttachmentMessage): void
     setHasNewMessages(hasNewMessages: boolean): void
+    reset(): void
 }
 
 export const useMessages = (): MessagesHookState => {
@@ -24,10 +25,16 @@ export const useMessages = (): MessagesHookState => {
         []
     )
 
+    const reset = useCallback(() => {
+        setMessages([])
+        setHasNewMessages(false)
+    }, [])
+
     return {
         messages,
         hasNewMessages,
         addMessage,
         setHasNewMessages,
+        reset,
     }
 }
