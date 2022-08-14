@@ -43,14 +43,14 @@ export const MessageComposer = () => {
         const eventout: SendMessage = {
             ID: utilsService.getRandomNumber(100000, 999999),
             description: message.trim(),
-            fromProvider: true,
+            fromProvider: !!currentUser,
             roomName: URLRoomName,
             senderName,
             createdAt: new Date().toISOString(),
         }
         socketService.dispatchEvent('Message', eventout)
         setMessage('')
-    }, [URLRoomName, message, senderName])
+    }, [URLRoomName, currentUser, message, senderName])
 
     return (
         <Styles>

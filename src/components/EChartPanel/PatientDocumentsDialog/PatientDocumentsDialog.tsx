@@ -5,6 +5,7 @@ import {
     DialogTitle,
 } from '@material-ui/core'
 import { Demographic } from '../../../services/models/Demographic.model'
+import { DemographicDocument } from '../../../services/models/DemographicDocument.model'
 import { Button } from '../../UI/Button'
 import { FontWeightBoldStyles } from '../../UI/styles/styles'
 import { PatientField } from '../EChartView/PatientField'
@@ -14,10 +15,11 @@ import PatientDocumentsList from './PatientDocumentsList'
 
 interface Props {
     open: boolean
+    onSend(demographicDocument: DemographicDocument): void
     onClose(): void
 }
 
-export const PatientDocumentsDialog = ({ open, onClose }: Props) => {
+export const PatientDocumentsDialog = ({ open, onSend, onClose }: Props) => {
     const { demographic, clearDemographic } = useEChartContext().demographic
 
     return (
@@ -39,7 +41,7 @@ export const PatientDocumentsDialog = ({ open, onClose }: Props) => {
                 {!demographic ? (
                     <SelectPatientView classes="p-4" />
                 ) : (
-                    <PatientDocumentsList />
+                    <PatientDocumentsList onSend={onSend} />
                 )}
             </DialogContent>
             <DialogActions>

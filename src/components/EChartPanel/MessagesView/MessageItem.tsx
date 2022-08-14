@@ -61,6 +61,10 @@ const MessageStyles = styled.div`
     .color-blue {
         color: ${Colors.BLUE};
     }
+
+    .word-break-all {
+        word-break: break-all;
+    }
 `
 
 export const MessageItem = ({ message, isLocalRecipient }: Props) => {
@@ -126,24 +130,37 @@ const AttachmentMessageContent = ({
         isLocalRecipient,
     ])
 
-    const onView = useCallback(() => {
-        if (!demographic) {
-            return
-        }
+    const canView = isAuthenticated || !message.fromProvider
 
-        getDocumentUrl(
-            demographic.demographicNo,
-            message.demographicDocumentID,
-            message.documentName,
-            message.documentType
-        ).then((url: string) => {
-            utilsService.downloadByUrl(url, message.documentName)
-        })
+    const onView = useCallback(() => {
+        // View document as a provider
+        if (message.fromProvider && demographic) {
+            getDocumentUrl(
+                demographic.demographicNo,
+                message.demographicDocumentID,
+                message.documentName,
+                message.documentType
+            ).then((url: string) => {
+                utilsService.downloadByUrl(url, message.documentName)
+            })
+
+            // View document as a patient
+        } else if (!message.fromProvider) {
+            fetch(message.bytes)
+                .then(res => res.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob)
+                    utilsService.downloadByUrl(url, message.documentName)
+                })
+                .catch(() => {})
+        }
     }, [
         demographic,
         message.demographicDocumentID,
         message.documentName,
         message.documentType,
+        message.fromProvider,
+        message.bytes,
         getDocumentUrl,
     ])
 
@@ -156,17 +173,17 @@ const AttachmentMessageContent = ({
             >
                 <Grid container alignItems="center">
                     <i className="material-icons color-blue mr-3">attachment</i>
-                    <span>{message.documentName}</span>
+                    <span className="word-break-all">
+                        {message.documentName}
+                    </span>
                 </Grid>
                 <Button
                     classes="d-inline-flex p-0 ml-5"
                     intent="text-primary"
-                    label={isAuthenticated ? 'View' : 'Accept'}
+                    label={canView ? 'View' : 'Accept'}
                     isLoading={isLoading}
                     onClick={() =>
-                        isAuthenticated
-                            ? onView()
-                            : setShowAuthenticationDialog(true)
+                        canView ? onView() : setShowAuthenticationDialog(true)
                     }
                 />
             </Grid>

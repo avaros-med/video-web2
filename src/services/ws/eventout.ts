@@ -15,7 +15,9 @@ export class SendAttachmentRequest {
     type!: DemographicDocumentType
     demographicName!: string
     roomName!: string
+    fromProvider!: boolean
     senderName!: string
+    bytes!: string
 }
 
 export class AuthenticateAttachment {

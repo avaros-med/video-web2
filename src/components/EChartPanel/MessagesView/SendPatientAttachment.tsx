@@ -1,5 +1,10 @@
-import { ChangeEvent, useCallback, useRef, useState } from 'react'
+import { ChangeEvent, useCallback, useMemo, useRef, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
+import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { utilsService } from '../../../services/utils.service'
+import { SendAttachmentRequest } from '../../../services/ws/eventout'
+import { socketService } from '../../../services/ws/socket.service'
 import { IconButton } from '../../UI/IconButton'
 
 interface Props {
@@ -33,8 +38,15 @@ const Styles = styled.div`
 `
 
 export const SendPatientAttachment = ({ classes }: Props) => {
-    const [file, setFile] = useState<File | null>(null)
+    const { URLRoomName } = useParams<{ URLRoomName?: string }>()
+    const { room } = useVideoContext()
+    const [, setFile] = useState<File | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
+
+    const localParticipantName = useMemo(
+        (): string => room?.localParticipant.identity ?? '',
+        [room]
+    )
 
     const clearInput = () => {
         // Clear input field
@@ -42,6 +54,28 @@ export const SendPatientAttachment = ({ classes }: Props) => {
             inputRef.current.value = ''
         }
     }
+
+    const onSend = useCallback(
+        async (_file: File) => {
+            const fileContent = await utilsService.getFileContent(_file)
+            if (!fileContent) {
+                return
+            }
+
+            const eventout: SendAttachmentRequest = {
+                ID: utilsService.getRandomNumber(100000, 999999),
+                name: _file.name,
+                type: 'document',
+                demographicName: localParticipantName,
+                roomName: URLRoomName!,
+                fromProvider: false,
+                senderName: localParticipantName,
+                bytes: fileContent,
+            }
+            socketService.dispatchEvent('SendAttachmentRequest', eventout)
+        },
+        [URLRoomName, localParticipantName]
+    )
 
     const onChangeHandler = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
@@ -65,10 +99,13 @@ export const SendPatientAttachment = ({ classes }: Props) => {
 
                     setFile(_file)
                     clearInput()
+
+                    // Send file
+                    onSend(_file)
                 }
             }
         },
-        []
+        [onSend]
     )
 
     return (

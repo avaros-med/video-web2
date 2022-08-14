@@ -37,7 +37,9 @@ export const SendProviderAttachment = ({ classes }: Props) => {
                 type: demographicDocument.type,
                 demographicName,
                 roomName: URLRoomName!,
+                fromProvider: true,
                 senderName,
+                bytes: '',
             }
             socketService.dispatchEvent('SendAttachmentRequest', eventout)
 

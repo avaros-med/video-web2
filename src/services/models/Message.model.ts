@@ -34,6 +34,8 @@ export class AttachmentMessage {
     documentType!: DemographicDocumentType
     demographicName!: string
     senderName!: string
+    fromProvider!: boolean
+    bytes!: string
     createdAt!: Date
 
     constructor(attachmentMessage: AttachmentMessage) {
@@ -43,6 +45,8 @@ export class AttachmentMessage {
         this.documentType = attachmentMessage.documentType
         this.demographicName = attachmentMessage.demographicName
         this.senderName = attachmentMessage.senderName
+        this.fromProvider = attachmentMessage.fromProvider
+        this.bytes = attachmentMessage.bytes
         this.createdAt = attachmentMessage.createdAt
     }
 
@@ -54,6 +58,8 @@ export class AttachmentMessage {
             documentType: obj.type,
             demographicName: obj.demographicName,
             senderName: obj.senderName,
+            fromProvider: obj.fromProvider,
+            bytes: obj.bytes,
             createdAt: new Date(),
         }
         return model
