@@ -31,8 +31,8 @@ interface SnackBarProps {
 
 export const EncounterNoteView = () => {
     const { demographic, clearDemographic } = useEChartContext().demographic
+    const { note, setNote } = useEChartContext().note
     const { createNote } = useHttpDemographic()
-    const [note, setNote] = useState<string>('')
     const [snackBarProps, setSnackBarProps] = useState<SnackBarProps | null>(
         null
     )
