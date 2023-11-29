@@ -46,7 +46,7 @@ export const ParticipantInfoMenu = ({
 
     const { URLRoomName: roomName } = useParams<{ URLRoomName?: string }>()
     const { currentUser } = useVideoContext()
-    const [menuOpen, setMenuOpen] = useState(true)
+    const [menuOpen, setMenuOpen] = useState(false)
     const anchorRef = useRef<any>(null)
 
     const onRemove = useCallback(() => {
