@@ -22,6 +22,7 @@ import usePublications from '../../hooks/usePublications/usePublications'
 import useTrack from '../../hooks/useTrack/useTrack'
 import { useAppState } from '../../state'
 import { Avatar } from '../UI/Avatar'
+import { ParticipantInfoMenu } from './ParticipantInfoMenu'
 import { useAudioVolume } from './useAudioVolume'
 
 const borderWidth = 2
@@ -235,17 +236,22 @@ export default function ParticipantInfo({
                             <ScreenShareIcon />
                         </span>
                     )}
-                    <span className={classes.identity}>
-                        <AudioLevelIndicator audioTrack={audioTrack} />
-                        <Typography
-                            variant="body1"
-                            className={classes.typography}
-                            component="span"
-                        >
-                            {participant.identity}
-                            {isLocalParticipant && ' (You)'}
-                        </Typography>
-                    </span>
+                    <ParticipantInfoMenu
+                        participantId={participant.sid}
+                        isLocalParticipant={isLocalParticipant}
+                    >
+                        <span className={classes.identity}>
+                            <AudioLevelIndicator audioTrack={audioTrack} />
+                            <Typography
+                                variant="body1"
+                                className={classes.typography}
+                                component="span"
+                            >
+                                {participant.identity}
+                                {isLocalParticipant && ' (You)'}
+                            </Typography>
+                        </span>
+                    </ParticipantInfoMenu>
                 </div>
                 <div>{isSelected && <PinIcon />}</div>
             </div>

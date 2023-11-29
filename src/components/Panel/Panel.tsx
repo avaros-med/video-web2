@@ -32,6 +32,7 @@ const useStyles = makeStyles((theme: Theme) => {
                 position: 'absolute',
                 right: '-100%',
                 opacity: 0,
+                display: 'none',
             },
         },
         header: {

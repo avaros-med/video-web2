@@ -37,7 +37,16 @@ const validateRoomExists = (roomName: string): Promise<boolean> => {
     })
 }
 
+const removeParticipant = (
+    roomName: string,
+    participantId: string
+): Promise<boolean> => {
+    const url = `${BASE_URL}/rooms/${roomName}/participants/${participantId}/disconnect`
+    return axios.post(url)
+}
+
 export const videoService = {
     getAppointmentByRoomName,
     validateRoomExists,
+    removeParticipant,
 }
