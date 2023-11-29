@@ -56,7 +56,7 @@ export const EncounterNoteView = () => {
                     isError: true,
                 })
             })
-    }, [demographic, note, createNote])
+    }, [demographic, note, createNote, setNote])
 
     if (!demographic) {
         return null
