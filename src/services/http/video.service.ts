@@ -51,6 +51,7 @@ const removeParticipant = (
 }
 
 export interface LogPayload {
+    clientName: string
     organizationID: string | null
     startAt: string
     endAt: string

@@ -23,13 +23,14 @@ export default function EndCallButton(props: { className?: string }) {
                 const isDoctor = !!currentUser
                 const ip = await utilsService.getIp()
                 const payload: LogPayload = {
+                    clientName: appointment.clientName,
                     organizationID: appointment.clientName,
-                    clinicalUserInformation: appointment.details.providerName,
                     startAt: appointment.startAt.toISOString(),
                     endAt: appointment.endAt.toISOString(),
+                    clinicalUserInformation: appointment.details.providerName,
                     clinicalUserLocation: isDoctor ? ip : null,
                     participantLocation: isDoctor ? null : ip,
-                    providerID: null,
+                    providerID: isDoctor ? +currentUser.providerNo : null,
                     physicianFlag: isDoctor ? 'Doctor' : 'Other',
                 }
                 await videoService.addLog(payload)
