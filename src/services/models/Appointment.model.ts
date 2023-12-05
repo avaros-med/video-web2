@@ -4,6 +4,7 @@ export class Appointment {
     startAt!: Date
     endAt!: Date
     roomID!: number
+    clientName!: string
     details!: AppointmentDetails
 
     static deserialize(obj: any): Appointment {

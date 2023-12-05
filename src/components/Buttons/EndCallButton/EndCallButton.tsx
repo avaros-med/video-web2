@@ -1,24 +1,55 @@
 import { useCallback } from 'react'
 import { useAvsSocketContext } from '../../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { LogPayload, videoService } from '../../../services/http/video.service'
+import { utilsService } from '../../../services/utils.service'
 import { useEChartContext } from '../../EChartPanel/useEChartContext'
 import { usePanelContext } from '../../Panel/usePanelContext'
 import { IconButton } from '../../UI/IconButton'
 
 export default function EndCallButton(props: { className?: string }) {
     const { room } = useVideoContext()
+    const { currentUser, appointment } = useVideoContext()
     const { reset: resetMessages } = useAvsSocketContext().messages
     const {
         clearDemographic: resetDemographic,
     } = useEChartContext().demographic
     const { onClose: resetPanel } = usePanelContext().panel
 
-    const onEndCall = useCallback(() => {
+    const onEndCall = useCallback(async () => {
+        // Add log about video visit
+        if (appointment) {
+            try {
+                const isDoctor = !!currentUser
+                const ip = await utilsService.getIp()
+                const payload: LogPayload = {
+                    organizationID: appointment.clientName,
+                    clinicalUserInformation: appointment.details.providerName,
+                    startAt: appointment.startAt.toISOString(),
+                    endAt: appointment.endAt.toISOString(),
+                    clinicalUserLocation: isDoctor ? ip : null,
+                    participantLocation: isDoctor ? null : ip,
+                    providerID: null,
+                    physicianFlag: isDoctor ? 'Doctor' : 'Other',
+                }
+                await videoService.addLog(payload)
+            } catch (error) {
+                console.error(error)
+            }
+        }
+
         room!.disconnect()
         resetMessages()
         resetDemographic()
         resetPanel()
-    }, [room, resetMessages, resetDemographic, resetPanel])
+    }, [
+        room,
+        currentUser,
+        appointment,
+        resetMessages,
+        resetDemographic,
+        resetPanel,
+    ])
 
     return (
         <IconButton

@@ -37,6 +37,11 @@ const validateRoomExists = (roomName: string): Promise<boolean> => {
     })
 }
 
+const addLog = (payload: LogPayload): Promise<void> => {
+    const url = `${BASE_URL}/video-logger/`
+    return axios.post(url, payload)
+}
+
 const removeParticipant = (
     roomName: string,
     participantId: string
@@ -45,8 +50,20 @@ const removeParticipant = (
     return axios.post(url)
 }
 
+export interface LogPayload {
+    organizationID: string | null
+    startAt: string
+    endAt: string
+    clinicalUserInformation: string | null
+    clinicalUserLocation: string | null
+    participantLocation: string | null
+    providerID: number | null
+    physicianFlag: 'Doctor' | 'Other'
+}
+
 export const videoService = {
     getAppointmentByRoomName,
     validateRoomExists,
     removeParticipant,
+    addLog,
 }

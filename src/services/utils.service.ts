@@ -92,10 +92,29 @@ const getFileContent = (file: File): Promise<any> => {
     })
 }
 
+const getIp = async (): Promise<string> => {
+    const ipRegex = /[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}/
+    try {
+        const response = await fetch(
+            'https://www.cloudflare.com/cdn-cgi/trace'
+        ).then(res => res.text())
+        const match = response?.match(ipRegex)
+        if (match) {
+            const ip = match[0]
+            return Promise.resolve(ip)
+        }
+        return Promise.reject('Unable to get IP')
+    } catch (error) {
+        console.error(error)
+        return Promise.reject(error)
+    }
+}
+
 export const utilsService = {
     getTimeRemaining,
     getRandomNumber,
     downloadByUrl,
     downloadDocument,
     getFileContent,
+    getIp,
 }

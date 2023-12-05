@@ -1,4 +1,10 @@
-import { createContext, ReactNode, useCallback, useState } from 'react'
+import {
+    createContext,
+    ReactNode,
+    useCallback,
+    useEffect,
+    useState,
+} from 'react'
 import {
     ConnectOptions,
     CreateLocalTrackOptions,
@@ -9,7 +15,10 @@ import {
 import { ErrorCallback } from '../../types'
 import { SelectedParticipantProvider } from './useSelectedParticipant/useSelectedParticipant'
 
+import { useParams } from 'react-router-dom'
 import { useCurrentUser } from '../../hooks/useCurrentUser'
+import { useHttpAppointment } from '../../hooks/useHttpAppointment'
+import { Appointment } from '../../services/models/Appointment.model'
 import { CurrentUser } from '../../services/models/CurrentUser.model'
 import AttachVisibilityHandler from './AttachVisibilityHandler/AttachVisibilityHandler'
 import useBackgroundSettings, {
@@ -49,6 +58,8 @@ export interface IVideoContext {
     backgroundSettings: BackgroundSettings
     setBackgroundSettings: (settings: BackgroundSettings) => void
     currentUser: CurrentUser | null
+    appointment: Appointment | null
+    isAppointmentLoading: boolean
 }
 
 export const VideoContext = createContext<IVideoContext>(null!)
@@ -91,6 +102,21 @@ export function VideoProvider({
         room,
         onError
     )
+
+    const { URLRoomName: roomName } = useParams<{ URLRoomName?: string }>()
+    const {
+        appointment,
+        isLoading: isAppointmentLoading,
+        getAppointmentByRoomName,
+    } = useHttpAppointment()
+
+    // Get appointment details on load
+    useEffect(() => {
+        if (!roomName) {
+            return
+        }
+        getAppointmentByRoomName(roomName)
+    }, [roomName, getAppointmentByRoomName])
 
     // Register callback functions to be called on room disconnect.
     useHandleRoomDisconnection(
@@ -137,6 +163,8 @@ export function VideoProvider({
                 backgroundSettings,
                 setBackgroundSettings,
                 currentUser,
+                appointment,
+                isAppointmentLoading,
             }}
         >
             <SelectedParticipantProvider room={room}>

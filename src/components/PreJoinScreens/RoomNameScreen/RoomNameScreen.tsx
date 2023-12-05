@@ -1,7 +1,6 @@
 import { Spinner, SpinnerSize } from '@blueprintjs/core'
 import { Grid, InputLabel, makeStyles, Theme } from '@material-ui/core'
 import { FormEvent, useEffect } from 'react'
-import { useHttpAppointment } from '../../../hooks/useHttpAppointment'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import { CurrentUser } from '../../../services/models/CurrentUser.model'
 import { AppLogoBlock } from '../../UI/AppLogoBlock'
@@ -36,12 +35,7 @@ export default function RoomNameScreen({
     handleSubmit,
 }: RoomNameScreenProps) {
     const classes = useStyles()
-    const { currentUser } = useVideoContext()
-    const {
-        appointment,
-        isLoading: isAppointmentLoading,
-        getAppointmentByRoomName,
-    } = useHttpAppointment()
+    const { currentUser, appointment, isAppointmentLoading } = useVideoContext()
 
     // Auto-fill participant name from current user
     useEffect(() => {
@@ -50,14 +44,6 @@ export default function RoomNameScreen({
         }
         setName(CurrentUser.getFullName(currentUser))
     }, [currentUser, setName])
-
-    // Get appointment details on load
-    useEffect(() => {
-        if (!roomName) {
-            return
-        }
-        getAppointmentByRoomName(roomName)
-    }, [roomName, getAppointmentByRoomName])
 
     return (
         <>
