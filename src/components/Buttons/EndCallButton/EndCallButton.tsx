@@ -30,7 +30,7 @@ export default function EndCallButton(props: { className?: string }) {
                     clinicalUserInformation: appointment.details.providerName,
                     clinicalUserLocation: isDoctor ? ip : null,
                     participantLocation: isDoctor ? null : ip,
-                    providerID: isDoctor ? +currentUser.providerNo : null,
+                    providerID: appointment.providerID,
                     physicianFlag: isDoctor ? 'Doctor' : 'Other',
                 }
                 await videoService.addLog(payload)
