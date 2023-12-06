@@ -36,6 +36,11 @@ const Styles = styled.div`
     position: relative;
     border-radius: 5px;
 
+    .invalid-state {
+        border: 1px solid ${Colors.RED} !important;
+        border-radius: 5px;
+    }
+
     .rbt {
         border-radius: 5px;
     }

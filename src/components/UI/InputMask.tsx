@@ -18,6 +18,11 @@ interface Props {
 }
 
 const Styles = styled.div`
+    .invalid-state {
+        border: 1px solid ${Colors.RED} !important;
+        border-radius: 5px;
+    }
+
     .error {
         margin-top: 4px;
         color: ${() => Colors.RED};

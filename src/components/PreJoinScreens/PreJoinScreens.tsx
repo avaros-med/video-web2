@@ -21,6 +21,8 @@ export default function PreJoinScreens() {
     const [step, setStep] = useState(Steps.roomNameStep)
 
     const [name, setName] = useState<string>(user?.displayName || '')
+    const [pin, setPin] = useState<string>('')
+    const [hasPin, setHasPin] = useState<boolean>(false)
     const [roomName, setRoomName] = useState<string>('')
 
     const [mediaError, setMediaError] = useState<Error>()
@@ -34,8 +36,9 @@ export default function PreJoinScreens() {
         }
         videoService
             .validateRoomExists(URLRoomName)
-            .then(exists => {
-                setRoomExists(exists)
+            .then(response => {
+                setRoomExists(response.roomExists)
+                setHasPin(response.hasPIN)
             })
             .catch(() => setRoomExists(false))
     }, [URLRoomName])
@@ -89,8 +92,11 @@ export default function PreJoinScreens() {
                     {step === Steps.roomNameStep && (
                         <RoomNameScreen
                             name={name}
+                            pin={pin}
+                            hasPin={hasPin}
                             roomName={roomName}
                             setName={setName}
+                            setPin={setPin}
                             handleSubmit={handleSubmit}
                         />
                     )}

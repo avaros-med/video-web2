@@ -20,7 +20,9 @@ const getAppointmentByRoomName = (roomName: string): Promise<Appointment> => {
     })
 }
 
-const validateRoomExists = (roomName: string): Promise<boolean> => {
+const validateRoomExists = (
+    roomName: string
+): Promise<ValidateRoomResponse> => {
     const url = `${BASE_URL}/room-exists/${roomName}`
 
     return new Promise((resolve, reject) => {
@@ -28,9 +30,29 @@ const validateRoomExists = (roomName: string): Promise<boolean> => {
             .get(url)
             .then((response: AxiosResponse) => {
                 if (response?.data) {
-                    resolve(response.data.roomExists)
+                    resolve({
+                        roomExists: !!response.data.roomExists,
+                        hasPIN: !!response.data.hasPIN,
+                    })
                 } else {
                     reject('Unable to validate room exists')
+                }
+            })
+            .catch((error: AxiosError) => reject(error))
+    })
+}
+
+const validatePin = (roomName: string, pin: string): Promise<boolean> => {
+    const url = `${BASE_URL}/room/${roomName}/lock/${pin}`
+
+    return new Promise((resolve, reject) => {
+        axios
+            .get(url)
+            .then((response: AxiosResponse) => {
+                if (response?.data) {
+                    resolve(!!response.data.pinValid)
+                } else {
+                    reject('Unable to validate pin')
                 }
             })
             .catch((error: AxiosError) => reject(error))
@@ -50,6 +72,11 @@ const removeParticipant = (
     return axios.post(url)
 }
 
+export interface ValidateRoomResponse {
+    hasPIN: boolean
+    roomExists: boolean
+}
+
 export interface LogPayload {
     clientName: string
     organizationID: string | null
@@ -65,6 +92,7 @@ export interface LogPayload {
 export const videoService = {
     getAppointmentByRoomName,
     validateRoomExists,
+    validatePin,
     removeParticipant,
     addLog,
 }

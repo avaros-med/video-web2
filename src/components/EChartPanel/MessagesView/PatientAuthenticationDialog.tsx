@@ -48,6 +48,7 @@ const Styles = styled.div`
 
     .invalid-state {
         border: 1px solid ${Colors.RED};
+        border-radius: 5px;
     }
 `
 

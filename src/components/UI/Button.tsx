@@ -23,7 +23,7 @@ interface Props {
     type?: 'button' | 'submit' | 'reset' | undefined
     disabled?: boolean
     isLoading?: boolean
-    onClick: () => void
+    onClick: (event: any) => void
 }
 
 const ButtonStyles = styled.button`

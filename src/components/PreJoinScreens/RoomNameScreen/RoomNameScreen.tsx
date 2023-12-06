@@ -1,11 +1,13 @@
 import { Spinner, SpinnerSize } from '@blueprintjs/core'
-import { Grid, InputLabel, makeStyles, Theme } from '@material-ui/core'
-import { FormEvent, useEffect } from 'react'
+import { Grid, InputLabel, Theme, makeStyles } from '@material-ui/core'
+import { FormEvent, useCallback, useEffect, useState } from 'react'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { videoService } from '../../../services/http/video.service'
 import { CurrentUser } from '../../../services/models/CurrentUser.model'
 import { AppLogoBlock } from '../../UI/AppLogoBlock'
 import { Button } from '../../UI/Button'
 import { Input } from '../../UI/Input'
+import { InputMask } from '../../UI/InputMask'
 import { FormInputStyles } from '../../UI/styles/FormStyles'
 import { AppointmentCard } from '../AppointmentCard'
 import { ProviderCard } from '../ProviderCard'
@@ -24,18 +26,28 @@ const useStyles = makeStyles((theme: Theme) => ({
 interface RoomNameScreenProps {
     name: string
     roomName: string
+    pin: string
+    hasPin: boolean
     setName: (name: string) => void
+    setPin: (pin: string) => void
     handleSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
 
 export default function RoomNameScreen({
     name,
     roomName,
+    pin,
+    hasPin,
     setName,
+    setPin,
     handleSubmit,
 }: RoomNameScreenProps) {
     const classes = useStyles()
     const { currentUser, appointment, isAppointmentLoading } = useVideoContext()
+    const [isPinValid, setIsPinValid] = useState<boolean | undefined>(
+        !hasPin ? true : undefined
+    )
+    useEffect(() => setIsPinValid(!hasPin ? true : undefined), [hasPin])
 
     // Auto-fill participant name from current user
     useEffect(() => {
@@ -45,10 +57,28 @@ export default function RoomNameScreen({
         setName(CurrentUser.getFullName(currentUser))
     }, [currentUser, setName])
 
+    const validatePin = useCallback(async () => {
+        if (!roomName) {
+            return
+        }
+
+        if (!pin) {
+            setIsPinValid(false)
+        }
+
+        let _isPinValid: boolean | undefined = undefined
+        try {
+            _isPinValid = await videoService.validatePin(roomName, pin)
+        } catch (error) {
+            console.error(error)
+        }
+        setIsPinValid(_isPinValid)
+    }, [roomName, pin])
+
     return (
         <>
             <FormInputStyles>
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={event => isPinValid && handleSubmit(event)}>
                     <AppLogoBlock classes="mb-4" />
                     {appointment && (
                         <>
@@ -67,6 +97,23 @@ export default function RoomNameScreen({
                     )}
 
                     <div className={`${classes.inputContainer} mb-4`}>
+                        {hasPin && (
+                            <div className="mb-3">
+                                <InputLabel shrink>PIN</InputLabel>
+                                <InputMask
+                                    mask="999999"
+                                    placeholder="PIN"
+                                    value={pin || ''}
+                                    onChange={value => setPin(value)}
+                                    onBlur={validatePin}
+                                    error={
+                                        isPinValid === false
+                                            ? 'Invalid PIN'
+                                            : undefined
+                                    }
+                                />
+                            </div>
+                        )}
                         <div className="mb-3">
                             <InputLabel shrink>Your Name</InputLabel>
                             <Input
@@ -81,7 +128,13 @@ export default function RoomNameScreen({
                             type="submit"
                             label="Continue"
                             disabled={!name || !roomName}
-                            onClick={() => {}}
+                            onClick={(event: any) => {
+                                if (!isPinValid) {
+                                    event.preventDefault()
+                                    event.stopPropagation()
+                                    setIsPinValid(false)
+                                }
+                            }}
                         />
                     </Grid>
                 </form>
