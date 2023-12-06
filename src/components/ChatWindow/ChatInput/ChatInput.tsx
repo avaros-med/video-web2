@@ -126,7 +126,7 @@ export default function ChatInput({
                             'There was a problem uploading the file. Please try again.'
                         )
                     }
-                    console.log('Problem sending file: ', e)
+                    console.error('Problem sending file: ', e)
                 })
                 .finally(() => {
                     setIsSendingFile(false)

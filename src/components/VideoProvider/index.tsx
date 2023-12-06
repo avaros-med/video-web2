@@ -77,7 +77,7 @@ export function VideoProvider({
 }: VideoProviderProps) {
     const onErrorCallback: ErrorCallback = useCallback(
         error => {
-            console.log(`ERROR: ${error.message}`, error)
+            console.error(`ERROR: ${error.message}`, error)
             onError(error)
         },
         [onError]
