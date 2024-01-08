@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 import { Appointment } from '../models/Appointment.model'
+import { utilsService } from '../utils.service'
 
 const BASE_URL = process.env.REACT_APP_VIDEO_BASE_URL
 
@@ -59,7 +60,27 @@ const validatePin = (roomName: string, pin: string): Promise<boolean> => {
     })
 }
 
-const addLog = (payload: LogPayload): Promise<void> => {
+const addLog = async (
+    appointment: Appointment,
+    isDoctor: boolean
+): Promise<void> => {
+    // @ts-ignore
+    const startAt = window.sessionStartedAt || appointment?.startAt
+    const endAt = new Date()
+    const ip = await utilsService.getIp()
+
+    const payload: LogPayload = {
+        clientName: appointment.clientName,
+        organizationID: appointment.clientName,
+        startAt: startAt.toISOString(),
+        endAt: endAt.toISOString(),
+        clinicalUserInformation: appointment.details.providerName,
+        clinicalUserLocation: isDoctor ? ip : null,
+        participantLocation: isDoctor ? null : ip,
+        providerID: appointment.providerID,
+        physicianFlag: isDoctor ? 'Doctor' : 'Other',
+    }
+
     const url = `${BASE_URL}/video-logger/`
     return axios.post(url, payload)
 }

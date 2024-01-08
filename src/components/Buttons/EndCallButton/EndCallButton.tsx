@@ -1,8 +1,7 @@
 import { useCallback } from 'react'
 import { useAvsSocketContext } from '../../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
-import { LogPayload, videoService } from '../../../services/http/video.service'
-import { utilsService } from '../../../services/utils.service'
+import { videoService } from '../../../services/http/video.service'
 import { useEChartContext } from '../../EChartPanel/useEChartContext'
 import { usePanelContext } from '../../Panel/usePanelContext'
 import { IconButton } from '../../UI/IconButton'
@@ -21,23 +20,7 @@ export default function EndCallButton(props: { className?: string }) {
         if (appointment) {
             try {
                 const isDoctor = !!currentUser
-                const ip = await utilsService.getIp()
-                // @ts-ignore
-                const startAt = window.sessionStartedAt || appointment?.startAt
-                const endAt = new Date()
-
-                const payload: LogPayload = {
-                    clientName: appointment.clientName,
-                    organizationID: appointment.clientName,
-                    startAt: startAt.toISOString(),
-                    endAt: endAt.toISOString(),
-                    clinicalUserInformation: appointment.details.providerName,
-                    clinicalUserLocation: isDoctor ? ip : null,
-                    participantLocation: isDoctor ? null : ip,
-                    providerID: appointment.providerID,
-                    physicianFlag: isDoctor ? 'Doctor' : 'Other',
-                }
-                await videoService.addLog(payload)
+                await videoService.addLog(appointment, isDoctor)
             } catch (error) {
                 console.error(error)
             }

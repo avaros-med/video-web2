@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { videoService } from '../../../services/http/video.service'
 import { Demographic } from '../../../services/models/Demographic.model'
 import { DemographicDocument } from '../../../services/models/DemographicDocument.model'
 import { SendAttachmentRequest } from '../../../services/ws/eventout'
@@ -18,7 +19,7 @@ const Styles = styled.div``
 
 export const SendProviderAttachment = ({ classes }: Props) => {
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
-    const { room } = useVideoContext()
+    const { room, appointment } = useVideoContext()
     const [showDialog, setShowDialog] = useState<boolean>(false)
     const { demographic } = useEChartContext().demographic
 
@@ -30,7 +31,7 @@ export const SendProviderAttachment = ({ classes }: Props) => {
     )
 
     const onSend = useCallback(
-        (demographicDocument: DemographicDocument) => {
+        async (demographicDocument: DemographicDocument) => {
             const eventout: SendAttachmentRequest = {
                 ID: +demographicDocument.id,
                 name: demographicDocument.title,
@@ -43,9 +44,19 @@ export const SendProviderAttachment = ({ classes }: Props) => {
             }
             socketService.dispatchEvent('SendAttachmentRequest', eventout)
 
+            // Add log
+            if (appointment) {
+                try {
+                    const isDoctor = true
+                    await videoService.addLog(appointment, isDoctor)
+                } catch (error) {
+                    console.error(error)
+                }
+            }
+
             setShowDialog(false)
         },
-        [URLRoomName, senderName, demographicName]
+        [URLRoomName, appointment, senderName, demographicName]
     )
 
     return (

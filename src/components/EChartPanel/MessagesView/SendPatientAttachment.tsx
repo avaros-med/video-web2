@@ -2,6 +2,7 @@ import { ChangeEvent, useCallback, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { videoService } from '../../../services/http/video.service'
 import { utilsService } from '../../../services/utils.service'
 import { SendAttachmentRequest } from '../../../services/ws/eventout'
 import { socketService } from '../../../services/ws/socket.service'
@@ -39,7 +40,7 @@ const Styles = styled.div`
 
 export const SendPatientAttachment = ({ classes }: Props) => {
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
-    const { room } = useVideoContext()
+    const { room, appointment } = useVideoContext()
     const [, setFile] = useState<File | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
@@ -73,8 +74,18 @@ export const SendPatientAttachment = ({ classes }: Props) => {
                 bytes: fileContent,
             }
             socketService.dispatchEvent('SendAttachmentRequest', eventout)
+
+            // Add log
+            if (appointment) {
+                try {
+                    const isDoctor = false
+                    await videoService.addLog(appointment, isDoctor)
+                } catch (error) {
+                    console.error(error)
+                }
+            }
         },
-        [URLRoomName, localParticipantName]
+        [appointment, URLRoomName, localParticipantName]
     )
 
     const onChangeHandler = useCallback(
