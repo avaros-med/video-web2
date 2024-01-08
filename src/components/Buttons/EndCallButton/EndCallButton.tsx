@@ -22,11 +22,15 @@ export default function EndCallButton(props: { className?: string }) {
             try {
                 const isDoctor = !!currentUser
                 const ip = await utilsService.getIp()
+                // @ts-ignore
+                const startAt = window.sessionStartedAt || appointment?.startAt
+                const endAt = new Date()
+
                 const payload: LogPayload = {
                     clientName: appointment.clientName,
                     organizationID: appointment.clientName,
-                    startAt: appointment.startAt.toISOString(),
-                    endAt: appointment.endAt.toISOString(),
+                    startAt: startAt.toISOString(),
+                    endAt: endAt.toISOString(),
                     clinicalUserInformation: appointment.details.providerName,
                     clinicalUserLocation: isDoctor ? ip : null,
                     participantLocation: isDoctor ? null : ip,

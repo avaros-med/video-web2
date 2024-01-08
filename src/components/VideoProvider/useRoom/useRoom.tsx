@@ -51,6 +51,9 @@ export default function useRoom(
                     // @ts-ignore
                     window.twilioRoom = newRoom
 
+                    // @ts-ignore
+                    window.sessionStartedAt = new Date() // Keep track of when the video session started for logging purposes
+
                     newRoom.localParticipant.videoTracks.forEach(publication =>
                         // All video tracks are published with 'low' priority because the video track
                         // that is displayed in the 'MainParticipant' component will have it's priority
