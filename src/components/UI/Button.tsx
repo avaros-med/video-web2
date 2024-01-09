@@ -7,6 +7,7 @@ export type ButtonIntent =
     | 'primary-fade'
     | 'secondary'
     | 'hint'
+    | 'danger'
     | 'text-primary'
     | 'text-secondary'
     | 'text-white'
@@ -109,6 +110,11 @@ const ButtonStyles = styled.button`
         &:hover {
             background: #efecec;
         }
+    }
+
+    &.danger {
+        background: ${Colors.RED};
+        color: white;
     }
 
     &[disabled] {

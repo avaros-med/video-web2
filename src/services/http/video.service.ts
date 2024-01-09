@@ -62,7 +62,9 @@ const validatePin = (roomName: string, pin: string): Promise<boolean> => {
 
 const addLog = async (
     appointment: Appointment,
-    isDoctor: boolean
+    isDoctor: boolean,
+    eventId: number,
+    eventDetails: string
 ): Promise<void> => {
     // @ts-ignore
     const startAt = window.sessionStartedAt || appointment?.startAt
@@ -70,6 +72,8 @@ const addLog = async (
     const ip = await utilsService.getIp()
 
     const payload: LogPayload = {
+        eventId,
+        eventDetails,
         clientName: appointment.clientName,
         organizationID: appointment.clientName,
         startAt: startAt.toISOString(),
@@ -99,6 +103,8 @@ export interface ValidateRoomResponse {
 }
 
 export interface LogPayload {
+    eventId: number
+    eventDetails: string
     clientName: string
     organizationID: string | null
     startAt: string

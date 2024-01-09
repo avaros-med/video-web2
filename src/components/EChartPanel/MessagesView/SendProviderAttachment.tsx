@@ -48,7 +48,15 @@ export const SendProviderAttachment = ({ classes }: Props) => {
             if (appointment) {
                 try {
                     const isDoctor = true
-                    await videoService.addLog(appointment, isDoctor)
+                    const eventId = appointment.roomID
+                    const eventDetails = `${senderName} sent file: ${demographicDocument.title}`
+
+                    await videoService.addLog(
+                        appointment,
+                        isDoctor,
+                        eventId,
+                        eventDetails
+                    )
                 } catch (error) {
                     console.error(error)
                 }
