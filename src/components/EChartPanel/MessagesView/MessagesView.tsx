@@ -17,6 +17,11 @@ const Styles = styled.div`
 
 export const MessagesView = () => {
     const { hasNetworkError } = useAvsSocketContext().networkError
+    const { isChatDisabled } = useAvsSocketContext()
+
+    if (isChatDisabled) {
+        return <DisabledState />
+    }
 
     return (
         <Styles>
@@ -47,6 +52,16 @@ const ErrorStateStyles = styled.div`
         display: block;
     }
 `
+
+const DisabledState = () => {
+    return (
+        <ErrorStateStyles>
+            <TextHintStyles className="text-center w-75">
+                Chat is disabled for this video visit
+            </TextHintStyles>
+        </ErrorStateStyles>
+    )
+}
 
 const ErrorState = () => {
     return (

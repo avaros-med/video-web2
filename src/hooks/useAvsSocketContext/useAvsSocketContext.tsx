@@ -17,6 +17,7 @@ import { AttachmentMessage, Message } from '../../services/models/Message.model'
 import { utilsService } from '../../services/utils.service'
 import {
     AuthenticateAttachment,
+    BlockChat,
     SendAttachment,
 } from '../../services/ws/eventout'
 import { BaseEvent, socketService } from '../../services/ws/socket.service'
@@ -28,6 +29,8 @@ interface ContextState {
         hasNetworkError: boolean
         onNetworkError: () => void
     }
+    isChatDisabled: boolean
+    disableChat: () => void
     socketEventHandler: (event: BaseEvent) => void
 }
 
@@ -35,6 +38,8 @@ const initialState: ContextState = {
     messages: {} as any,
     networkError: {} as any,
     socketEventHandler: {} as any,
+    isChatDisabled: process.env.REACT_APP_CHAT_DISABLED_BY_DEFAULT === 'true',
+    disableChat: () => {},
 }
 
 const LocalStateContext = createContext<ContextState>(initialState)
@@ -55,6 +60,9 @@ export function AvsSocketContextProvider({ children }: any) {
         authenticateDemographicDocument,
     } = useHttpDemographic()
     const { demographic } = useEChartContext().demographic
+    const [isChatDisabled, setisChatDisabled] = useState<boolean>(
+        initialState.isChatDisabled
+    )
     const [hasNetworkError, setHasNetworkError] = useState<boolean>(false)
 
     const localParticipantName = useMemo(
@@ -222,6 +230,11 @@ export function AvsSocketContextProvider({ children }: any) {
                     }
                     break
                 }
+
+                case 'BlockChat': {
+                    setisChatDisabled(true)
+                    break
+                }
             }
         },
         [
@@ -232,6 +245,13 @@ export function AvsSocketContextProvider({ children }: any) {
             sendAttachmentHandler,
         ]
     )
+
+    const onDisableChat = useCallback(() => {
+        const eventout: BlockChat = {
+            roomName: URLRoomName!,
+        }
+        socketService.dispatchEvent('BlockChat', eventout)
+    }, [URLRoomName])
 
     const onNetworkError = useCallback(() => {
         setHasNetworkError(true)
@@ -249,6 +269,8 @@ export function AvsSocketContextProvider({ children }: any) {
                 },
                 networkError: { hasNetworkError, onNetworkError },
                 socketEventHandler,
+                isChatDisabled,
+                disableChat: onDisableChat,
             }}
         >
             {children}

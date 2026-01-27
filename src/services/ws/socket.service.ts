@@ -132,6 +132,7 @@ type BaseEventType =
     | 'SendAttachmentRequest'
     | 'AuthenticateAttachment'
     | 'SendAttachment'
+    | 'BlockChat'
 
 const getRandomNumber = (min: number, max: number) => {
     return Math.random() * (max - min) + min

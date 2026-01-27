@@ -35,3 +35,7 @@ export class SendAttachment {
     senderName!: string
     roomName!: string
 }
+
+export class BlockChat {
+    roomName!: string
+}
