@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import Colors from '../../../colors'
-import { useAvsSocketContext } from '../../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import { utilsService } from '../../../services/utils.service'
 import { SendMessage } from '../../../services/ws/eventout'
@@ -32,7 +31,6 @@ const Styles = styled.div`
 export const MessageComposer = () => {
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
     const { room, currentUser } = useVideoContext()
-    const { disableChat } = useAvsSocketContext()
     const [message, setMessage] = useState<string>('')
 
     const senderName = room!.localParticipant.identity
@@ -80,15 +78,6 @@ export const MessageComposer = () => {
                     <SendPatientAttachment classes="ml-3" />
                 )}
             </Grid>
-            {currentUser && (
-                <Grid className="mt-2" container justifyContent="flex-end">
-                    <Button
-                        intent="text-hint"
-                        label="Disable Chat"
-                        onClick={disableChat}
-                    />
-                </Grid>
-            )}
         </Styles>
     )
 }
