@@ -1,4 +1,9 @@
 import {
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
     Menu as MenuContainer,
     MenuItem,
     styled,
@@ -9,8 +14,11 @@ import {
 import { useRef, useState } from 'react'
 import AboutDialog from '../../AboutDialog/AboutDialog'
 import DeviceSelectionDialog from '../../DeviceSelectionDialog/DeviceSelectionDialog'
+import { Button } from '../../UI/Button'
 
+import { useAvsSocketContext } from '../../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useFlipCameraToggle from '../../../hooks/useFlipCameraToggle/useFlipCameraToggle'
+import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import { useAppState } from '../../../state'
 import { usePanelContext } from '../../Panel/usePanelContext'
 import { IconButton } from '../../UI/IconButton'
@@ -34,7 +42,10 @@ export default function Menu(props: { buttonClassName?: string }) {
     const [aboutOpen, setAboutOpen] = useState(false)
     const [menuOpen, setMenuOpen] = useState(false)
     const [settingsOpen, setSettingsOpen] = useState(false)
+    const [disableChatConfirmOpen, setDisableChatConfirmOpen] = useState(false)
 
+    const { currentUser } = useVideoContext()
+    const { disableChat } = useAvsSocketContext()
     const { setIsGalleryViewActive, isGalleryViewActive } = useAppState()
     const { showJoiningInfo, showMediaDevices } = usePanelContext().panel
 
@@ -191,6 +202,22 @@ export default function Menu(props: { buttonClassName?: string }) {
                     </Typography>
                 </MenuItem>
 
+                {currentUser && (
+                    <MenuItem
+                        onClick={() => {
+                            setMenuOpen(false)
+                            setDisableChatConfirmOpen(true)
+                        }}
+                    >
+                        <IconContainer>
+                            <i className="material-icons">speaker_notes_off</i>
+                        </IconContainer>
+                        <Typography variant="body1">
+                            <FontWeightBold>Disable Chat</FontWeightBold>
+                        </Typography>
+                    </MenuItem>
+                )}
+
                 {/* About */}
                 {/* <MenuItem onClick={() => setAboutOpen(true)}>
                     <IconContainer>
@@ -217,6 +244,35 @@ export default function Menu(props: { buttonClassName?: string }) {
                     setMenuOpen(false)
                 }}
             />
+            <Dialog
+                open={disableChatConfirmOpen}
+                onClose={() => setDisableChatConfirmOpen(false)}
+                fullWidth
+                maxWidth="xs"
+            >
+                <DialogTitle>Disable chat?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Participants will no longer be able to send messages.
+                        Continue?
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        intent="text-hint"
+                        label="Cancel"
+                        onClick={() => setDisableChatConfirmOpen(false)}
+                    />
+                    <Button
+                        intent="danger"
+                        label="Disable"
+                        onClick={() => {
+                            disableChat()
+                            setDisableChatConfirmOpen(false)
+                        }}
+                    />
+                </DialogActions>
+            </Dialog>
         </>
     )
 }
