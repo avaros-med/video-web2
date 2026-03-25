@@ -11,7 +11,10 @@ export const ErrorScreens = () => {
         <Styles>
             <AppLogoBlock classes="mb-4" />
             <Typography variant="button">Whoops!</Typography>
-            <Typography variant="body1">An error has occurred</Typography>
+            <Typography variant="body1">
+                The video service is currently unavailable. Please contact your
+                clinic.
+            </Typography>
         </Styles>
     )
 }
