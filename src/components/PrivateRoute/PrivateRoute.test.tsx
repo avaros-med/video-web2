@@ -14,7 +14,7 @@ describe('the PrivateRoute component', () => {
     describe('with auth enabled', () => {
         describe('when isAuthReady is true', () => {
             it('should redirect to /login when there is no user', () => {
-                process.env.REACT_APP_SET_AUTH = 'firebase'
+                process.env.REACT_APP_SET_AUTH = 'passcode'
                 mockUseAppState.mockImplementation(() => ({
                     user: false,
                     isAuthReady: true,
@@ -32,7 +32,7 @@ describe('the PrivateRoute component', () => {
             })
 
             it('should render children when there is a user', () => {
-                process.env.REACT_APP_SET_AUTH = 'firebase'
+                process.env.REACT_APP_SET_AUTH = 'passcode'
                 mockUseAppState.mockImplementation(() => ({
                     user: {},
                     isAuthReady: true,
@@ -52,7 +52,7 @@ describe('the PrivateRoute component', () => {
 
         describe('when isAuthReady is false', () => {
             it('should not render children', () => {
-                process.env.REACT_APP_SET_AUTH = 'firebase'
+                process.env.REACT_APP_SET_AUTH = 'passcode'
                 mockUseAppState.mockImplementation(() => ({
                     user: false,
                     isAuthReady: false,

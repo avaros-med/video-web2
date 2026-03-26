@@ -2,12 +2,8 @@ import React from 'react'
 import { act, renderHook } from '@testing-library/react-hooks'
 
 import AppStateProvider, { useAppState } from './index'
-import useFirebaseAuth from './useFirebaseAuth/useFirebaseAuth'
 import usePasscodeAuth from './usePasscodeAuth/usePasscodeAuth'
 
-jest.mock('./useFirebaseAuth/useFirebaseAuth', () =>
-    jest.fn(() => ({ user: 'firebaseUser' }))
-)
 jest.mock('./usePasscodeAuth/usePasscodeAuth', () =>
     jest.fn(() => ({ user: 'passcodeUser' }))
 )
@@ -70,20 +66,10 @@ describe('the useAppState hook', () => {
     })
 
     describe('with auth disabled', () => {
-        it('should not use any auth hooks', async () => {
+        it('should not use the passcode auth hook', async () => {
             delete process.env.REACT_APP_SET_AUTH
             renderHook(useAppState, { wrapper })
-            expect(useFirebaseAuth).not.toHaveBeenCalled()
             expect(usePasscodeAuth).not.toHaveBeenCalled()
-        })
-    })
-
-    describe('with firebase auth enabled', () => {
-        it('should use the useFirebaseAuth hook', async () => {
-            process.env.REACT_APP_SET_AUTH = 'firebase'
-            const { result } = renderHook(useAppState, { wrapper })
-            expect(useFirebaseAuth).toHaveBeenCalled()
-            expect(result.current.user).toBe('firebaseUser')
         })
     })
 
