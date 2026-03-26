@@ -1,5 +1,5 @@
 import React from 'react'
-import { mount, shallow } from 'enzyme'
+import { shallow } from 'enzyme'
 import useScreenShareParticipant from '../../../hooks/useScreenShareParticipant/useScreenShareParticipant'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 
@@ -8,8 +8,7 @@ import ToggleScreenShareButton, {
     SHARE_IN_PROGRESS_TEXT,
     SHARE_NOT_SUPPORTED_TEXT,
 } from './ToggleScreenShareButton'
-import ScreenShareIcon from '../../../icons/ScreenShareIcon'
-import { Button, Tooltip } from '@material-ui/core'
+import { IconButton } from '../../UI/IconButton'
 
 jest.mock('../../../hooks/useScreenShareParticipant/useScreenShareParticipant')
 jest.mock('../../../hooks/useVideoContext/useVideoContext')
@@ -33,33 +32,37 @@ Object.defineProperty(navigator, 'mediaDevices', {
 
 describe('the ToggleScreenShareButton component', () => {
     it('should render correctly when screenSharing is allowed', () => {
-        const wrapper = mount(<ToggleScreenShareButton />)
-        expect(wrapper.find(ScreenShareIcon).exists()).toBe(true)
-        expect(wrapper.text()).toBe(SCREEN_SHARE_TEXT)
+        mockUseScreenShareParticipant.mockImplementationOnce(() => undefined)
+        const wrapper = shallow(<ToggleScreenShareButton />)
+        expect(wrapper.find(IconButton).exists()).toBe(true)
+        expect(wrapper.find(IconButton).prop('disabled')).toBeFalsy()
     })
 
     it('should render correctly when another user is sharing their screen', () => {
         mockUseScreenShareParticipant.mockImplementationOnce(
             () => 'mockParticipant'
         )
-        const wrapper = mount(<ToggleScreenShareButton />)
-        expect(wrapper.find(Button).prop('disabled')).toBe(true)
-        expect(wrapper.find(Tooltip).prop('title')).toBe(SHARE_IN_PROGRESS_TEXT)
+        const wrapper = shallow(<ToggleScreenShareButton />)
+        expect(wrapper.find(IconButton).prop('disabled')).toBe(true)
+        expect(wrapper.find(IconButton).prop('tooltipContent')).toBe(
+            SHARE_IN_PROGRESS_TEXT
+        )
     })
 
     it('should call the correct toggle function when clicked', () => {
         const wrapper = shallow(<ToggleScreenShareButton />)
-        wrapper.find(Button).simulate('click')
+        wrapper.find(IconButton).simulate('click')
         expect(mockToggleScreenShare).toHaveBeenCalled()
     })
 
     it('should render the screenshare button with the correct messaging if screensharing is not supported', () => {
         Object.defineProperty(navigator, 'mediaDevices', {
             value: { getDisplayMedia: undefined },
+            configurable: true,
         })
-        const wrapper = mount(<ToggleScreenShareButton />)
-        expect(wrapper.find(Button).prop('disabled')).toBe(true)
-        expect(wrapper.find(Tooltip).prop('title')).toBe(
+        const wrapper = shallow(<ToggleScreenShareButton />)
+        expect(wrapper.find(IconButton).prop('disabled')).toBe(true)
+        expect(wrapper.find(IconButton).prop('tooltipContent')).toBe(
             SHARE_NOT_SUPPORTED_TEXT
         )
     })

@@ -1,5 +1,4 @@
 import React from 'react'
-import AvatarIcon from '../../icons/AvatarIcon'
 import ParticipantInfo from './ParticipantInfo'
 import PinIcon from './PinIcon/PinIcon'
 import { shallow } from 'enzyme'
@@ -8,6 +7,8 @@ import useIsTrackSwitchedOff from '../../hooks/useIsTrackSwitchedOff/useIsTrackS
 import useParticipantIsReconnecting from '../../hooks/useParticipantIsReconnecting/useParticipantIsReconnecting'
 import usePublications from '../../hooks/usePublications/usePublications'
 import ScreenShareIcon from '../../icons/ScreenShareIcon'
+import { Avatar } from '../UI/Avatar'
+import { ParticipantInfoMenu } from './ParticipantInfoMenu'
 
 jest.mock('../../state')
 jest.mock(
@@ -19,6 +20,15 @@ jest.mock('../../hooks/useIsTrackSwitchedOff/useIsTrackSwitchedOff')
 jest.mock(
     '../../hooks/useParticipantIsReconnecting/useParticipantIsReconnecting'
 )
+jest.mock('../../hooks/useTrack/useTrack', () => () => null)
+jest.mock('./useAudioVolume', () => ({
+    useAudioVolume: jest.fn(() => ({ volume: 0 })),
+}))
+jest.mock('./ParticipantInfoMenu', () => ({
+    ParticipantInfoMenu: ({ children }: { children: React.ReactNode }) => (
+        <>{children}</>
+    ),
+}))
 
 const mockUseAppState = useAppState as jest.Mock<any>
 const mockUsePublications = usePublications as jest.Mock<any>
@@ -41,7 +51,7 @@ describe('the ParticipantInfo component', () => {
                 mock children
             </ParticipantInfo>
         )
-        expect(wrapper.find(AvatarIcon).exists()).toBe(true)
+        expect(wrapper.find(Avatar).exists()).toBe(true)
     })
 
     it('should not display the AvatarIcon component when a video track is published', () => {
@@ -57,7 +67,7 @@ describe('the ParticipantInfo component', () => {
                 mock children
             </ParticipantInfo>
         )
-        expect(wrapper.find(AvatarIcon).exists()).toBe(false)
+        expect(wrapper.find(Avatar).exists()).toBe(false)
     })
 
     it('should render the AvatarIcon component when the video track is switchedOff', () => {
@@ -74,7 +84,7 @@ describe('the ParticipantInfo component', () => {
                 mock children
             </ParticipantInfo>
         )
-        expect(wrapper.find(AvatarIcon).exists()).toBe(true)
+        expect(wrapper.find(Avatar).exists()).toBe(true)
     })
 
     it('should not render the reconnecting UI when the user is connected', () => {
@@ -243,7 +253,12 @@ describe('the ParticipantInfo component', () => {
                 mock children
             </ParticipantInfo>
         )
-        expect(wrapper.text()).toContain('mockIdentity (You)')
+        expect(
+            wrapper
+                .find(ParticipantInfoMenu)
+                .dive()
+                .text()
+        ).toContain('mockIdentity (You)')
     })
 
     it('should not add "(You)" to the participants identity when they are the localParticipant', () => {
@@ -260,6 +275,11 @@ describe('the ParticipantInfo component', () => {
                 mock children
             </ParticipantInfo>
         )
-        expect(wrapper.text()).not.toContain('mockIdentity (You)')
+        expect(
+            wrapper
+                .find(ParticipantInfoMenu)
+                .dive()
+                .text()
+        ).not.toContain('mockIdentity (You)')
     })
 })

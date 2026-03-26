@@ -32,6 +32,17 @@ jest.mock('./useHandleTrackPublicationFailed/useHandleTrackPublicationFailed')
 jest.mock(
     './useRestartAudioTrackOnDeviceChange/useRestartAudioTrackOnDeviceChange'
 )
+jest.mock('react-router-dom', () => ({ useParams: jest.fn(() => ({})) }))
+jest.mock('../../hooks/useCurrentUser', () => ({
+    useCurrentUser: jest.fn(() => ({ currentUser: null })),
+}))
+jest.mock('../../hooks/useHttpAppointment', () => ({
+    useHttpAppointment: jest.fn(() => ({
+        appointment: null,
+        isLoading: false,
+        getAppointmentByRoomName: jest.fn(),
+    })),
+}))
 jest.mock('@twilio/video-processors', () => {
     return {
         GaussianBlurBackgroundProcessor: jest.fn().mockImplementation(() => {
