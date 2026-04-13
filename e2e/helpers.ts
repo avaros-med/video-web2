@@ -114,7 +114,5 @@ export async function assertParticipantVisible(page: Page, identity: string) {
 }
 
 export async function assertErrorScreen(page: Page) {
-    await expect(
-        page.locator('text=room').or(page.locator('text=Room')).or(page.locator('text=Invalid'))
-    ).toBeVisible()
+    await expect(page.getByText('Whoops!', { exact: true })).toBeVisible()
 }

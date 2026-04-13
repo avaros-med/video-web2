@@ -43,6 +43,64 @@ export const TEST_ROOM = 'e2e-test-room'
 
 export const TWILIO_MOCK_SCRIPT = `
 (function() {
+    // ── navigator.mediaDevices mock ───────────────────────────────────────────
+    // Headless Chromium in WSL2 has no physical camera/mic, so getUserMedia
+    // and enumerateDevices fail. Mock them to return silent fake tracks so
+    // the DeviceSelectionScreen pre-join step renders normally.
+    function makeFakeMediaStreamTrack(kind) {
+        return {
+            kind, id: 'fake-' + kind + '-' + Math.random().toString(36).slice(2),
+            enabled: true, muted: false, readyState: 'live',
+            label: kind === 'audio' ? 'Fake Microphone' : 'Fake Camera',
+            stop() { this.readyState = 'ended'; },
+            clone() { return makeFakeMediaStreamTrack(kind); },
+            getSettings()     { return { deviceId: 'fake-' + kind, groupId: 'fake-group', width: 640, height: 480, frameRate: 30 }; },
+            getCapabilities() { return {}; },
+            getConstraints()  { return {}; },
+            applyConstraints() { return Promise.resolve(); },
+            addEventListener() {},
+            removeEventListener() {},
+            dispatchEvent() { return true; },
+        };
+    }
+    function makeFakeMediaStream(kinds) {
+        const tracks = kinds.map(makeFakeMediaStreamTrack);
+        return {
+            id: 'fake-stream-' + Math.random().toString(36).slice(2),
+            active: true,
+            getTracks()      { return tracks; },
+            getAudioTracks() { return tracks.filter(t => t.kind === 'audio'); },
+            getVideoTracks() { return tracks.filter(t => t.kind === 'video'); },
+            getTrackById(id) { return tracks.find(t => t.id === id) || null; },
+            addTrack() {},
+            removeTrack() {},
+            clone() { return makeFakeMediaStream(kinds); },
+            addEventListener() {},
+            removeEventListener() {},
+        };
+    }
+    const fakeDevices = [
+        { deviceId: 'fake-audioinput',  kind: 'audioinput',  label: 'Fake Microphone', groupId: 'fake-group' },
+        { deviceId: 'fake-videoinput',  kind: 'videoinput',  label: 'Fake Camera',      groupId: 'fake-group' },
+        { deviceId: 'fake-audiooutput', kind: 'audiooutput', label: 'Fake Speaker',     groupId: 'fake-group' },
+    ];
+    if (!navigator.mediaDevices) {
+        Object.defineProperty(navigator, 'mediaDevices', { value: {}, writable: true, configurable: true });
+    }
+    navigator.mediaDevices.getUserMedia    = (constraints) => {
+        const kinds = [];
+        if (constraints && constraints.audio) kinds.push('audio');
+        if (constraints && constraints.video) kinds.push('video');
+        return Promise.resolve(makeFakeMediaStream(kinds.length ? kinds : ['audio', 'video']));
+    };
+    navigator.mediaDevices.enumerateDevices = () => Promise.resolve(fakeDevices);
+    navigator.mediaDevices.getDisplayMedia  = () => Promise.resolve(makeFakeMediaStream(['video']));
+    if (typeof navigator.mediaDevices.addEventListener !== 'function') {
+        navigator.mediaDevices.addEventListener    = () => {};
+        navigator.mediaDevices.removeEventListener = () => {};
+        navigator.mediaDevices.dispatchEvent       = () => true;
+    }
+
     class MockEmitter {
         constructor() { this._listeners = {}; }
         on(event, fn) {
