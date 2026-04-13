@@ -35,26 +35,7 @@ test('screen share button is visible in the room footer on desktop', async ({ mo
 // ── Start screen sharing ──────────────────────────────────────────────────────
 
 test('clicking screen share button triggers getDisplayMedia', async ({ mockedPage: page }) => {
-    // Mock getDisplayMedia to return a fake stream
-    await page.addInitScript(() => {
-        const fakeTrack = {
-            kind: 'video',
-            enabled: true,
-            stop: () => {},
-            addEventListener: () => {},
-            removeEventListener: () => {},
-            dispatchEvent: () => true,
-        }
-        const fakeStream = {
-            getTracks: () => [fakeTrack],
-            getVideoTracks: () => [fakeTrack],
-            getAudioTracks: () => [],
-        }
-        if (navigator.mediaDevices) {
-            (navigator.mediaDevices as any).getDisplayMedia = () => Promise.resolve(fakeStream)
-        }
-    })
-
+    // getDisplayMedia is already mocked by TWILIO_MOCK_SCRIPT in fixtures.ts
     await enterRoom(page)
 
     // Find and click the screen share icon button
@@ -72,24 +53,7 @@ test('clicking screen share button triggers getDisplayMedia', async ({ mockedPag
 // ── Stop screen sharing ───────────────────────────────────────────────────────
 
 test('"Stop Sharing" button stops screen share and removes banner', async ({ mockedPage: page }) => {
-    await page.addInitScript(() => {
-        const fakeTrack = {
-            kind: 'video', enabled: true,
-            stop: () => {},
-            addEventListener: () => {},
-            removeEventListener: () => {},
-            dispatchEvent: () => true,
-        }
-        const fakeStream = {
-            getTracks: () => [fakeTrack],
-            getVideoTracks: () => [fakeTrack],
-            getAudioTracks: () => [],
-        }
-        if (navigator.mediaDevices) {
-            (navigator.mediaDevices as any).getDisplayMedia = () => Promise.resolve(fakeStream)
-        }
-    })
-
+    // getDisplayMedia is already mocked by TWILIO_MOCK_SCRIPT in fixtures.ts
     await enterRoom(page)
 
     // Start sharing
