@@ -126,7 +126,7 @@ export const backgroundConfig = {
     images,
 }
 
-const virtualBackgroundAssets = '/virtualbackground'
+const virtualBackgroundAssets = `${process.env.PUBLIC_URL}/virtualbackground`
 let blurProcessor: GaussianBlurBackgroundProcessor
 let virtualBackgroundProcessor: VirtualBackgroundProcessor
 
