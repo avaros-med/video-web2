@@ -123,7 +123,7 @@ const dispatchEvent = (type: BaseEventType, eventout: any) => {
         return
     }
 
-    const url = `${VIDEO_BASE_URL}/room/${currentRoomId}/${pathSegment}/`
+    const url = `${VIDEO_BASE_URL}/video-appointment/${currentRoomId}/${pathSegment}/`
     fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
