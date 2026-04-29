@@ -84,18 +84,18 @@ export default async function globalSetup() {
 
         // Ensure the base test room exists (no PIN)
         await conn.execute(
-            `INSERT INTO video_room (name, client_name, provider_id, pin)
-             VALUES (?, 'emr', ?, NULL)
-             ON DUPLICATE KEY UPDATE client_name='emr', provider_id=?, pin=NULL`,
+            `INSERT INTO video_room (name, provider_id, pin)
+             VALUES (?, ?, NULL)
+             ON DUPLICATE KEY UPDATE provider_id=?, pin=NULL`,
             [TEST_ROOM, TEST_PROVIDER_ID, TEST_PROVIDER_ID]
         )
         console.log(`[video global-setup] Ensured video_room '${TEST_ROOM}' exists`)
 
         // Ensure a PIN-protected room exists (used by pin-flow tests)
         await conn.execute(
-            `INSERT INTO video_room (name, client_name, provider_id, pin)
-             VALUES (?, 'emr', ?, '1234')
-             ON DUPLICATE KEY UPDATE client_name='emr', provider_id=?, pin='1234'`,
+            `INSERT INTO video_room (name, provider_id, pin)
+             VALUES (?, ?, '1234')
+             ON DUPLICATE KEY UPDATE provider_id=?, pin='1234'`,
             [TEST_ROOM_PIN, TEST_PROVIDER_ID, TEST_PROVIDER_ID]
         )
         console.log(`[video global-setup] Ensured video_room '${TEST_ROOM_PIN}' exists (PIN=1234)`)
