@@ -34,3 +34,4 @@ junit.xml
 serviceAccountKey.json
 
 public/virtualbackground/
+test-results/

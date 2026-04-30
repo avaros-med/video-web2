@@ -1,11 +1,9 @@
 import React from 'react'
 import { shallow } from 'enzyme'
 import useLocalAudioToggle from '../../../hooks/useLocalAudioToggle/useLocalAudioToggle'
-
-import MicIcon from '../../../icons/MicIcon'
-import MicOffIcon from '../../../icons/MicOffIcon'
 import ToggleAudioButton from './ToggleAudioButton'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { IconButton } from '../../UI/IconButton'
 
 jest.mock('../../../hooks/useLocalAudioToggle/useLocalAudioToggle')
 jest.mock('../../../hooks/useVideoContext/useVideoContext')
@@ -22,15 +20,13 @@ describe('the ToggleAudioButton component', () => {
     it('should render correctly when audio is enabled', () => {
         mockUseLocalAudioToggle.mockImplementation(() => [true, () => {}])
         const wrapper = shallow(<ToggleAudioButton />)
-        expect(wrapper.prop('startIcon')).toEqual(<MicIcon />)
-        expect(wrapper.text()).toBe('Mute')
+        expect(wrapper.find(IconButton).prop('icon')).toBe('mic')
     })
 
     it('should render correctly when audio is disabled', () => {
         mockUseLocalAudioToggle.mockImplementation(() => [false, () => {}])
         const wrapper = shallow(<ToggleAudioButton />)
-        expect(wrapper.prop('startIcon')).toEqual(<MicOffIcon />)
-        expect(wrapper.text()).toBe('Unmute')
+        expect(wrapper.find(IconButton).prop('icon')).toBe('mic_off')
     })
 
     it('should render correctly when there are no audio tracks', () => {
@@ -39,16 +35,14 @@ describe('the ToggleAudioButton component', () => {
             localTracks: [{ kind: 'video' }],
         }))
         const wrapper = shallow(<ToggleAudioButton />)
-        expect(wrapper.prop('startIcon')).toEqual(<MicIcon />)
-        expect(wrapper.text()).toBe('No Audio')
-        expect(wrapper.prop('disabled')).toEqual(true)
+        expect(wrapper.find(IconButton).prop('disabled')).toEqual(true)
     })
 
     it('should call the correct toggle function when clicked', () => {
         const mockFn = jest.fn()
         mockUseLocalAudioToggle.mockImplementation(() => [false, mockFn])
         const wrapper = shallow(<ToggleAudioButton />)
-        wrapper.simulate('click')
+        wrapper.find(IconButton).simulate('click')
         expect(mockFn).toHaveBeenCalled()
     })
 })

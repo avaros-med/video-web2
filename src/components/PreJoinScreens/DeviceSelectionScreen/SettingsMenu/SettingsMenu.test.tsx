@@ -29,34 +29,24 @@ describe('the SettingsMenu component', () => {
             expect(wrapper.find(MenuContainer).prop('open')).toBe(true)
         })
 
-        it('should open the AboutDialog when the About button is clicked', () => {
-            const wrapper = shallow(<Menu />)
-            expect(wrapper.find(AboutDialog).prop('open')).toBe(false)
-            wrapper
-                .find(MenuItem)
-                .at(0)
-                .simulate('click')
-            expect(wrapper.find(AboutDialog).prop('open')).toBe(true)
-        })
-
-        it('should open the DeviceSelectionDialog when the Settings button is clicked', () => {
+        it('should open the DeviceSelectionDialog when the Media Devices button is clicked', () => {
             const wrapper = shallow(<Menu />)
             expect(wrapper.find(DeviceSelectionDialog).prop('open')).toBe(false)
             wrapper
                 .find(MenuItem)
-                .at(1)
+                .at(0)
                 .simulate('click')
             expect(wrapper.find(DeviceSelectionDialog).prop('open')).toBe(true)
         })
 
-        it('should open the ConnectionOptionsDialog when the Settings button is clicked', () => {
+        it('should open the ConnectionOptionsDialog when the Connection Settings button is clicked', () => {
             const wrapper = shallow(<Menu />)
             expect(wrapper.find(ConnectionOptionsDialog).prop('open')).toBe(
                 false
             )
             wrapper
                 .find(MenuItem)
-                .at(2)
+                .at(1)
                 .simulate('click')
             expect(wrapper.find(ConnectionOptionsDialog).prop('open')).toBe(
                 true

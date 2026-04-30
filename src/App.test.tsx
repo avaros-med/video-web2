@@ -1,6 +1,6 @@
 import React from 'react'
 import App from './App'
-import MenuBar from './components/MenuBar/MenuBar'
+import MenuBar2 from './components/MenuBar/MenuBar2'
 import PreJoinScreens from './components/PreJoinScreens/PreJoinScreens'
 import Room from './components/Room/Room'
 import { shallow } from 'enzyme'
@@ -31,7 +31,7 @@ describe('the App component', () => {
 
         expect(wrapper.find(PreJoinScreens).exists()).toBe(true)
         expect(wrapper.find(Room).exists()).toBe(false)
-        expect(wrapper.find(MenuBar).exists()).toBe(false)
+        expect(wrapper.find(MenuBar2).exists()).toBe(false)
     })
 
     it('should render correctly when connected (or reconnecting) to a room', () => {
@@ -40,7 +40,7 @@ describe('the App component', () => {
 
         expect(wrapper.find(PreJoinScreens).exists()).toBe(false)
         expect(wrapper.find(Room).exists()).toBe(true)
-        expect(wrapper.find(MenuBar).exists()).toBe(true)
+        expect(wrapper.find(MenuBar2).exists()).toBe(true)
     })
 
     it('should set the height of the main container using the useHeight hook', () => {

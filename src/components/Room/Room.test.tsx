@@ -19,6 +19,16 @@ jest.mock('swiper', () => ({
 jest.mock('../../hooks/useChatContext/useChatContext')
 jest.mock('../../hooks/useVideoContext/useVideoContext')
 jest.mock('../../state')
+jest.mock('react-router-dom', () => ({ useParams: jest.fn(() => ({})) }))
+jest.mock('../../hooks/useAvsSocketContext/useAvsSocketContext', () => ({
+    useAvsSocketContext: jest.fn(() => ({
+        socketEventHandler: jest.fn(),
+        networkError: { onNetworkError: jest.fn() },
+    })),
+}))
+jest.mock('../../services/ws/socket.service', () => ({
+    socketService: { initSocket: jest.fn() },
+}))
 
 const mockUseAppState = useAppState as jest.Mock<any>
 const mockUseChatContext = useChatContext as jest.Mock<any>

@@ -1,86 +1,105 @@
-const WS_URL = process.env.REACT_APP_WS_URL
-const WS_RECONNECT_MAX_ATTEMPTS = 3
-const WS_RECONNECT_MIN_INTERVAL = 1000
-const WS_RECONNECT_MAX_INTERVAL = 7000
+const SSE_URL = process.env.REACT_APP_SSE_URL
+const VIDEO_BASE_URL = process.env.REACT_APP_VIDEO_BASE_URL
 
-export let socket: WebSocket | null = null
+const SSE_RECONNECT_MAX_ATTEMPTS = 3
+const SSE_RECONNECT_MIN_INTERVAL = 1000
+const SSE_RECONNECT_MAX_INTERVAL = 7000
+
+export let eventSource: EventSource | null = null
 
 let reconnectAttemptCounter: number = 0
+let currentRoomId: string | null = null
+let currentEventHandler: ((event: BaseEvent) => void) | null = null
+let currentOnNetworkError: (() => void) | null = null
 
 const initSocket = (
     roomId: string,
     eventHandler: (event: BaseEvent) => void,
     onNetworkError: () => void
-): Promise<WebSocket | null> => {
-    if (!WS_URL) {
+): Promise<EventSource | null> => {
+    if (!SSE_URL) {
         return Promise.resolve(null)
     }
 
+    currentRoomId = roomId
+    currentEventHandler = eventHandler
+    currentOnNetworkError = onNetworkError
+
     return new Promise(resolve => {
-        // Create websocket
-        const url = `${WS_URL}?roomName=${roomId}`
-        socket = new WebSocket(url)
+        const url = `${SSE_URL}?roomName=${roomId}`
+        eventSource = new EventSource(url)
 
-        // Websocket events
-        socket.onopen = () => {
-            // Reset reconnect attempt
+        eventSource.onopen = () => {
             reconnectAttemptCounter = 0
-
-            resolve(socket)
+            resolve(eventSource)
         }
 
-        socket.onmessage = (messageEvent: MessageEvent) => {
-            incomingMessageHandler(messageEvent, eventHandler)
+        eventSource.onmessage = (messageEvent: MessageEvent) => {
+            if (currentEventHandler) {
+                incomingMessageHandler(messageEvent, currentEventHandler)
+            }
         }
 
-        socket.onerror = (event: Event) => {
-            console.error('Socket error:', event)
-            resolve(null)
-            onNetworkError()
-        }
-
-        socket.onclose = (event: Event) => {
-            console.error('Socket closed:', event)
-
-            // If maximum reconnection attempt as reached then display error dialog
-            // Else reconnect socket
-            if (reconnectAttemptCounter >= WS_RECONNECT_MAX_ATTEMPTS) {
-                onNetworkError()
+        eventSource.onerror = () => {
+            // EventSource auto-reconnects, but we track failures to enforce a limit
+            if (reconnectAttemptCounter >= SSE_RECONNECT_MAX_ATTEMPTS) {
+                eventSource?.close()
+                eventSource = null
+                if (currentOnNetworkError) {
+                    currentOnNetworkError()
+                }
             } else {
-                reconnect(roomId, eventHandler, onNetworkError)
                 reconnectAttemptCounter++
+                eventSource?.close()
+                eventSource = null
+                resolve(null)
+                setTimeout(() => {
+                    if (
+                        currentRoomId &&
+                        currentEventHandler &&
+                        currentOnNetworkError
+                    ) {
+                        initSocket(
+                            currentRoomId,
+                            currentEventHandler,
+                            currentOnNetworkError
+                        )
+                    }
+                }, getRandomNumber(SSE_RECONNECT_MIN_INTERVAL, SSE_RECONNECT_MAX_INTERVAL))
             }
         }
     })
 }
 
-const reconnect = (
-    roomId: string,
-    eventHandler: (event: BaseEvent) => void,
-    onNetworkError: () => void
-) => {
-    setTimeout(
-        () => initSocket(roomId, eventHandler, onNetworkError),
-        getRandomNumber(WS_RECONNECT_MIN_INTERVAL, WS_RECONNECT_MAX_INTERVAL)
-    )
-}
-
-const isOpen = (): boolean => socket?.readyState === socket?.OPEN
+const isOpen = (): boolean =>
+    eventSource !== null && eventSource.readyState === EventSource.OPEN
 
 const incomingMessageHandler = (
     messageEvent: MessageEvent,
     eventHandler: (baseEvent: BaseEvent) => void
 ) => {
-    const data = JSON.parse(messageEvent.data)
-
-    // Validate event data is of BaseEvent type
-    if (!BaseEvent.IsType(data)) {
-        console.error('Received socket message is not a BaseEvent')
+    let data: any
+    try {
+        data = JSON.parse(messageEvent.data)
+    } catch {
+        console.error('Failed to parse SSE message as JSON')
         return
     }
 
-    const baseEvent: BaseEvent = data
-    eventHandler(baseEvent)
+    if (!BaseEvent.IsType(data)) {
+        console.error('Received SSE message is not a BaseEvent')
+        return
+    }
+
+    eventHandler(data as BaseEvent)
+}
+
+// Map from event type to the REST path segment under /room/{room}/
+const typeToPath: Partial<Record<BaseEventType, string>> = {
+    Message: 'message',
+    SendAttachmentRequest: 'attachment-request',
+    AuthenticateAttachment: 'authenticate-attachment',
+    SendAttachment: 'attachment',
 }
 
 export function getSocketBaseEvent(type: BaseEventType, eventout: any) {
@@ -94,11 +113,24 @@ export function getSocketBaseEvent(type: BaseEventType, eventout: any) {
 }
 
 const dispatchEvent = (type: BaseEventType, eventout: any) => {
-    if (!isOpen()) {
+    if (!isOpen() || !currentRoomId) {
         return
     }
-    const baseEvent: BaseEvent = getSocketBaseEvent(type, eventout)
-    socket?.send(JSON.stringify(baseEvent))
+
+    const pathSegment = typeToPath[type]
+    if (!pathSegment) {
+        // BlockChat has no server handler — intentional no-op
+        return
+    }
+
+    const url = `${VIDEO_BASE_URL}/video-appointment/${currentRoomId}/${pathSegment}/`
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventout),
+    }).catch(err => {
+        console.error(`Failed to dispatch ${type} event:`, err)
+    })
 }
 
 export class BaseEvent {
@@ -150,7 +182,6 @@ export const generateBaseEventId = (): string => {
 
 export const socketService = {
     initSocket,
-    reconnect,
     isOpen,
     dispatchEvent,
 }

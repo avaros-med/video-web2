@@ -5,7 +5,7 @@ import { utilsService } from '../utils.service'
 const BASE_URL = process.env.REACT_APP_VIDEO_BASE_URL
 
 const getAppointmentByRoomName = (roomName: string): Promise<Appointment> => {
-    const url = `${BASE_URL}/video-appointment-by-room/${roomName}`
+    const url = `${BASE_URL}/video-appointment/${roomName}`
 
     return new Promise((resolve, reject) => {
         axios
@@ -24,7 +24,7 @@ const getAppointmentByRoomName = (roomName: string): Promise<Appointment> => {
 const validateRoomExists = (
     roomName: string
 ): Promise<ValidateRoomResponse> => {
-    const url = `${BASE_URL}/room-exists/${roomName}`
+    const url = `${BASE_URL}/video-appointment/${roomName}/exists`
 
     return new Promise((resolve, reject) => {
         axios
@@ -44,7 +44,7 @@ const validateRoomExists = (
 }
 
 const validatePin = (roomName: string, pin: string): Promise<boolean> => {
-    const url = `${BASE_URL}/room/${roomName}/lock/${pin}`
+    const url = `${BASE_URL}/video-appointment/${roomName}/lock/${pin}`
 
     return new Promise((resolve, reject) => {
         axios
