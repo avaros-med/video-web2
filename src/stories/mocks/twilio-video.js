@@ -1,5 +1,6 @@
 import { action } from '@storybook/addon-actions'
 import EventEmitter from 'events'
+import { SELECTED_BACKGROUND_SETTINGS_KEY } from '../../constants'
 
 Object.defineProperty(navigator, 'permissions', { value: false })
 
@@ -43,6 +44,12 @@ const stalled = side =>
     simulateStalledAudio === 'both' ||
     simulateStalledAudio === side
 
+// Storybook control: use photos of people (Unsplash, via picsum.photos) instead of
+// coloured placeholders, for design reviews.
+let personPosters = false
+export const LOCAL_PERSON_PHOTO = 'https://picsum.photos/id/64/1280/720'
+export const REMOTE_PERSON_PHOTO = 'https://picsum.photos/id/1027/1280/720'
+
 const getRandomColor = () => {
     return Math.floor(Math.random() * 16777215).toString(16)
 }
@@ -70,6 +77,10 @@ class MockTrack extends EventEmitter {
                 // To use a video source, set the 'el.src' property instead and uncomment el.play() below
                 el.poster =
                     'https://dummyimage.com/800x450/c25050/ffffff.png&text=Screen+share'
+            } else if (personPosters) {
+                el.poster = this.isLocal
+                    ? LOCAL_PERSON_PHOTO
+                    : REMOTE_PERSON_PHOTO
             } else {
                 el.poster = `https://dummyimage.com/800x450/${this.backgroundColor}/ffffff.png&text=Participant`
             }
@@ -126,6 +137,7 @@ class LocalParticipant extends EventEmitter {
         super()
         const videoPublication = new MockPublication('video')
         const audioPublication = new MockPublication('audio')
+        videoPublication.track.isLocal = true
 
         this.videoTracks = new Map([['video', videoPublication]])
         this.audioTracks = new Map([['audio', audioPublication]])
@@ -234,6 +246,18 @@ process.env.REACT_APP_DISABLE_TWILIO_CONVERSATIONS = 'true'
 // The decorator to be used in ./storybook/preview to apply the mock to all stories
 export function decorator(story, { args }) {
     simulateStalledAudio = args.simulateStalledAudio || false
+    personPosters = Boolean(args.personPosters)
+    // Pre-select background blur so the toolbar button renders in its "on" state.
+    try {
+        if (args.blurPreview) {
+            localStorage.setItem(
+                SELECTED_BACKGROUND_SETTINGS_KEY,
+                JSON.stringify({ type: 'blur', index: 0 })
+            )
+        } else {
+            localStorage.removeItem(SELECTED_BACKGROUND_SETTINGS_KEY)
+        }
+    } catch {}
     for (let i = 1; i <= 200; i++) {
         const identity = `test-${i}`
 

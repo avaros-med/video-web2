@@ -13,6 +13,7 @@ import { AvsSocketContextProvider } from '../hooks/useAvsSocketContext/useAvsSoc
 import { PanelContextProvider } from '../components/Panel/usePanelContext'
 import useVideoContext from '../hooks/useVideoContext/useVideoContext'
 import useConnectionOptions from '../utils/useConnectionOptions/useConnectionOptions'
+import { LOCAL_PERSON_PHOTO } from './mocks/twilio-video'
 
 /*
  * Renders the in-call view directly, skipping the pre-join screens, so the room
@@ -52,9 +53,31 @@ const VideoApp = () => {
     )
 }
 
-const InCallApp = () => (
+/*
+ * The mock has no real video track for the background processor to act on, so
+ * this approximates what blur looks like: the local video is blurred and a sharp
+ * copy of the same frame is clipped to the person's silhouette on top.
+ */
+const BlurPreviewStyles = () => (
+    <style>{`
+        [data-cy-participant="Local Participant"] video { filter: blur(9px); }
+        [data-cy-participant="Local Participant"] [class*="innerContainer"]::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url(${LOCAL_PERSON_PHOTO}) center / cover no-repeat;
+            -webkit-mask-image: radial-gradient(ellipse 27% 54% at 50% 54%, #000 66%, transparent 100%);
+            mask-image: radial-gradient(ellipse 27% 54% at 50% 54%, #000 66%, transparent 100%);
+            transform: scaleX(-1);
+            pointer-events: none;
+        }
+    `}</style>
+)
+
+const InCallApp = ({ blurPreview }) => (
     <MuiThemeProvider theme={theme}>
         <CssBaseline />
+        {blurPreview && <BlurPreviewStyles />}
         <Router>
             <AppStateProvider>
                 <VideoApp />
@@ -77,6 +100,8 @@ export default {
         },
         disableAllAudio: { control: { type: 'boolean' } },
         unpublishAllVideo: { control: { type: 'boolean' } },
+        personPosters: { control: { type: 'boolean' } },
+        blurPreview: { control: { type: 'boolean' } },
     },
 }
 
@@ -90,6 +115,8 @@ SpeakerView.args = {
     simulateStalledAudio: false,
     disableAllAudio: false,
     unpublishAllVideo: false,
+    personPosters: false,
+    blurPreview: false,
 }
 
 export const MicrophoneProblem = Template.bind({})
@@ -108,4 +135,11 @@ export const AudioProblems = Template.bind({})
 AudioProblems.args = {
     ...SpeakerView.args,
     simulateStalledAudio: 'both',
+}
+
+export const BackgroundBlur = Template.bind({})
+BackgroundBlur.args = {
+    ...SpeakerView.args,
+    personPosters: true,
+    blurPreview: true,
 }

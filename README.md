@@ -160,6 +160,10 @@ A one-tap **Blur my background** button sits next to the camera button. It reuse
 
 ![Toolbar with blur on](docs/screenshots/toolbar-blur-on.png)
 
+![Blur on, with tooltip, using the Storybook person photos](docs/screenshots/toolbar-blur-on-tooltip.png)
+
+The **In Call / Background Blur** story uses photos of people and approximates the blur on the local tile (the mock has no real video track for the processor to act on).
+
 ## Browser Support
 
 See browser support table for [twilio-video.js SDK](https://github.com/twilio/twilio-video.js/tree/master/#browser-support).
