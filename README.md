@@ -146,21 +146,11 @@ The app records a client-side diagnostics timeline for every visit and offers a 
 -   Remote audio that stops arriving shows a blue callout pointing at Settings, with a **Check speaker** action that opens Media Devices; the other participant's tile is labelled **No audio received**.
 -   If screen sharing is stopped by a media-connection drop, an orange callout offers **Share again**.
 
-![Microphone alert during a call](docs/screenshots/in-call-mic-alert.png)
-
-![Remote audio alert during a call](docs/screenshots/in-call-remote-audio-alert.png)
-
 To review these states without a real Twilio room, run `npm run storybook` and open the **In Call** stories (*Microphone Problem*, *Remote Audio Problem*, *Audio Problems*).
 
 ## Background blur
 
 A one-tap **Blur my background** button sits next to the camera button. It reuses the background-processor pipeline that ships with this app and persists the choice per browser. It is behind the `REACT_APP_ENABLE_BACKGROUND_BLUR=true` flag until the processor library is upgraded (the installed 1.x does not support Safari) and verified on clinic hardware.
-
-![Toolbar with blur off](docs/screenshots/toolbar-blur-off.png)
-
-![Toolbar with blur on](docs/screenshots/toolbar-blur-on.png)
-
-![Blur on, with tooltip, using the Storybook person photos](docs/screenshots/toolbar-blur-on-tooltip.png)
 
 The **In Call / Background Blur** story uses photos of people and approximates the blur on the local tile (the mock has no real video track for the processor to act on).
 
