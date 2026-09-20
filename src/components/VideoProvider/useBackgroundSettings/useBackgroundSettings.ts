@@ -126,7 +126,10 @@ export const backgroundConfig = {
     images,
 }
 
-const virtualBackgroundAssets = '/virtualbackground'
+// The app is served under a base path in production (see REACT_APP_BASE_HREF /
+// PUBLIC_URL); an absolute '/virtualbackground' would 404 there.
+const virtualBackgroundAssets = `${process.env.PUBLIC_URL ||
+    ''}/virtualbackground`
 let blurProcessor: GaussianBlurBackgroundProcessor
 let virtualBackgroundProcessor: VirtualBackgroundProcessor
 

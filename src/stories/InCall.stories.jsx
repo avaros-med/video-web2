@@ -71,7 +71,10 @@ export default {
         participants: { control: { type: 'range', min: 0, max: 8, step: 1 } },
         dominantSpeaker: { control: { type: 'text' } },
         presentationParticipant: { control: { type: 'text' } },
-        simulateStalledAudio: { control: { type: 'boolean' } },
+        simulateStalledAudio: {
+            control: { type: 'select' },
+            options: [false, 'local', 'remote', 'both'],
+        },
         disableAllAudio: { control: { type: 'boolean' } },
         unpublishAllVideo: { control: { type: 'boolean' } },
     },
@@ -89,8 +92,20 @@ SpeakerView.args = {
     unpublishAllVideo: false,
 }
 
+export const MicrophoneProblem = Template.bind({})
+MicrophoneProblem.args = {
+    ...SpeakerView.args,
+    simulateStalledAudio: 'local',
+}
+
+export const RemoteAudioProblem = Template.bind({})
+RemoteAudioProblem.args = {
+    ...SpeakerView.args,
+    simulateStalledAudio: 'remote',
+}
+
 export const AudioProblems = Template.bind({})
 AudioProblems.args = {
     ...SpeakerView.args,
-    simulateStalledAudio: true,
+    simulateStalledAudio: 'both',
 }

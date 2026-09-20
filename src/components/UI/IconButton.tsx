@@ -15,6 +15,7 @@ interface Props {
         | 'hint'
         | 'orange'
         | 'danger'
+        | 'alert'
         | 'endcall'
     icon: string
     tooltipContent?: string
@@ -82,6 +83,28 @@ const Styles = styled.div`
 
     &.danger {
         color: ${Colors.RED};
+    }
+    /* A control that needs attention right now (for example a dead microphone):
+       solid red with a glow ring that pulses outwards. */
+    &.alert {
+        background: ${Colors.ALERT_RED};
+        border-color: ${Colors.ALERT_RED};
+        color: white;
+        animation: media-alert-ring 1.6s ease-out infinite;
+        &:hover {
+            background: ${Colors.ALERT_RED};
+        }
+    }
+    @keyframes media-alert-ring {
+        0% {
+            box-shadow: 0 0 0 0 rgba(200, 30, 30, 0.55);
+        }
+        70% {
+            box-shadow: 0 0 0 9px rgba(200, 30, 30, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(200, 30, 30, 0);
+        }
     }
 
     &.endcall {

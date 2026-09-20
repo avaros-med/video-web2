@@ -2,18 +2,42 @@ import { createStyles, makeStyles, Theme } from '@material-ui/core/styles'
 
 import { Grid, Hidden, Typography } from '@material-ui/core'
 import moment from 'moment'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import useRoomState from '../../hooks/useRoomState/useRoomState'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import { isMobile } from '../../utils'
 import EndCallButton from '../Buttons/EndCallButton/EndCallButton'
 import ToggleAudioButton from '../Buttons/ToggleAudioButton/ToggleAudioButton'
+import ToggleBlurButton from '../Buttons/ToggleBlurButton/ToggleBlurButton'
 import ToggleChatButton from '../Buttons/ToggleChatButton/ToggleChatButton'
 import ToggleMessagesButton from '../Buttons/ToggleMessagesButton/ToggleMessagesButton'
 import ToggleVideoButton from '../Buttons/ToggleVideoButton/ToggleVideoButton'
 import ToggleScreenShareButton from '../Buttons/ToogleScreenShareButton/ToggleScreenShareButton'
 import { Button } from '../UI/Button'
 import Menu from './Menu/Menu'
+import {
+    MEDIA_ANCHOR_ATTRIBUTE,
+    MediaAlertAnchor,
+} from '../MediaAlertCallout/MediaAlertCallout'
+
+const isBackgroundBlurEnabled =
+    process.env.REACT_APP_ENABLE_BACKGROUND_BLUR === 'true'
+
+/** Marks a toolbar control so MediaAlertCallout can point at it. */
+const Anchor = ({
+    name,
+    children,
+}: {
+    name: MediaAlertAnchor
+    children: React.ReactNode
+}) => (
+    <span
+        {...{ [MEDIA_ANCHOR_ATTRIBUTE]: name }}
+        style={{ display: 'inline-flex' }}
+    >
+        {children}
+    </span>
+)
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -102,24 +126,38 @@ export default function MenuBar2() {
                     </Grid>
                 </Hidden>
                 <Grid className={classes.controllersContainer}>
-                    <ToggleAudioButton
-                        className="mr-2"
-                        disabled={isReconnecting}
-                    />
-                    <ToggleVideoButton
-                        className="mr-2"
-                        disabled={isReconnecting}
-                    />
-                    <ToggleMessagesButton className="mr-2" />
-                    {!isSharingScreen && !isMobile && (
-                        <ToggleScreenShareButton
+                    <Anchor name="mic">
+                        <ToggleAudioButton
+                            className="mr-2"
+                            disabled={isReconnecting}
+                        />
+                    </Anchor>
+                    <Anchor name="camera">
+                        <ToggleVideoButton
+                            className="mr-2"
+                            disabled={isReconnecting}
+                        />
+                    </Anchor>
+                    {isBackgroundBlurEnabled && (
+                        <ToggleBlurButton
                             className="mr-2"
                             disabled={isReconnecting}
                         />
                     )}
+                    <ToggleMessagesButton className="mr-2" />
+                    {!isSharingScreen && !isMobile && (
+                        <Anchor name="screenshare">
+                            <ToggleScreenShareButton
+                                className="mr-2"
+                                disabled={isReconnecting}
+                            />
+                        </Anchor>
+                    )}
                     {process.env.REACT_APP_DISABLE_TWILIO_CONVERSATIONS !==
                         'true' && <ToggleChatButton />}
-                    <Menu buttonClassName="mr-2" />
+                    <Anchor name="settings">
+                        <Menu buttonClassName="mr-2" />
+                    </Anchor>
                     <EndCallButton />
                 </Grid>
 

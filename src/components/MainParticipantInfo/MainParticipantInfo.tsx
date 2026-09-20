@@ -22,6 +22,8 @@ import usePublications from '../../hooks/usePublications/usePublications'
 import useScreenShareParticipant from '../../hooks/useScreenShareParticipant/useScreenShareParticipant'
 import useTrack from '../../hooks/useTrack/useTrack'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
+import useTileAudioAlert from '../../hooks/useTileAudioAlert/useTileAudioAlert'
+import { TONE_COLORS } from '../MediaAlertCallout/MediaAlertCallout'
 
 const useStyles = makeStyles((theme: Theme) => ({
     container: {
@@ -157,6 +159,7 @@ export default function MainParticipantInfo({
     const isParticipantReconnecting = useParticipantIsReconnecting(participant)
 
     const isRecording = useIsRecording()
+    const audioAlert = useTileAudioAlert(participant, isLocal)
 
     return (
         <div
@@ -176,6 +179,26 @@ export default function MainParticipantInfo({
                             {screenSharePublication && ' - Screen'}
                         </Typography>
                     </div>
+                    {audioAlert && (
+                        <div
+                            className={classes.identity}
+                            style={{
+                                background: TONE_COLORS[audioAlert.tone],
+                                fontWeight: 600,
+                            }}
+                            data-cy-audio-alert-badge
+                        >
+                            <i
+                                className="material-icons"
+                                style={{ fontSize: '18px', marginRight: '4px' }}
+                            >
+                                {audioAlert.icon}
+                            </i>
+                            <Typography variant="body1" color="inherit">
+                                {audioAlert.label}
+                            </Typography>
+                        </div>
+                    )}
                     <NetworkQualityLevel participant={participant} />
                 </div>
                 {isRecording && (

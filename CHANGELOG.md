@@ -12,6 +12,8 @@
 ### New Features
 
 -   Microphone health monitoring: the app now detects a microphone that the OS has paused (`mute`), has ended, has produced digital silence for 10 seconds, or is capturing but not sending bytes to the room, and shows a persistent notification with a one-click **Reconnect microphone** action. Remote audio that stops arriving for ~9 seconds is also flagged. (`useAudioHealth`, `MediaHealthNotifications`)
+-   In-call alerts are now callouts anchored above the toolbar instead of corner snackbars: microphone problems point at the pulsing red microphone button (**Reconnect microphone**), remote audio problems point at Settings (**Check speaker**), and a stopped screen share offers **Share again**. The affected tile is outlined and labelled (**Muted to others** / **No audio received**). (`MediaAlertCallout`, `useTileAudioAlert`)
+-   Background blur toggle in the toolbar, behind `REACT_APP_ENABLE_BACKGROUND_BLUR=true`, reusing the existing processor pipeline; the processor asset path now honours `PUBLIC_URL` so it works under the `/av/video2` base path. (`ToggleBlurButton`)
 -   Diagnostics timeline: room lifecycle, publications, subscriptions, network quality drops, device changes, screen share and microphone events, plus twilio-video's own warnings, are recorded in memory (`window.avsDiagnostics`) and a summary is appended to the video visit log sent at end of call, so support can see what happened in EMR Admin > Video Visit Logs. Twilio's Room Monitor is available from Settings > Connection Diagnostics or Ctrl/Cmd+Shift+D. (`diagnostics.service`, `useRoomDiagnostics`, `useRoomMonitorShortcut`)
 
 ## 0.7.0 (July 6, 2022)

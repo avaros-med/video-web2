@@ -34,10 +34,14 @@ const createSilentAudioTrack = () => {
 let trackSidCounter = 0
 const nextTrackSid = kind => `MT-${kind}-${++trackSidCounter}`
 
-// Storybook control: when true, room.getStats() reports byte counters that never
-// increase, which makes the app raise its "audio not reaching the call" and
-// "no audio received" notifications after ~9 seconds.
+// Storybook control: 'both' | 'local' | 'remote' | false. Stalled byte counters
+// from room.getStats() make the app raise its "no one can hear you" (local) and
+// "you may not be hearing" (remote) notifications after ~9 seconds.
 let simulateStalledAudio = false
+const stalled = side =>
+    simulateStalledAudio === true ||
+    simulateStalledAudio === 'both' ||
+    simulateStalledAudio === side
 
 const getRandomColor = () => {
     return Math.floor(Math.random() * 16777215).toString(16)
@@ -144,13 +148,14 @@ class MockRoom extends EventEmitter {
     _statsPoll = 0
     getStats = () => {
         this._statsPoll += 1
-        const bytes = simulateStalledAudio ? 1000 : 1000 * this._statsPoll
+        const remoteBytes = stalled('remote') ? 1000 : 1000 * this._statsPoll
+        const localBytes = stalled('local') ? 1000 : 1000 * this._statsPoll
         const remoteAudioTrackStats = []
         this.participants.forEach(participant => {
             participant.audioTracks.forEach(publication => {
                 remoteAudioTrackStats.push({
                     trackSid: publication.trackSid,
-                    bytesReceived: bytes,
+                    bytesReceived: remoteBytes,
                 })
             })
         })
@@ -158,7 +163,7 @@ class MockRoom extends EventEmitter {
             this.localParticipant.audioTracks.values()
         ).map(publication => ({
             trackSid: publication.trackSid,
-            bytesSent: bytes,
+            bytesSent: localBytes,
         }))
         return Promise.resolve([
             { localAudioTrackStats, remoteAudioTrackStats },
@@ -228,7 +233,7 @@ process.env.REACT_APP_DISABLE_TWILIO_CONVERSATIONS = 'true'
 
 // The decorator to be used in ./storybook/preview to apply the mock to all stories
 export function decorator(story, { args }) {
-    simulateStalledAudio = Boolean(args.simulateStalledAudio)
+    simulateStalledAudio = args.simulateStalledAudio || false
     for (let i = 1; i <= 200; i++) {
         const identity = `test-${i}`
 

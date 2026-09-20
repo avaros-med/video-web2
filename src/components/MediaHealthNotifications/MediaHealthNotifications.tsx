@@ -1,68 +1,64 @@
 import React, { useState } from 'react'
-import { makeStyles } from '@material-ui/core'
 import useRoomState from '../../hooks/useRoomState/useRoomState'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
+import { usePanelContext } from '../Panel/usePanelContext'
 import { MicStatus } from '../VideoProvider/useAudioHealth/useAudioHealth'
-import Snackbar from '../Snackbar/Snackbar'
-import { Button } from '../UI/Button'
+import MediaAlertCallout from '../MediaAlertCallout/MediaAlertCallout'
 
-const useStyles = makeStyles({
-    actionRow: {
-        display: 'flex',
-        justifyContent: 'flex-end',
-        marginTop: '0.5em',
-    },
-})
-
-interface MicCopy {
-    headline: string
+interface AlertCopy {
+    title: string
     message: string
 }
 
-export const MIC_ALERT_COPY: Record<Exclude<MicStatus, 'ok'>, MicCopy> = {
+export const MIC_ALERT_COPY: Record<Exclude<MicStatus, 'ok'>, AlertCopy> = {
     'system-muted': {
-        headline: 'Microphone paused:',
-        message:
-            'Your computer or another application has paused your microphone. If the other participant cannot hear you, click Reconnect microphone.',
+        title: 'No one can hear you',
+        message: 'Your computer or another app paused your microphone.',
     },
     ended: {
-        headline: 'Microphone disconnected:',
-        message:
-            'Your microphone was disconnected. Click Reconnect microphone to switch to an available microphone.',
+        title: 'Your microphone disconnected',
+        message: 'Reconnect to switch to an available microphone.',
     },
     silent: {
-        headline: 'Microphone check:',
+        title: 'No sound from your microphone',
         message:
-            'No sound has been detected from your microphone for a while. If the other participant cannot hear you, click Reconnect microphone or choose a different microphone under Media Devices.',
+            "Nothing has been picked up for a while. If others can't hear you, reconnect.",
     },
     'not-sending': {
-        headline: 'Audio is not reaching the call:',
-        message:
-            'Your microphone is working but its audio is not being sent. Click Reconnect microphone. If the problem continues, leave and rejoin the call.',
+        title: 'No one can hear you',
+        message: 'Your microphone stopped sending audio.',
     },
 }
 
-export const REMOTE_AUDIO_HEADLINE = 'Audio check:'
-export const remoteAudioMessage = (identity: string) =>
-    `No audio has been received from ${identity} for several seconds. Check your speaker output under Media Devices, or ask them to check their microphone.`
+export const RECONNECT_MIC_LABEL = 'Reconnect microphone'
+export const SCREEN_SHARE_STOPPED_TITLE = 'Screen sharing stopped'
+export const SHARE_AGAIN_LABEL = 'Share again'
+export const CHECK_SPEAKER_LABEL = 'Check speaker'
+export const remoteAudioTitle = (identity: string) =>
+    `You may not be hearing ${identity}`
+export const REMOTE_AUDIO_MESSAGE =
+    'No audio has arrived from them for several seconds. Check your speaker, or ask them to check their microphone.'
+
+const SCREEN_SHARE_NOTICE_MS = 15000
+const REMOTE_AUDIO_NOTICE_MS = 20000
 
 /*
- * Surfaces microphone, remote audio and screen share problems as snackbars.
- * Mounted once inside the room view, alongside ReconnectingNotification.
+ * Surfaces microphone, screen share and remote audio problems as a single callout
+ * above the toolbar, pointing at the control that fixes them.
  *
- * All snackbars share the top-right corner, so only one is shown at a time, in
- * priority order: microphone (actionable) > screen share stopped > remote audio.
- * A lower-priority alert appears once the higher one is dismissed or resolved.
- * Nothing is shown while the room itself is reconnecting; that banner already
- * explains the situation.
+ * Only one is shown at a time, in priority order: microphone (actionable) >
+ * screen share stopped > remote audio. A lower-priority alert appears once the
+ * higher one is dismissed or resolved. Nothing is shown while the room itself is
+ * reconnecting; that banner already explains the situation.
  */
 export default function MediaHealthNotifications() {
-    const classes = useStyles()
     const {
         audioHealth,
         screenShareNotice,
         dismissScreenShareNotice,
+        toggleScreenShare,
     } = useVideoContext()
+    const { showMediaDevices } = usePanelContext().panel
     const [isRestarting, setIsRestarting] = useState(false)
     const isRoomReconnecting = useRoomState() === 'reconnecting'
 
@@ -86,57 +82,63 @@ export default function MediaHealthNotifications() {
         try {
             await audioHealth.restartMic()
         } catch {
-            // Errors are already recorded in the diagnostics timeline; the alert
-            // stays visible so the user can try again or pick another device.
+            // Already recorded in the diagnostics timeline; the alert stays so the
+            // user can try again or pick another device.
         } finally {
             setIsRestarting(false)
         }
     }
 
+    const onShareAgain = () => {
+        dismissScreenShareNotice()
+        toggleScreenShare()
+    }
+
+    const onCheckSpeaker = () => {
+        showMediaDevices?.()
+        audioHealth.dismissRemoteAudioAlert()
+    }
+
     return (
         <>
-            <Snackbar
-                variant="warning"
-                headline={micCopy?.headline ?? ''}
-                message={
-                    <>
-                        {micCopy?.message}
-                        <div className={classes.actionRow}>
-                            <Button
-                                intent="primary"
-                                label={
-                                    isRestarting
-                                        ? 'Reconnecting...'
-                                        : 'Reconnect microphone'
-                                }
-                                disabled={isRestarting}
-                                onClick={onRestartMic}
-                                data-cy-reconnect-mic
-                            />
-                        </div>
-                    </>
-                }
+            <MediaAlertCallout
                 open={showMicAlert}
-                autoHideDuration={null}
-                handleClose={audioHealth.dismissMicAlert}
+                tone="error"
+                anchor="mic"
+                title={micCopy?.title ?? ''}
+                message={micCopy?.message}
+                action={{
+                    label: RECONNECT_MIC_LABEL,
+                    busyLabel: 'Reconnecting…',
+                    isBusy: isRestarting,
+                    onClick: onRestartMic,
+                }}
+                onClose={audioHealth.dismissMicAlert}
+                data-testid="mic-alert"
             />
-            <Snackbar
-                variant="info"
-                headline={REMOTE_AUDIO_HEADLINE}
-                message={remoteAudioMessage(
+            <MediaAlertCallout
+                open={showScreenShareNotice}
+                tone="warning"
+                anchor="screenshare"
+                title={SCREEN_SHARE_STOPPED_TITLE}
+                message={screenShareNotice?.message}
+                action={{ label: SHARE_AGAIN_LABEL, onClick: onShareAgain }}
+                onClose={dismissScreenShareNotice}
+                autoHideMs={SCREEN_SHARE_NOTICE_MS}
+                data-testid="screenshare-alert"
+            />
+            <MediaAlertCallout
+                open={showRemoteAudioAlert}
+                tone="info"
+                anchor="settings"
+                title={remoteAudioTitle(
                     audioHealth.remoteAudioAlert?.identity ?? ''
                 )}
-                open={showRemoteAudioAlert}
-                autoHideDuration={20000}
-                handleClose={audioHealth.dismissRemoteAudioAlert}
-            />
-            <Snackbar
-                variant="warning"
-                headline="Screen sharing stopped:"
-                message={screenShareNotice?.message ?? ''}
-                open={showScreenShareNotice}
-                autoHideDuration={15000}
-                handleClose={dismissScreenShareNotice}
+                message={REMOTE_AUDIO_MESSAGE}
+                action={{ label: CHECK_SPEAKER_LABEL, onClick: onCheckSpeaker }}
+                onClose={audioHealth.dismissRemoteAudioAlert}
+                autoHideMs={REMOTE_AUDIO_NOTICE_MS}
+                data-testid="remote-audio-alert"
             />
         </>
     )

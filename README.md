@@ -142,13 +142,23 @@ The app records a client-side diagnostics timeline for every visit and offers a 
 -   **Settings > Connection Diagnostics** (or **Ctrl/Cmd+Shift+D**) opens Twilio's Room Monitor with live per-track bitrate, packet loss and codec details.
 -   In the browser console, `avsDiagnostics.getSummary()` prints the timeline of room, screen share, microphone, device and SDK events for the current session; `avsDiagnostics.getEvents()` returns the raw list.
 -   The same summary is appended to the video visit log that is sent to the ark video service when the call ends, and is visible under **EMR Admin > Video Visit Logs**.
--   Microphone problems (paused by the OS, disconnected, silent, or not reaching the room) surface as a notification with a **Reconnect microphone** action. Remote audio that stops arriving is flagged too.
+-   Microphone problems (paused by the OS, disconnected, silent, or not reaching the room) show a red callout above the toolbar pointing at the pulsing microphone button, with a **Reconnect microphone** action. Your own tile is outlined in red and labelled **Muted to others** so the problem is visible at a glance.
+-   Remote audio that stops arriving shows a blue callout pointing at Settings, with a **Check speaker** action that opens Media Devices; the other participant's tile is labelled **No audio received**.
+-   If screen sharing is stopped by a media-connection drop, an orange callout offers **Share again**.
 
 ![Microphone alert during a call](docs/screenshots/in-call-mic-alert.png)
 
-![Connection Diagnostics in the settings menu](docs/screenshots/in-call-settings-menu.png)
+![Remote audio alert during a call](docs/screenshots/in-call-remote-audio-alert.png)
 
-To review these states without a real Twilio room, run `npm run storybook` and open the **In Call** stories; the *Audio Problems* story simulates stalled audio in both directions.
+To review these states without a real Twilio room, run `npm run storybook` and open the **In Call** stories (*Microphone Problem*, *Remote Audio Problem*, *Audio Problems*).
+
+## Background blur
+
+A one-tap **Blur my background** button sits next to the camera button. It reuses the background-processor pipeline that ships with this app and persists the choice per browser. It is behind the `REACT_APP_ENABLE_BACKGROUND_BLUR=true` flag until the processor library is upgraded (the installed 1.x does not support Safari) and verified on clinic hardware.
+
+![Toolbar with blur off](docs/screenshots/toolbar-blur-off.png)
+
+![Toolbar with blur on](docs/screenshots/toolbar-blur-on.png)
 
 ## Browser Support
 

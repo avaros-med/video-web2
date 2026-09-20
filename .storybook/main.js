@@ -12,6 +12,8 @@ module.exports = {
         '@storybook/preset-create-react-app',
     ],
     framework: '@storybook/react',
+    // Show the background blur toolbar button in stories.
+    env: config => ({ ...config, REACT_APP_ENABLE_BACKGROUND_BLUR: 'true' }),
     webpackFinal: config => {
         config.resolve.alias['twilio-video'] = require.resolve(
             '../src/stories/mocks/twilio-video.js'
