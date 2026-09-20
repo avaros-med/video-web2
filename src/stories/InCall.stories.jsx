@@ -66,8 +66,8 @@ const BlurPreviewStyles = () => (
             position: absolute;
             inset: 0;
             background: url(${LOCAL_PERSON_PHOTO}) center / cover no-repeat;
-            -webkit-mask-image: radial-gradient(ellipse 27% 54% at 50% 54%, #000 66%, transparent 100%);
-            mask-image: radial-gradient(ellipse 27% 54% at 50% 54%, #000 66%, transparent 100%);
+            -webkit-mask-image: radial-gradient(ellipse 30% 64% at 50% 52%, #000 68%, transparent 100%);
+            mask-image: radial-gradient(ellipse 30% 64% at 50% 52%, #000 68%, transparent 100%);
             transform: scaleX(-1);
             pointer-events: none;
         }
@@ -122,12 +122,14 @@ SpeakerView.args = {
 export const MicrophoneProblem = Template.bind({})
 MicrophoneProblem.args = {
     ...SpeakerView.args,
+    personPosters: true,
     simulateStalledAudio: 'local',
 }
 
 export const RemoteAudioProblem = Template.bind({})
 RemoteAudioProblem.args = {
     ...SpeakerView.args,
+    personPosters: true,
     simulateStalledAudio: 'remote',
 }
 

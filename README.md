@@ -164,6 +164,8 @@ A one-tap **Blur my background** button sits next to the camera button. It reuse
 
 The **In Call / Background Blur** story uses photos of people and approximates the blur on the local tile (the mock has no real video track for the processor to act on).
 
+Photos in these renders are from Pexels (free to use under the [Pexels license](https://www.pexels.com/license/)): clinician, ["Photo of a Doctor Smiling" by Thirdman](https://www.pexels.com/photo/photo-of-a-doctor-smiling-4989179/); patient, ["Smiling Elderly Woman Doing a Peace Sign while Looking at Camera" by Kampus Production](https://www.pexels.com/photo/smiling-elderly-woman-doing-a-peace-sign-while-looking-at-camera-5473381/). They are loaded from Pexels at story time and are not checked into the repo.
+
 ## Browser Support
 
 See browser support table for [twilio-video.js SDK](https://github.com/twilio/twilio-video.js/tree/master/#browser-support).

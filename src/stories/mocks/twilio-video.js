@@ -44,11 +44,16 @@ const stalled = side =>
     simulateStalledAudio === 'both' ||
     simulateStalledAudio === side
 
-// Storybook control: use photos of people (Unsplash, via picsum.photos) instead of
-// coloured placeholders, for design reviews.
+// Storybook control: use photos of people instead of coloured placeholders, for
+// design reviews. Both are Pexels-licensed (free to use, no attribution required):
+//   local  = "Photo of a Doctor Smiling" by Thirdman (pexels.com/photo/4989179)
+//   remote = "Smiling Elderly Woman Doing a Peace Sign while Looking at Camera" by Kampus Production (pexels.com/photo/5473381)
+// Pexels serves through imgix, so we ask for a 16:9 crop centred on the face.
 let personPosters = false
-export const LOCAL_PERSON_PHOTO = 'https://picsum.photos/id/64/1280/720'
-export const REMOTE_PERSON_PHOTO = 'https://picsum.photos/id/1027/1280/720'
+const pexels = (id, extra = '') =>
+    `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=1280&h=720&fit=crop${extra}`
+export const LOCAL_PERSON_PHOTO = pexels(4989179)
+export const REMOTE_PERSON_PHOTO = pexels(5473381, '&crop=top')
 
 const getRandomColor = () => {
     return Math.floor(Math.random() * 16777215).toString(16)
