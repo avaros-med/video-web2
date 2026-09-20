@@ -23,7 +23,7 @@ import useTrack from '../../hooks/useTrack/useTrack'
 import { useAppState } from '../../state'
 import { Avatar } from '../UI/Avatar'
 import { ParticipantInfoMenu } from './ParticipantInfoMenu'
-import { useAudioVolume } from './useAudioVolume'
+import { useIsSpeaking } from './useAudioVolume'
 
 const borderWidth = 2
 
@@ -205,8 +205,7 @@ export default function ParticipantInfo({
         | LocalAudioTrack
         | RemoteAudioTrack
         | undefined
-    const { volume } = useAudioVolume(audioTrack)
-    const isSpeaking = volume > 0
+    const isSpeaking = useIsSpeaking(audioTrack)
     const isParticipantReconnecting = useParticipantIsReconnecting(participant)
 
     const { isGalleryViewActive } = useAppState()

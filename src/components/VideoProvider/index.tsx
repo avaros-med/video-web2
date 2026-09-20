@@ -29,7 +29,11 @@ import useHandleTrackPublicationFailed from './useHandleTrackPublicationFailed/u
 import useLocalTracks from './useLocalTracks/useLocalTracks'
 import useRestartAudioTrackOnDeviceChange from './useRestartAudioTrackOnDeviceChange/useRestartAudioTrackOnDeviceChange'
 import useRoom from './useRoom/useRoom'
-import useScreenShareToggle from './useScreenShareToggle/useScreenShareToggle'
+import useScreenShareToggle, {
+    ScreenShareNotice,
+} from './useScreenShareToggle/useScreenShareToggle'
+import useAudioHealth, { AudioHealth } from './useAudioHealth/useAudioHealth'
+import useRoomDiagnostics from './useRoomDiagnostics/useRoomDiagnostics'
 
 /*
  *  The hooks used by the VideoProvider component are different than the hooks found in the 'hooks/' directory. The hooks
@@ -52,6 +56,9 @@ export interface IVideoContext {
     removeLocalVideoTrack: () => void
     isSharingScreen: boolean
     toggleScreenShare: () => void
+    screenShareNotice: ScreenShareNotice | null
+    dismissScreenShareNotice: () => void
+    audioHealth: AudioHealth
     getAudioAndVideoTracks: () => Promise<void>
     isBackgroundSelectionOpen: boolean
     setIsBackgroundSelectionOpen: (value: boolean) => void
@@ -98,10 +105,12 @@ export function VideoProvider({
         options
     )
 
-    const [isSharingScreen, toggleScreenShare] = useScreenShareToggle(
-        room,
-        onError
-    )
+    const [
+        isSharingScreen,
+        toggleScreenShare,
+        screenShareNotice,
+        dismissScreenShareNotice,
+    ] = useScreenShareToggle(room, onError)
 
     const { URLRoomName: roomName } = useParams<{ URLRoomName?: string }>()
     const {
@@ -129,6 +138,8 @@ export function VideoProvider({
     )
     useHandleTrackPublicationFailed(room, onError)
     useRestartAudioTrackOnDeviceChange(localTracks)
+    useRoomDiagnostics(room)
+    const audioHealth = useAudioHealth(room, localTracks)
 
     const [isBackgroundSelectionOpen, setIsBackgroundSelectionOpen] = useState(
         false
@@ -157,6 +168,9 @@ export function VideoProvider({
                 removeLocalVideoTrack,
                 isSharingScreen,
                 toggleScreenShare,
+                screenShareNotice,
+                dismissScreenShareNotice,
+                audioHealth,
                 getAudioAndVideoTracks,
                 isBackgroundSelectionOpen,
                 setIsBackgroundSelectionOpen,

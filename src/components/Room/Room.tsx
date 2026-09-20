@@ -6,6 +6,7 @@ import { Participant, Room as IRoom } from 'twilio-video'
 import { useAvsSocketContext } from '../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useChatContext from '../../hooks/useChatContext/useChatContext'
 import useScreenShareParticipant from '../../hooks/useScreenShareParticipant/useScreenShareParticipant'
+import useRoomMonitorShortcut from '../../hooks/useRoomMonitorShortcut/useRoomMonitorShortcut'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import { socketService } from '../../services/ws/socket.service'
 import { useAppState } from '../../state'
@@ -91,6 +92,7 @@ export default function Room() {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
     const screenShareParticipant = useScreenShareParticipant()
+    useRoomMonitorShortcut()
 
     // Here we switch to speaker view when a participant starts sharing their screen, but
     // the user is still free to switch back to gallery view.

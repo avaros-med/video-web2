@@ -1,5 +1,6 @@
 import { LocalAudioTrack, LocalVideoTrack } from 'twilio-video'
 import { useEffect } from 'react'
+import { diagnosticsService } from '../../../services/diagnostics/diagnostics.service'
 
 /*
  * If a user has published an audio track from an external audio input device and
@@ -18,6 +19,9 @@ export default function useRestartAudioTrackOnDeviceChange(
     useEffect(() => {
         const handleDeviceChange = () => {
             if (audioTrack?.mediaStreamTrack.readyState === 'ended') {
+                diagnosticsService.log('mic', 'restart-requested', {
+                    from: 'devicechange-ended',
+                })
                 audioTrack.restart({})
             }
         }

@@ -1,6 +1,7 @@
 import { styled, Theme } from '@material-ui/core/styles'
 
 import PreJoinScreens from './components/PreJoinScreens/PreJoinScreens'
+import MediaHealthNotifications from './components/MediaHealthNotifications/MediaHealthNotifications'
 import ReconnectingNotification from './components/ReconnectingNotification/ReconnectingNotification'
 import RecordingNotifications from './components/RecordingNotifications/RecordingNotifications'
 import Room from './components/Room/Room'
@@ -45,6 +46,7 @@ export default function App() {
             ) : (
                 <MainContainer>
                     <ReconnectingNotification />
+                    <MediaHealthNotifications />
                     <RecordingNotifications />
                     <TopMenuBar />
                     <RoomContainer>

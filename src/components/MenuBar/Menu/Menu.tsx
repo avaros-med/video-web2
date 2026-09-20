@@ -22,6 +22,7 @@ import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import { useAppState } from '../../../state'
 import { usePanelContext } from '../../Panel/usePanelContext'
 import { IconButton } from '../../UI/IconButton'
+import { toggleRoomMonitor } from '../../../hooks/useRoomMonitorShortcut/useRoomMonitorShortcut'
 
 export const IconContainer = styled('div')({
     display: 'flex',
@@ -161,24 +162,21 @@ export default function Menu(props: { buttonClassName?: string }) {
                     </MenuItem>
                 )} */}
 
-                {/* Monitoring */}
-                {/* <MenuItem
+                {/* Monitoring: Twilio Room Monitor with live per-track stats. Also Ctrl/Cmd+Shift+D. */}
+                <MenuItem
                     onClick={() => {
-                        VideoRoomMonitor.toggleMonitor()
+                        toggleRoomMonitor('menu')
                         setMenuOpen(false)
                     }}
+                    data-cy-room-monitor
                 >
                     <IconContainer>
-                        <SearchIcon
-                            style={{ fill: '#707578', width: '0.9em' }}
-                        />
+                        <i className="material-icons">troubleshoot</i>
                     </IconContainer>
                     <Typography variant="body1">
-                    <FontWeightBold>
-                            Room Monitor
-                            </FontWeightBold>
-                            </Typography>
-                </MenuItem> */}
+                        <FontWeightBold>Connection Diagnostics</FontWeightBold>
+                    </Typography>
+                </MenuItem>
 
                 <MenuItem
                     onClick={() => {

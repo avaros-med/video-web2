@@ -135,6 +135,15 @@ The Video app has the following features:
 -   [x] Defines participant bandwidth usage with the [Bandwidth Profile API](https://www.twilio.com/docs/video/tutorials/using-bandwidth-profile-api)
 -   [x] Start and stop recording with the [Recording Rules API](https://www.twilio.com/docs/video/api/recording-rules)
 
+## Diagnosing audio and connection problems
+
+The app records a client-side diagnostics timeline for every visit and offers a few tools for looking at a problem while it is happening:
+
+-   **Settings > Connection Diagnostics** (or **Ctrl/Cmd+Shift+D**) opens Twilio's Room Monitor with live per-track bitrate, packet loss and codec details.
+-   In the browser console, `avsDiagnostics.getSummary()` prints the timeline of room, screen share, microphone, device and SDK events for the current session; `avsDiagnostics.getEvents()` returns the raw list.
+-   The same summary is appended to the video visit log that is sent to the ark video service when the call ends, and is visible under **EMR Admin > Video Visit Logs**.
+-   Microphone problems (paused by the OS, disconnected, silent, or not reaching the room) surface as a notification with a **Reconnect microphone** action. Remote audio that stops arriving is flagged too.
+
 ## Browser Support
 
 See browser support table for [twilio-video.js SDK](https://github.com/twilio/twilio-video.js/tree/master/#browser-support).

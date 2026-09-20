@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import React from 'react'
 import { renderHook } from '@testing-library/react-hooks'
+import { MemoryRouter } from 'react-router-dom'
 import { Room, TwilioError } from 'twilio-video'
 import { VideoProvider } from './index'
 import { useAppState } from '../../state'
@@ -27,6 +28,16 @@ jest.mock('./useLocalTracks/useLocalTracks', () =>
     }))
 )
 jest.mock('../../state')
+jest.mock('../../hooks/useHttpAppointment', () => ({
+    useHttpAppointment: () => ({
+        appointment: null,
+        isLoading: false,
+        getAppointmentByRoomName: jest.fn(),
+    }),
+}))
+jest.mock('../../hooks/useCurrentUser', () => ({
+    useCurrentUser: () => ({ currentUser: null }),
+}))
 jest.mock('./useHandleRoomDisconnection/useHandleRoomDisconnection')
 jest.mock('./useHandleTrackPublicationFailed/useHandleTrackPublicationFailed')
 jest.mock(
@@ -49,12 +60,14 @@ mockUseAppState.mockImplementation(() => ({ isGalleryViewActive: false }))
 describe('the VideoProvider component', () => {
     it('should correctly return the Video Context object', () => {
         const wrapper: React.FC = ({ children }) => (
-            <VideoProvider
-                onError={() => {}}
-                options={{ dominantSpeaker: true }}
-            >
-                {children}
-            </VideoProvider>
+            <MemoryRouter>
+                <VideoProvider
+                    onError={() => {}}
+                    options={{ dominantSpeaker: true }}
+                >
+                    {children}
+                </VideoProvider>
+            </MemoryRouter>
         )
         const { result } = renderHook(useVideoContext, { wrapper })
         const expectedSettings = {
@@ -71,7 +84,18 @@ describe('the VideoProvider component', () => {
             getLocalAudioTrack: expect.any(Function),
             removeLocalVideoTrack: expect.any(Function),
             isAcquiringLocalTracks: true,
+            isSharingScreen: false,
             toggleScreenShare: expect.any(Function),
+            screenShareNotice: null,
+            dismissScreenShareNotice: expect.any(Function),
+            audioHealth: {
+                micStatus: 'ok',
+                isMicAlertVisible: false,
+                dismissMicAlert: expect.any(Function),
+                restartMic: expect.any(Function),
+                remoteAudioAlert: null,
+                dismissRemoteAudioAlert: expect.any(Function),
+            },
             isBackgroundSelectionOpen: false,
             setIsBackgroundSelectionOpen: expect.any(Function),
             backgroundSettings: expectedSettings,
@@ -105,12 +129,14 @@ describe('the VideoProvider component', () => {
     it('should call the onError function when there is an error', () => {
         const mockOnError = jest.fn()
         const wrapper: React.FC = ({ children }) => (
-            <VideoProvider
-                onError={mockOnError}
-                options={{ dominantSpeaker: true }}
-            >
-                {children}
-            </VideoProvider>
+            <MemoryRouter>
+                <VideoProvider
+                    onError={mockOnError}
+                    options={{ dominantSpeaker: true }}
+                >
+                    {children}
+                </VideoProvider>
+            </MemoryRouter>
         )
         const { result } = renderHook(useVideoContext, { wrapper })
         result.current.onError({} as TwilioError)
