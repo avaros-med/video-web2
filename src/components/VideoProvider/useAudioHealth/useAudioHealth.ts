@@ -178,11 +178,13 @@ export default function useAudioHealth(
             const track = room.localParticipant.audioTracks.values().next()
                 .value
             const localTrack = track?.track as LocalAudioTrack | undefined
+            const captureTrack = localTrack?.mediaStreamTrack
             if (
                 !localTrack ||
+                !captureTrack ||
                 !localTrack.isEnabled ||
-                localTrack.mediaStreamTrack.muted ||
-                localTrack.mediaStreamTrack.readyState !== 'live'
+                captureTrack.muted ||
+                captureTrack.readyState !== 'live'
             ) {
                 localCounter.stalledPolls = 0
                 return

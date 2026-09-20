@@ -144,6 +144,12 @@ The app records a client-side diagnostics timeline for every visit and offers a 
 -   The same summary is appended to the video visit log that is sent to the ark video service when the call ends, and is visible under **EMR Admin > Video Visit Logs**.
 -   Microphone problems (paused by the OS, disconnected, silent, or not reaching the room) surface as a notification with a **Reconnect microphone** action. Remote audio that stops arriving is flagged too.
 
+![Microphone alert during a call](docs/screenshots/in-call-mic-alert.png)
+
+![Connection Diagnostics in the settings menu](docs/screenshots/in-call-settings-menu.png)
+
+To review these states without a real Twilio room, run `npm run storybook` and open the **In Call** stories; the *Audio Problems* story simulates stalled audio in both directions.
+
 ## Browser Support
 
 See browser support table for [twilio-video.js SDK](https://github.com/twilio/twilio-video.js/tree/master/#browser-support).

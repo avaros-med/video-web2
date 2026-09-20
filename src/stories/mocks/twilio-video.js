@@ -17,6 +17,28 @@ window.fetch = (...args) => {
     }
 }
 
+// A real, silent MediaStreamTrack so the audio analysers and microphone health
+// checks can run against the mock exactly as they do against the SDK.
+let silentAudioContext
+const createSilentAudioTrack = () => {
+    try {
+        silentAudioContext = silentAudioContext || new AudioContext()
+        return silentAudioContext
+            .createMediaStreamDestination()
+            .stream.getAudioTracks()[0]
+    } catch {
+        return undefined
+    }
+}
+
+let trackSidCounter = 0
+const nextTrackSid = kind => `MT-${kind}-${++trackSidCounter}`
+
+// Storybook control: when true, room.getStats() reports byte counters that never
+// increase, which makes the app raise its "audio not reaching the call" and
+// "no audio received" notifications after ~9 seconds.
+let simulateStalledAudio = false
+
 const getRandomColor = () => {
     return Math.floor(Math.random() * 16777215).toString(16)
 }
@@ -31,6 +53,9 @@ class MockTrack extends EventEmitter {
         this.backgroundColor = getRandomColor()
 
         this._dummyAudioEl_ = document.createElement('audio')
+        if (this.kind === 'audio') {
+            this.mediaStreamTrack = createSilentAudioTrack()
+        }
     }
 
     attach(el) {
@@ -87,6 +112,7 @@ class MockPublication extends EventEmitter {
         this.kind = kind === 'screen' || kind === 'video' ? 'video' : 'audio'
         this.track = new MockTrack(kind)
         this.trackName = kind
+        this.trackSid = nextTrackSid(kind)
         this.setPriority = () => {}
     }
 }
@@ -115,6 +141,29 @@ class MockRoom extends EventEmitter {
     state = 'connected'
     localParticipant = new LocalParticipant()
     disconnect = () => {}
+    _statsPoll = 0
+    getStats = () => {
+        this._statsPoll += 1
+        const bytes = simulateStalledAudio ? 1000 : 1000 * this._statsPoll
+        const remoteAudioTrackStats = []
+        this.participants.forEach(participant => {
+            participant.audioTracks.forEach(publication => {
+                remoteAudioTrackStats.push({
+                    trackSid: publication.trackSid,
+                    bytesReceived: bytes,
+                })
+            })
+        })
+        const localAudioTrackStats = Array.from(
+            this.localParticipant.audioTracks.values()
+        ).map(publication => ({
+            trackSid: publication.trackSid,
+            bytesSent: bytes,
+        }))
+        return Promise.resolve([
+            { localAudioTrackStats, remoteAudioTrackStats },
+        ])
+    }
 }
 
 const mockRoom = new MockRoom()
@@ -127,12 +176,14 @@ class MockParticipant extends EventEmitter {
             ['video', new MockPublication('video')],
             ['audio', new MockPublication('audio')],
         ])
+        this.audioTracks = new Map([['audio', this.tracks.get('audio')]])
     }
 
     publishTrack(kind) {
         if (!this.tracks.get(kind)) {
             const publication = new MockPublication(kind)
             this.tracks.set(kind, publication)
+            if (kind === 'audio') this.audioTracks.set('audio', publication)
             this.emit('trackSubscribed', publication.track)
             this.emit('trackPublished', publication)
             mockRoom.emit('trackPublished', publication, this)
@@ -143,6 +194,7 @@ class MockParticipant extends EventEmitter {
         const publication = this.tracks.get(kind)
         if (publication) {
             this.tracks.delete(kind)
+            if (kind === 'audio') this.audioTracks.delete('audio')
             this.emit('trackUnsubscribed', publication.track)
             this.emit('trackUnpublished', publication)
             mockRoom.emit('trackUnpublished', publication, this)
@@ -176,6 +228,7 @@ process.env.REACT_APP_DISABLE_TWILIO_CONVERSATIONS = 'true'
 
 // The decorator to be used in ./storybook/preview to apply the mock to all stories
 export function decorator(story, { args }) {
+    simulateStalledAudio = Boolean(args.simulateStalledAudio)
     for (let i = 1; i <= 200; i++) {
         const identity = `test-${i}`
 

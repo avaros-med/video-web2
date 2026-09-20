@@ -122,8 +122,18 @@ function createEntry(track: MediaStreamTrack): Entry | undefined {
     const context = getSharedAudioContext()
     if (!context) return undefined
 
-    const stream = buildStream(track)
-    const { source, analyser } = createAnalyserNodes(context, stream)
+    let stream: MediaStream
+    let nodes: ReturnType<typeof createAnalyserNodes>
+    try {
+        stream = buildStream(track)
+        nodes = createAnalyserNodes(context, stream)
+    } catch (error) {
+        // Some environments (or a track that is not a real MediaStreamTrack) cannot
+        // be analysed; indicators then simply stay idle rather than crashing the UI.
+        console.warn('[avs-video] audio analyser unavailable for track', error)
+        return undefined
+    }
+    const { source, analyser } = nodes
     const entry: Entry = {
         stream,
         source,

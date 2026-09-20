@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { makeStyles } from '@material-ui/core'
+import useRoomState from '../../hooks/useRoomState/useRoomState'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import { MicStatus } from '../VideoProvider/useAudioHealth/useAudioHealth'
 import Snackbar from '../Snackbar/Snackbar'
@@ -48,6 +49,12 @@ export const remoteAudioMessage = (identity: string) =>
 /*
  * Surfaces microphone, remote audio and screen share problems as snackbars.
  * Mounted once inside the room view, alongside ReconnectingNotification.
+ *
+ * All snackbars share the top-right corner, so only one is shown at a time, in
+ * priority order: microphone (actionable) > screen share stopped > remote audio.
+ * A lower-priority alert appears once the higher one is dismissed or resolved.
+ * Nothing is shown while the room itself is reconnecting; that banner already
+ * explains the situation.
  */
 export default function MediaHealthNotifications() {
     const classes = useStyles()
@@ -57,11 +64,22 @@ export default function MediaHealthNotifications() {
         dismissScreenShareNotice,
     } = useVideoContext()
     const [isRestarting, setIsRestarting] = useState(false)
+    const isRoomReconnecting = useRoomState() === 'reconnecting'
 
     const micCopy =
         audioHealth.micStatus !== 'ok'
             ? MIC_ALERT_COPY[audioHealth.micStatus]
             : null
+
+    const showMicAlert =
+        !isRoomReconnecting && audioHealth.isMicAlertVisible && micCopy !== null
+    const showScreenShareNotice =
+        !isRoomReconnecting && !showMicAlert && screenShareNotice !== null
+    const showRemoteAudioAlert =
+        !isRoomReconnecting &&
+        !showMicAlert &&
+        !showScreenShareNotice &&
+        audioHealth.remoteAudioAlert !== null
 
     const onRestartMic = async () => {
         setIsRestarting(true)
@@ -98,7 +116,7 @@ export default function MediaHealthNotifications() {
                         </div>
                     </>
                 }
-                open={audioHealth.isMicAlertVisible && micCopy !== null}
+                open={showMicAlert}
                 autoHideDuration={null}
                 handleClose={audioHealth.dismissMicAlert}
             />
@@ -108,7 +126,7 @@ export default function MediaHealthNotifications() {
                 message={remoteAudioMessage(
                     audioHealth.remoteAudioAlert?.identity ?? ''
                 )}
-                open={audioHealth.remoteAudioAlert !== null}
+                open={showRemoteAudioAlert}
                 autoHideDuration={20000}
                 handleClose={audioHealth.dismissRemoteAudioAlert}
             />
@@ -116,7 +134,7 @@ export default function MediaHealthNotifications() {
                 variant="warning"
                 headline="Screen sharing stopped:"
                 message={screenShareNotice?.message ?? ''}
-                open={screenShareNotice !== null}
+                open={showScreenShareNotice}
                 autoHideDuration={15000}
                 handleClose={dismissScreenShareNotice}
             />
