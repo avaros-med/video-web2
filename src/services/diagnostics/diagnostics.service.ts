@@ -48,6 +48,12 @@ const SUMMARY_MAX_LINES = 20
 const SDK_MESSAGE_MAX_LENGTH = 300
 const LOG_PREFIX = '[avs-video]'
 
+// The mic events that mean something actually went wrong. Counting these by name
+// keeps restart bookkeeping ('restart-requested', 'restart-fallback',
+// 'restart-failed', 'restarted') out of the total, so support reads the number of
+// problems rather than the number of mic events.
+const MIC_PROBLEM_EVENTS = ['system-muted', 'ended', 'silent', 'not-sending']
+
 // Categories that are worth showing in the end-of-call summary. Network quality
 // changes and SDK warnings are kept in the timeline but summarised as counts only.
 const SUMMARY_CATEGORIES: DiagnosticCategory[] = [
@@ -228,12 +234,10 @@ export class DiagnosticsService {
             )} (failed: ${count(
                 'screenshare',
                 'publish-failed'
-            )}) | Mic alerts: ${count('mic') -
-                count('mic', 'recovered') -
-                count(
-                    'mic',
-                    'restart-requested'
-                )} | Remote audio alerts: ${count(
+            )}) | Mic alerts: ${MIC_PROBLEM_EVENTS.reduce(
+                (total, name) => total + count('mic', name),
+                0
+            )} | Remote audio alerts: ${count(
                 'audio-out',
                 'remote-audio-stalled'
             )} | SDK warnings: ${count('sdk')}`,

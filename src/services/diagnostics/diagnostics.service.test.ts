@@ -54,4 +54,16 @@ describe('the DiagnosticsService', () => {
         // Network noise is counted but not listed line by line.
         expect(summary).not.toContain('network:local-quality-low')
     })
+
+    it('should count only genuine microphone problems, not restart bookkeeping', () => {
+        service.log('mic', 'not-sending', { bytesSent: 0 })
+        service.log('mic', 'restart-requested', { from: 'not-sending' })
+        service.log('mic', 'restart-fallback', { message: 'device gone' })
+        service.log('mic', 'restart-failed', { message: 'device gone' })
+        service.log('mic', 'restarted', { label: 'Built-in Microphone' })
+        service.log('mic', 'recovered', { from: 'not-sending' })
+
+        // One problem occurred; the rest is the app reporting on its own recovery.
+        expect(service.getSummary()).toContain('Mic alerts: 1')
+    })
 })
