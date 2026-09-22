@@ -345,7 +345,17 @@ export default function useAudioHealth(
             diagnosticsService.log('mic', 'restart-fallback', {
                 message: (error as Error).message,
             })
-            await audioTrack.restart({})
+            try {
+                await audioTrack.restart({})
+            } catch (fallbackError) {
+                // Both attempts failed. Record it before rejecting: a microphone we
+                // could not recover is exactly what the timeline exists to explain.
+                diagnosticsService.log('mic', 'restart-failed', {
+                    message: (error as Error).message,
+                    fallbackMessage: (fallbackError as Error).message,
+                })
+                throw fallbackError
+            }
         }
         diagnosticsService.log('mic', 'restarted', {
             label: audioTrack.mediaStreamTrack.label,
