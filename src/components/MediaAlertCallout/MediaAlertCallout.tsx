@@ -39,6 +39,12 @@ interface MediaAlertCalloutProps {
     anchor?: MediaAlertAnchor
     /** Auto-dismiss after this many ms. Omit to keep the callout until dismissed. */
     autoHideMs?: number
+    /**
+     * Called instead of onClose when autoHideMs elapses. Timing out is not the
+     * same as the user dismissing the alert, so callers that treat a dismissal as
+     * "don't tell me about this again" must not receive it for an auto-hide.
+     */
+    onAutoHide?: () => void
     'data-testid'?: string
 }
 
@@ -196,6 +202,7 @@ export default function MediaAlertCallout({
     onClose,
     anchor,
     autoHideMs,
+    onAutoHide,
     'data-testid': testId,
 }: MediaAlertCalloutProps) {
     const classes = useStyles()
@@ -203,10 +210,11 @@ export default function MediaAlertCallout({
     const placement = usePlacement(open, anchor, ref)
 
     useEffect(() => {
-        if (!open || !autoHideMs || !onClose) return
-        const timer = window.setTimeout(onClose, autoHideMs)
+        const hide = onAutoHide ?? onClose
+        if (!open || !autoHideMs || !hide) return
+        const timer = window.setTimeout(hide, autoHideMs)
         return () => window.clearTimeout(timer)
-    }, [open, autoHideMs, onClose])
+    }, [open, autoHideMs, onAutoHide, onClose])
 
     if (!open) return null
 

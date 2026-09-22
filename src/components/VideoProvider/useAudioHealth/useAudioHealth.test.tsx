@@ -175,6 +175,45 @@ describe('the useAudioHealth hook', () => {
             })
         }
 
+        let remoteBytesReceived = 4000
+
+        // Puts a remote participant in the room whose audio byte counter only
+        // moves when the test moves it.
+        const givenRemoteParticipant = () => {
+            remoteBytesReceived = 4000
+            room.participants.set('PA1', {
+                identity: 'Patient',
+                audioTracks: new Map([
+                    [
+                        'MTremote',
+                        { trackSid: 'MTremote', track: { isEnabled: true } },
+                    ],
+                ]),
+            })
+            room.getStats.mockImplementation(() =>
+                Promise.resolve([
+                    {
+                        localAudioTrackStats: [],
+                        remoteAudioTrackStats: [
+                            {
+                                trackSid: 'MTremote',
+                                bytesReceived: remoteBytesReceived,
+                            },
+                        ],
+                    },
+                ])
+            )
+        }
+
+        // One baseline poll plus the three stalled polls that raise the alert.
+        const stallRemoteAudio = async (result: any) => {
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            expect(result.current.remoteAudioAlert).not.toBeNull()
+        }
+
         it('should flag a local track that stops sending bytes and recover when they flow again', async () => {
             room.localParticipant.audioTracks.set('MTlocal', {
                 trackSid: 'MTlocal',
@@ -241,9 +280,44 @@ describe('the useAudioHealth hook', () => {
             await flushPoll()
             expect(result.current.remoteAudioAlert).toEqual({
                 identity: 'Patient',
+                trackSid: 'MTremote',
             })
 
             act(() => result.current.dismissRemoteAudioAlert())
+            expect(result.current.remoteAudioAlert).toBeNull()
+        })
+
+        it('should keep alerting about a track that timed out on screen rather than being dismissed', async () => {
+            givenRemoteParticipant()
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+            await stallRemoteAudio(result)
+
+            // Auto-hide: the alert leaves the screen without the user deciding
+            // anything, so a later stall on the same track must alert again.
+            act(() => result.current.hideRemoteAudioAlert())
+            expect(result.current.remoteAudioAlert).toBeNull()
+
+            remoteBytesReceived += 500 // recovers
+            await flushPoll()
+            await stallRemoteAudio(result)
+            expect(result.current.remoteAudioAlert).toEqual({
+                identity: 'Patient',
+                trackSid: 'MTremote',
+            })
+        })
+
+        it('should clear the alert when the track it refers to goes away', async () => {
+            givenRemoteParticipant()
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+            await stallRemoteAudio(result)
+
+            // The participant leaves, so there is nobody left to not be hearing.
+            room.participants.clear()
+            await flushPoll()
             expect(result.current.remoteAudioAlert).toBeNull()
         })
     })

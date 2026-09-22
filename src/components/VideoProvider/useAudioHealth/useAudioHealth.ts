@@ -42,6 +42,12 @@ export type MicStatus =
 
 export interface RemoteAudioAlert {
     identity: string
+    /**
+     * The publication the alert is about. Alerts are keyed by track rather than
+     * by identity because a participant who rejoins gets a fresh identity, and
+     * a replaced track gets a fresh SID while the identity stays put.
+     */
+    trackSid: string
 }
 
 export interface AudioHealth {
@@ -50,7 +56,10 @@ export interface AudioHealth {
     dismissMicAlert: () => void
     restartMic: () => Promise<void>
     remoteAudioAlert: RemoteAudioAlert | null
+    /** The user dismissed the alert: stay quiet about this track until it recovers. */
     dismissRemoteAudioAlert: () => void
+    /** The alert timed out on screen. Hide it, but keep alerting if it stalls again. */
+    hideRemoteAudioAlert: () => void
 }
 
 const SILENCE_THRESHOLD_MS = 10000
@@ -85,7 +94,7 @@ export default function useAudioHealth(
         remoteAudioAlert,
         setRemoteAudioAlert,
     ] = useState<RemoteAudioAlert | null>(null)
-    const dismissedRemoteIdentities = useRef(new Set<string>())
+    const dismissedRemoteTrackSids = useRef(new Set<string>())
 
     // --- Browser-level capture track events -------------------------------------
     useEffect(() => {
@@ -249,13 +258,10 @@ export default function useAudioHealth(
                                     trackSid: sid,
                                 }
                             )
-                            if (
-                                !dismissedRemoteIdentities.current.has(
-                                    participant.identity
-                                )
-                            ) {
+                            if (!dismissedRemoteTrackSids.current.has(sid)) {
                                 setRemoteAudioAlert({
                                     identity: participant.identity,
+                                    trackSid: sid,
                                 })
                             }
                         }
@@ -268,13 +274,9 @@ export default function useAudioHealth(
                                 'remote-audio-recovered',
                                 { identity: participant.identity }
                             )
-                            dismissedRemoteIdentities.current.delete(
-                                participant.identity
-                            )
+                            dismissedRemoteTrackSids.current.delete(sid)
                             setRemoteAudioAlert(alert =>
-                                alert?.identity === participant.identity
-                                    ? null
-                                    : alert
+                                alert?.trackSid === sid ? null : alert
                             )
                         }
                         counter.stalledPolls = 0
@@ -283,10 +285,18 @@ export default function useAudioHealth(
                     remoteCounters.set(sid, counter)
                 })
             })
-            // Forget tracks that were unsubscribed or disabled.
+            // Forget tracks that were unsubscribed or disabled. An alert about a
+            // track that is gone has nothing left to say — the participant has left,
+            // muted themselves, or republished — so it goes with the counter.
             Array.from(remoteCounters.keys())
                 .filter(sid => !seenSids.has(sid))
-                .forEach(sid => remoteCounters.delete(sid))
+                .forEach(sid => {
+                    remoteCounters.delete(sid)
+                    dismissedRemoteTrackSids.current.delete(sid)
+                    setRemoteAudioAlert(alert =>
+                        alert?.trackSid === sid ? null : alert
+                    )
+                })
         }
 
         const poll = async () => {
@@ -323,10 +333,16 @@ export default function useAudioHealth(
 
     const dismissRemoteAudioAlert = useCallback(() => {
         setRemoteAudioAlert(alert => {
-            if (alert) dismissedRemoteIdentities.current.add(alert.identity)
+            if (alert) dismissedRemoteTrackSids.current.add(alert.trackSid)
             return null
         })
     }, [])
+
+    // Auto-hide is not a decision by the user, so it must not silence the track.
+    const hideRemoteAudioAlert = useCallback(
+        () => setRemoteAudioAlert(null),
+        []
+    )
 
     const restartMic = useCallback(async () => {
         if (!audioTrack) return
@@ -370,5 +386,6 @@ export default function useAudioHealth(
         restartMic,
         remoteAudioAlert,
         dismissRemoteAudioAlert,
+        hideRemoteAudioAlert,
     }
 }
