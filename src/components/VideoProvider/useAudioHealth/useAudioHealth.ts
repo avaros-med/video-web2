@@ -228,6 +228,12 @@ export default function useAudioHealth(
                         seconds:
                             (STALLED_POLLS_BEFORE_ALERT * STATS_POLL_MS) / 1000,
                     })
+                }
+                if (localCounter.stalledPolls >= STALLED_POLLS_BEFORE_ALERT) {
+                    // Raised on every stalled poll, not just the one that crosses
+                    // the threshold: another problem may own the status at that
+                    // moment, and when it clears the microphone is still not
+                    // reaching the room. Only the log fires once.
                     isNotSendingRaised = true
                     setMicStatus(previous =>
                         previous === 'ok' ? 'not-sending' : previous

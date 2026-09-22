@@ -40,6 +40,8 @@ const makeRoom = () => {
     return room
 }
 
+const SILENCE_MS = 11000
+
 describe('the useAudioHealth hook', () => {
     let audioTrack: MockLocalAudioTrack
     let room: any
@@ -248,6 +250,45 @@ describe('the useAudioHealth hook', () => {
             bytesSent += 500
             await flushPoll()
             expect(result.current.micStatus).toBe('ok')
+        })
+
+        it('should raise not-sending once a competing status clears while bytes stay stalled', async () => {
+            room.localParticipant.audioTracks.set('MTlocal', {
+                trackSid: 'MTlocal',
+                track: audioTrack,
+            })
+            room.getStats.mockImplementation(() =>
+                Promise.resolve([
+                    {
+                        localAudioTrackStats: [
+                            { trackSid: 'MTlocal', bytesSent: 1000 },
+                        ],
+                        remoteAudioTrackStats: [],
+                    },
+                ])
+            )
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+
+            // Digital silence claims the status first. Silence uses Date.now().
+            let now = 1_000_000
+            jest.spyOn(Date, 'now').mockImplementation(() => now)
+            act(() => levelSubscriber?.({ volume: 0, isSilent: true }))
+            now += SILENCE_MS
+            act(() => levelSubscriber?.({ volume: 0, isSilent: true }))
+            expect(result.current.micStatus).toBe('silent')
+
+            // Bytes stall for the whole threshold while 'silent' owns the status.
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+
+            // Sound returns, so silence clears — but nothing is reaching the room.
+            act(() => levelSubscriber?.({ volume: 5, isSilent: false }))
+            await flushPoll()
+            expect(result.current.micStatus).toBe('not-sending')
         })
 
         it('should clear the not-sending alert after a mute and unmute cycle', async () => {
