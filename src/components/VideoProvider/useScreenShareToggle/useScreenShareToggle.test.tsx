@@ -203,4 +203,45 @@ describe('the useScreenShareToggle hook', () => {
             })
         })
     })
+
+    it('should ignore a second start while the first publication is pending', async () => {
+        let resolvePublish: (value: string) => void = () => undefined
+        mockLocalParticipant.publishTrack.mockImplementation(
+            () =>
+                new Promise<string>(resolve => {
+                    resolvePublish = resolve
+                })
+        )
+
+        const { result, waitForNextUpdate } = renderHook(() =>
+            useScreenShareToggle(mockRoom, mockOnError)
+        )
+
+        // isSharing is still false during this window, so nothing else prevents a
+        // second capture being published with only the later one stoppable.
+        await act(async () => {
+            result.current[1]()
+            result.current[1]()
+            await Promise.resolve()
+            await Promise.resolve()
+        })
+        expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledTimes(1)
+        expect(mockLocalParticipant.publishTrack).toHaveBeenCalledTimes(1)
+
+        await act(async () => {
+            resolvePublish('mockPublication')
+            await waitForNextUpdate()
+        })
+        expect(result.current[0]).toBe(true)
+
+        // The guard is handed back, so sharing can start again after stopping.
+        act(() => result.current[1]())
+        expect(result.current[0]).toBe(false)
+        await act(async () => {
+            result.current[1]()
+            await Promise.resolve()
+            await Promise.resolve()
+        })
+        expect(navigator.mediaDevices.getDisplayMedia).toHaveBeenCalledTimes(2)
+    })
 })

@@ -35,10 +35,17 @@ export default function useScreenShareToggle(
     const [isSharing, setIsSharing] = useState(false)
     const [notice, setNotice] = useState<ScreenShareNotice | null>(null)
     const stopScreenShareRef = useRef<(() => void) | null>(null)
+    // `isSharing` only turns true once publishing resolves, so it cannot stop a
+    // second start during the gap between the picker closing and that resolution.
+    // Two captures would then be published with only the later one reachable from
+    // stopScreenShareRef, leaving the first sharing until the call ends.
+    const isStartingShareRef = useRef(false)
 
     const dismissNotice = useCallback(() => setNotice(null), [])
 
     const shareScreen = useCallback(() => {
+        if (isStartingShareRef.current) return
+        isStartingShareRef.current = true
         diagnosticsService.log('screenshare', 'requested')
         navigator.mediaDevices
             .getDisplayMedia({
@@ -101,6 +108,7 @@ export default function useScreenShareToggle(
                             // Fired when the user clicks the browser's own "Stop sharing" control.
                             mediaStreamTrack.onended = () =>
                                 stopScreenShareRef.current?.()
+                            isStartingShareRef.current = false
                             setIsSharing(true)
                         })
                         .catch((error: TwilioError | Error) => {
@@ -108,6 +116,7 @@ export default function useScreenShareToggle(
                             // Release the capture so the browser's sharing indicator disappears,
                             // leave mic/camera alone, and tell the user in plain language.
                             releaseTrack()
+                            isStartingShareRef.current = false
                             setIsSharing(false)
                             diagnosticsService.log(
                                 'screenshare',
@@ -133,6 +142,10 @@ export default function useScreenShareToggle(
                 }
             })
             .catch(error => {
+                // Reached by a cancelled picker, a capture failure, and the
+                // rethrow above, so every path that ends without a publication
+                // hands the guard back.
+                isStartingShareRef.current = false
                 // Don't display an error if the user closes the screen share dialog
                 if (
                     error.message === 'Permission denied by system' ||
