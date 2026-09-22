@@ -48,73 +48,89 @@ export default function useScreenShareToggle(
             .then(stream => {
                 const mediaStreamTrack = stream.getVideoTracks()[0]
 
-                // Wrap the raw MediaStreamTrack ourselves so we hold the same object
-                // the SDK publishes. This lets us stop and unpublish it reliably and
-                // keeps its logs quiet.
-                const screenTrack = new Video.LocalVideoTrack(
-                    mediaStreamTrack,
-                    {
-                        name: 'screen', // Tracks are named so the UI can find them later
-                        logLevel: 'off',
+                // Until publishing is under way we are the only holder of the capture,
+                // so anything that throws in between has to release it. Otherwise the
+                // browser keeps showing its "sharing your screen" indicator for a share
+                // that never started.
+                let releaseTrack = () => mediaStreamTrack.stop()
+
+                try {
+                    // Wrap the raw MediaStreamTrack ourselves so we hold the same object
+                    // the SDK publishes. This lets us stop and unpublish it reliably and
+                    // keeps its logs quiet.
+                    const screenTrack = new Video.LocalVideoTrack(
+                        mediaStreamTrack,
+                        {
+                            name: 'screen', // Tracks are named so the UI can find them later
+                            logLevel: 'off',
+                        }
+                    )
+
+                    releaseTrack = () => {
+                        screenTrack.stop()
+                        mediaStreamTrack.stop()
                     }
-                )
 
-                const releaseTrack = () => {
-                    screenTrack.stop()
-                    mediaStreamTrack.stop()
-                }
-
-                // All video tracks are published with 'low' priority. The video track
-                // displayed in the 'MainParticipant' component has its priority raised
-                // to 'high' by the subscriber via track.setPriority().
-                room!.localParticipant
-                    .publishTrack(screenTrack, { priority: 'low' })
-                    .then(trackPublication => {
-                        diagnosticsService.log(
-                            'screenshare',
-                            'published',
-                            describeDisplayTrack(mediaStreamTrack)
-                        )
-
-                        stopScreenShareRef.current = () => {
-                            stopScreenShareRef.current = null
-                            room!.localParticipant.unpublishTrack(screenTrack)
-                            // TODO: remove this if the SDK is updated to emit this event
-                            room!.localParticipant.emit(
-                                'trackUnpublished',
-                                trackPublication
+                    // All video tracks are published with 'low' priority. The video track
+                    // displayed in the 'MainParticipant' component has its priority raised
+                    // to 'high' by the subscriber via track.setPriority().
+                    room!.localParticipant
+                        .publishTrack(screenTrack, { priority: 'low' })
+                        .then(trackPublication => {
+                            diagnosticsService.log(
+                                'screenshare',
+                                'published',
+                                describeDisplayTrack(mediaStreamTrack)
                             )
+
+                            stopScreenShareRef.current = () => {
+                                stopScreenShareRef.current = null
+                                room!.localParticipant.unpublishTrack(
+                                    screenTrack
+                                )
+                                // TODO: remove this if the SDK is updated to emit this event
+                                room!.localParticipant.emit(
+                                    'trackUnpublished',
+                                    trackPublication
+                                )
+                                releaseTrack()
+                                setIsSharing(false)
+                                diagnosticsService.log('screenshare', 'stopped')
+                            }
+
+                            // Fired when the user clicks the browser's own "Stop sharing" control.
+                            mediaStreamTrack.onended = () =>
+                                stopScreenShareRef.current?.()
+                            setIsSharing(true)
+                        })
+                        .catch((error: TwilioError | Error) => {
+                            // Publishing failed (renegotiation rejected, signalling error, etc.).
+                            // Release the capture so the browser's sharing indicator disappears,
+                            // leave mic/camera alone, and tell the user in plain language.
                             releaseTrack()
                             setIsSharing(false)
-                            diagnosticsService.log('screenshare', 'stopped')
-                        }
-
-                        // Fired when the user clicks the browser's own "Stop sharing" control.
-                        mediaStreamTrack.onended = () =>
-                            stopScreenShareRef.current?.()
-                        setIsSharing(true)
-                    })
-                    .catch((error: TwilioError | Error) => {
-                        // Publishing failed (renegotiation rejected, signalling error, etc.).
-                        // Release the capture so the browser's sharing indicator disappears,
-                        // leave mic/camera alone, and tell the user in plain language.
-                        releaseTrack()
-                        setIsSharing(false)
-                        diagnosticsService.log(
-                            'screenshare',
-                            'publish-failed',
-                            {
-                                code: error.code,
-                                message: error.message,
-                            }
-                        )
-                        const friendlyError = new Error(
-                            SCREEN_SHARE_PUBLISH_FAILED_MESSAGE
-                        )
-                        friendlyError.name = 'ScreenSharePublishFailed'
-                        Object.assign(friendlyError, { code: error.code })
-                        onError(friendlyError)
-                    })
+                            diagnosticsService.log(
+                                'screenshare',
+                                'publish-failed',
+                                {
+                                    code: error.code,
+                                    message: error.message,
+                                }
+                            )
+                            const friendlyError = new Error(
+                                SCREEN_SHARE_PUBLISH_FAILED_MESSAGE
+                            )
+                            friendlyError.name = 'ScreenSharePublishFailed'
+                            Object.assign(friendlyError, { code: error.code })
+                            onError(friendlyError)
+                        })
+                } catch (error) {
+                    // Wrapping or handing the track to the SDK threw synchronously, so
+                    // no publish attempt is in flight to clean up after itself.
+                    releaseTrack()
+                    setIsSharing(false)
+                    throw error
+                }
             })
             .catch(error => {
                 // Don't display an error if the user closes the screen share dialog
