@@ -181,7 +181,21 @@ export default function useAudioHealth(
 
         let isActive = true
         const localCounter: ByteCounter = { bytes: 0, stalledPolls: 0 }
+        // Whether we raised the 'not-sending' alert. Clearing it keys off this
+        // rather than off the stall counter: muting resets the counter to zero, so
+        // a counter-based recovery check can never fire again afterwards and the
+        // alert would stay on screen for the rest of the call.
+        let isNotSendingRaised = false
         const remoteCounters = new Map<string, ByteCounter>()
+
+        const clearNotSendingAlert = () => {
+            if (!isNotSendingRaised) return
+            isNotSendingRaised = false
+            diagnosticsService.log('mic', 'recovered', { from: 'not-sending' })
+            setMicStatus(previous =>
+                previous === 'not-sending' ? 'ok' : previous
+            )
+        }
 
         const checkLocalAudio = (stats: LocalAudioTrackStats[]) => {
             const track = room.localParticipant.audioTracks.values().next()
@@ -195,7 +209,9 @@ export default function useAudioHealth(
                 captureTrack.muted ||
                 captureTrack.readyState !== 'live'
             ) {
+                // Not capturing, so the byte counter says nothing about health.
                 localCounter.stalledPolls = 0
+                clearNotSendingAlert()
                 return
             }
             const stat = stats.find(s => s.trackSid === track.trackSid)
@@ -209,19 +225,15 @@ export default function useAudioHealth(
                         seconds:
                             (STALLED_POLLS_BEFORE_ALERT * STATS_POLL_MS) / 1000,
                     })
+                    isNotSendingRaised = true
                     setMicStatus(previous =>
                         previous === 'ok' ? 'not-sending' : previous
                     )
                 }
             } else {
-                if (localCounter.stalledPolls >= STALLED_POLLS_BEFORE_ALERT) {
-                    diagnosticsService.log('mic', 'recovered', {
-                        from: 'not-sending',
-                    })
-                    setMicStatus(previous =>
-                        previous === 'not-sending' ? 'ok' : previous
-                    )
-                }
+                // Bytes are leaving the peer connection, so the alert is wrong
+                // regardless of what the stall counter currently reads.
+                clearNotSendingAlert()
                 localCounter.stalledPolls = 0
             }
             localCounter.bytes = stat.bytesSent

@@ -250,6 +250,44 @@ describe('the useAudioHealth hook', () => {
             expect(result.current.micStatus).toBe('ok')
         })
 
+        it('should clear the not-sending alert after a mute and unmute cycle', async () => {
+            room.localParticipant.audioTracks.set('MTlocal', {
+                trackSid: 'MTlocal',
+                track: audioTrack,
+            })
+            let bytesSent = 1000
+            room.getStats.mockImplementation(() =>
+                Promise.resolve([
+                    {
+                        localAudioTrackStats: [
+                            { trackSid: 'MTlocal', bytesSent },
+                        ],
+                        remoteAudioTrackStats: [],
+                    },
+                ])
+            )
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+
+            await flushPoll() // baseline
+            await flushPoll()
+            await flushPoll()
+            await flushPoll() // stalled 3 -> alert
+            expect(result.current.micStatus).toBe('not-sending')
+
+            // Toggling mute is the first thing anyone tries when told nobody can
+            // hear them, and it resets the stall counter. Recovery must not depend
+            // on that counter or the alert can never clear.
+            audioTrack.isEnabled = false
+            await flushPoll()
+            audioTrack.isEnabled = true
+            bytesSent += 5000
+            await flushPoll()
+
+            expect(result.current.micStatus).toBe('ok')
+        })
+
         it('should report a remote participant whose audio stops arriving', async () => {
             room.participants.set('PA1', {
                 identity: 'Patient',
