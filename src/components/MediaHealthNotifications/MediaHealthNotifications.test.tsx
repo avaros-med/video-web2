@@ -133,4 +133,30 @@ describe('the MediaHealthNotifications component', () => {
         const wrapper = shallow(<MediaHealthNotifications />)
         expect(openCallouts(wrapper)).toEqual([])
     })
+
+    it('should record a dismissal when the remote audio callout times out', () => {
+        const dismissRemoteAudioAlert = jest.fn()
+        mockUseVideoContext.mockReturnValue(
+            buildContext({
+                audioHealth: {
+                    remoteAudioAlert: {
+                        identity: 'Patient',
+                        trackSid: 'MTremote',
+                    },
+                    dismissRemoteAudioAlert,
+                },
+            })
+        )
+        const wrapper = shallow(<MediaHealthNotifications />)
+        const callout = wrapper
+            .find(MediaAlertCallout)
+            .filterWhere((c: any) => c.prop('open'))
+
+        // The timeout has to run through dismissal. Routing it anywhere else lets
+        // the next three-second stats poll raise the same alert again.
+        expect(callout.prop('autoHideMs')).toBeGreaterThan(0)
+        callout.prop('onClose')!()
+        expect(dismissRemoteAudioAlert).toHaveBeenCalled()
+        expect(callout.prop('onAutoHide')).toBeUndefined()
+    })
 })

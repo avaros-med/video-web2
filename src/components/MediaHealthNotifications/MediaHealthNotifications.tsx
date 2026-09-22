@@ -137,7 +137,6 @@ export default function MediaHealthNotifications() {
                 message={REMOTE_AUDIO_MESSAGE}
                 action={{ label: CHECK_SPEAKER_LABEL, onClick: onCheckSpeaker }}
                 onClose={audioHealth.dismissRemoteAudioAlert}
-                onAutoHide={audioHealth.hideRemoteAudioAlert}
                 autoHideMs={REMOTE_AUDIO_NOTICE_MS}
                 data-testid="remote-audio-alert"
             />

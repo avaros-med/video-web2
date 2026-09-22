@@ -56,10 +56,13 @@ export interface AudioHealth {
     dismissMicAlert: () => void
     restartMic: () => Promise<void>
     remoteAudioAlert: RemoteAudioAlert | null
-    /** The user dismissed the alert: stay quiet about this track until it recovers. */
+    /**
+     * Stop showing the alert for this track until its audio recovers or the track
+     * goes away. Used both by the dismiss control and by the auto-hide timeout:
+     * because the record is keyed by track SID and cleared on recovery and on
+     * cleanup, it silences one problem rather than the participant.
+     */
     dismissRemoteAudioAlert: () => void
-    /** The alert timed out on screen. Hide it, but keep alerting if it stalls again. */
-    hideRemoteAudioAlert: () => void
 }
 
 const SILENCE_THRESHOLD_MS = 10000
@@ -361,12 +364,6 @@ export default function useAudioHealth(
         })
     }, [])
 
-    // Auto-hide is not a decision by the user, so it must not silence the track.
-    const hideRemoteAudioAlert = useCallback(
-        () => setRemoteAudioAlert(null),
-        []
-    )
-
     const restartMic = useCallback(async () => {
         if (!audioTrack) return
         diagnosticsService.log('mic', 'restart-requested', { from: micStatus })
@@ -409,6 +406,5 @@ export default function useAudioHealth(
         restartMic,
         remoteAudioAlert,
         dismissRemoteAudioAlert,
-        hideRemoteAudioAlert,
     }
 }

@@ -93,4 +93,26 @@ describe('the MediaAlertCallout component', () => {
             )
         expect(caret.exists()).toBe(true)
     })
+
+    it('should treat the auto-hide timeout as a dismissal', () => {
+        jest.useFakeTimers()
+        const onClose = jest.fn()
+        mount(
+            <MediaAlertCallout
+                open
+                tone="info"
+                title="You may not be hearing Patient"
+                onClose={onClose}
+                autoHideMs={20000}
+            />
+        )
+
+        // Timing out must go through the same handler as the close control, so a
+        // caller that records dismissals does not see the alert return on the very
+        // next poll.
+        expect(onClose).not.toHaveBeenCalled()
+        jest.advanceTimersByTime(20000)
+        expect(onClose).toHaveBeenCalledTimes(1)
+        jest.useRealTimers()
+    })
 })

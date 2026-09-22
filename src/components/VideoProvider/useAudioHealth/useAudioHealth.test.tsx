@@ -372,24 +372,56 @@ describe('the useAudioHealth hook', () => {
             expect(result.current.remoteAudioAlert?.identity).toBe('Patient')
         })
 
-        it('should keep alerting about a track that timed out on screen rather than being dismissed', async () => {
+        it('should not re-raise an alert that was dismissed while the track is still stalled', async () => {
             givenRemoteParticipant()
             const { result } = renderHook(() =>
                 useAudioHealth(room, [audioTrack as any])
             )
             await stallRemoteAudio(result)
 
-            // Auto-hide: the alert leaves the screen without the user deciding
-            // anything, so a later stall on the same track must alert again.
-            act(() => result.current.hideRemoteAudioAlert())
+            // Dismissing (by the control or by the auto-hide timeout) has to stick
+            // for as long as the track stays stalled, or the callout reappears on
+            // the very next poll three seconds later.
+            act(() => result.current.dismissRemoteAudioAlert())
             expect(result.current.remoteAudioAlert).toBeNull()
-
-            remoteBytesReceived += 500 // recovers
             await flushPoll()
+            await flushPoll()
+            expect(result.current.remoteAudioAlert).toBeNull()
+        })
+
+        it('should alert again when a dismissed participant republishes their audio', async () => {
+            givenRemoteParticipant()
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+            await stallRemoteAudio(result)
+            act(() => result.current.dismissRemoteAudioAlert())
+
+            // Same participant, new publication. The dismissal belonged to the old
+            // track, so the new one must be able to raise its own alert.
+            room.participants.set('PA1', {
+                identity: 'Patient',
+                audioTracks: new Map([
+                    [
+                        'MTremote2',
+                        { trackSid: 'MTremote2', track: { isEnabled: true } },
+                    ],
+                ]),
+            })
+            room.getStats.mockImplementation(() =>
+                Promise.resolve([
+                    {
+                        localAudioTrackStats: [],
+                        remoteAudioTrackStats: [
+                            { trackSid: 'MTremote2', bytesReceived: 7000 },
+                        ],
+                    },
+                ])
+            )
             await stallRemoteAudio(result)
             expect(result.current.remoteAudioAlert).toEqual({
                 identity: 'Patient',
-                trackSid: 'MTremote',
+                trackSid: 'MTremote2',
             })
         })
 
