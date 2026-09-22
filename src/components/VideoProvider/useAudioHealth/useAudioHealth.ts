@@ -270,12 +270,23 @@ export default function useAudioHealth(
                                     trackSid: sid,
                                 }
                             )
-                            if (!dismissedRemoteTrackSids.current.has(sid)) {
-                                setRemoteAudioAlert({
-                                    identity: participant.identity,
-                                    trackSid: sid,
-                                })
-                            }
+                        }
+                        if (
+                            counter.stalledPolls >=
+                                STALLED_POLLS_BEFORE_ALERT &&
+                            !dismissedRemoteTrackSids.current.has(sid)
+                        ) {
+                            // There is one alert slot. Whoever stalls first keeps it
+                            // until they recover or are dismissed; a second stalled
+                            // participant waits rather than silently replacing them,
+                            // and takes the slot on a later poll once it is free.
+                            setRemoteAudioAlert(
+                                alert =>
+                                    alert ?? {
+                                        identity: participant.identity,
+                                        trackSid: sid,
+                                    }
+                            )
                         }
                     } else {
                         if (

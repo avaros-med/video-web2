@@ -325,6 +325,53 @@ describe('the useAudioHealth hook', () => {
             expect(result.current.remoteAudioAlert).toBeNull()
         })
 
+        it('should not let a second stalled participant replace an active alert', async () => {
+            givenRemoteParticipant()
+            room.participants.set('PA2', {
+                identity: 'Guest',
+                audioTracks: new Map([
+                    [
+                        'MTguest',
+                        { trackSid: 'MTguest', track: { isEnabled: true } },
+                    ],
+                ]),
+            })
+            let guestBytes = 9000
+            room.getStats.mockImplementation(() =>
+                Promise.resolve([
+                    {
+                        localAudioTrackStats: [],
+                        remoteAudioTrackStats: [
+                            { trackSid: 'MTremote', bytesReceived: 4000 },
+                            { trackSid: 'MTguest', bytesReceived: guestBytes },
+                        ],
+                    },
+                ])
+            )
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+
+            // The patient stalls first and owns the alert.
+            guestBytes += 500
+            await flushPoll()
+            guestBytes += 500
+            await flushPoll()
+            guestBytes += 500
+            await flushPoll()
+            guestBytes += 500
+            await flushPoll()
+            expect(result.current.remoteAudioAlert?.identity).toBe('Patient')
+
+            // Now the guest stalls too. The patient is still silent, so the alert
+            // must stay on them rather than being quietly overwritten.
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            expect(result.current.remoteAudioAlert?.identity).toBe('Patient')
+        })
+
         it('should keep alerting about a track that timed out on screen rather than being dismissed', async () => {
             givenRemoteParticipant()
             const { result } = renderHook(() =>
