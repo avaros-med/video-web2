@@ -362,8 +362,14 @@ describe('the useAudioHealth hook', () => {
                 trackSid: 'MTremote',
             })
 
+            // Dismissing puts the callout away; the problem, and the tile badge
+            // driven by it, remain until the audio actually recovers.
             act(() => result.current.dismissRemoteAudioAlert())
-            expect(result.current.remoteAudioAlert).toBeNull()
+            expect(result.current.isRemoteAlertVisible).toBe(false)
+            expect(result.current.remoteAudioAlert).toEqual({
+                identity: 'Patient',
+                trackSid: 'MTremote',
+            })
         })
 
         it('should not let a second stalled participant replace an active alert', async () => {
@@ -424,10 +430,10 @@ describe('the useAudioHealth hook', () => {
             // for as long as the track stays stalled, or the callout reappears on
             // the very next poll three seconds later.
             act(() => result.current.dismissRemoteAudioAlert())
-            expect(result.current.remoteAudioAlert).toBeNull()
+            expect(result.current.isRemoteAlertVisible).toBe(false)
             await flushPoll()
             await flushPoll()
-            expect(result.current.remoteAudioAlert).toBeNull()
+            expect(result.current.isRemoteAlertVisible).toBe(false)
         })
 
         it('should alert again when a dismissed participant republishes their audio', async () => {
@@ -464,6 +470,76 @@ describe('the useAudioHealth hook', () => {
                 identity: 'Patient',
                 trackSid: 'MTremote2',
             })
+            expect(result.current.isRemoteAlertVisible).toBe(true)
+        })
+
+        it('should show the callout again when the same track stalls after recovering', async () => {
+            givenRemoteParticipant()
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+            await stallRemoteAudio(result)
+            act(() => result.current.dismissRemoteAudioAlert())
+            expect(result.current.isRemoteAlertVisible).toBe(false)
+
+            // Recovery clears the problem and, with it, the memory of the dismissal.
+            remoteBytesReceived += 500
+            await flushPoll()
+            expect(result.current.remoteAudioAlert).toBeNull()
+
+            // A fresh stall is a fresh problem and gets a fresh callout.
+            await stallRemoteAudio(result)
+            expect(result.current.isRemoteAlertVisible).toBe(true)
+        })
+
+        it('should keep the microphone problem while its callout is dismissed and bring it back on request', async () => {
+            room.localParticipant.audioTracks.set('MTlocal', {
+                trackSid: 'MTlocal',
+                track: audioTrack,
+            })
+            let bytesSent = 1000
+            room.getStats.mockImplementation(() =>
+                Promise.resolve([
+                    {
+                        localAudioTrackStats: [
+                            { trackSid: 'MTlocal', bytesSent },
+                        ],
+                        remoteAudioTrackStats: [],
+                    },
+                ])
+            )
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            expect(result.current.micStatus).toBe('not-sending')
+            expect(result.current.isMicAlertVisible).toBe(true)
+
+            // The callout carries the only reconnect action, so dismissing it must
+            // not erase the problem, and the pulsing button must be able to bring
+            // the callout back.
+            act(() => result.current.dismissMicAlert())
+            expect(result.current.isMicAlertVisible).toBe(false)
+            expect(result.current.micStatus).toBe('not-sending')
+            await flushPoll()
+            expect(result.current.isMicAlertVisible).toBe(false)
+            act(() => result.current.showMicAlert())
+            expect(result.current.isMicAlertVisible).toBe(true)
+
+            // Once it recovers, the dismissal is forgotten: a later recurrence is
+            // shown without anyone having to ask for it.
+            act(() => result.current.dismissMicAlert())
+            bytesSent += 5000
+            await flushPoll()
+            expect(result.current.micStatus).toBe('ok')
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            expect(result.current.micStatus).toBe('not-sending')
+            expect(result.current.isMicAlertVisible).toBe(true)
         })
 
         it('should clear the alert when the track it refers to goes away', async () => {

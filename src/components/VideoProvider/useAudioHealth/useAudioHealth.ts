@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
     LocalAudioTrack,
     LocalVideoTrack,
@@ -50,17 +50,27 @@ export interface RemoteAudioAlert {
     trackSid: string
 }
 
+/*
+ * Each direction keeps two separate facts: whether there is a problem, and
+ * whether the user has put the callout for that problem away. The problem
+ * (`micStatus`, `remoteAudioAlert`) drives the tile badges and the pulsing mic
+ * button for as long as it lasts. The callout is shown only while the problem
+ * exists and has not been hidden, and hiding is forgotten the moment the problem
+ * clears, so a fresh occurrence always gets a fresh callout.
+ */
 export interface AudioHealth {
     micStatus: MicStatus
     isMicAlertVisible: boolean
+    /** Put the microphone callout away. The problem, badge and button stay. */
     dismissMicAlert: () => void
+    /** Bring a dismissed microphone callout back, e.g. from the pulsing button. */
+    showMicAlert: () => void
     restartMic: () => Promise<void>
     remoteAudioAlert: RemoteAudioAlert | null
+    isRemoteAlertVisible: boolean
     /**
-     * Stop showing the alert for this track until its audio recovers or the track
-     * goes away. Used both by the dismiss control and by the auto-hide timeout:
-     * because the record is keyed by track SID and cleared on recovery and on
-     * cleanup, it silences one problem rather than the participant.
+     * Put the remote audio callout away, by the close control or the auto-hide
+     * timeout. The tile badge stays until the track recovers or goes away.
      */
     dismissRemoteAudioAlert: () => void
 }
@@ -92,12 +102,22 @@ export default function useAudioHealth(
     const isMicEnabled = useIsTrackEnabled(audioTrack)
 
     const [micStatus, setMicStatus] = useState<MicStatus>('ok')
-    const [isMicAlertVisible, setIsMicAlertVisible] = useState(false)
+    const [hiddenMicStatus, setHiddenMicStatus] = useState<MicStatus | null>(
+        null
+    )
     const [
         remoteAudioAlert,
         setRemoteAudioAlert,
     ] = useState<RemoteAudioAlert | null>(null)
-    const dismissedRemoteTrackSids = useRef(new Set<string>())
+    const [hiddenRemoteTrackSid, setHiddenRemoteTrackSid] = useState<
+        string | null
+    >(null)
+
+    const isMicAlertVisible =
+        micStatus !== 'ok' && micStatus !== hiddenMicStatus
+    const isRemoteAlertVisible =
+        remoteAudioAlert !== null &&
+        remoteAudioAlert.trackSid !== hiddenRemoteTrackSid
 
     // --- Browser-level capture track events -------------------------------------
     useEffect(() => {
@@ -281,14 +301,13 @@ export default function useAudioHealth(
                             )
                         }
                         if (
-                            counter.stalledPolls >=
-                                STALLED_POLLS_BEFORE_ALERT &&
-                            !dismissedRemoteTrackSids.current.has(sid)
+                            counter.stalledPolls >= STALLED_POLLS_BEFORE_ALERT
                         ) {
                             // There is one alert slot. Whoever stalls first keeps it
-                            // until they recover or are dismissed; a second stalled
+                            // until they recover or go away; a second stalled
                             // participant waits rather than silently replacing them,
                             // and takes the slot on a later poll once it is free.
+                            // Dismissal hides the callout but does not free the slot.
                             setRemoteAudioAlert(
                                 alert =>
                                     alert ?? {
@@ -306,7 +325,6 @@ export default function useAudioHealth(
                                 'remote-audio-recovered',
                                 { identity: participant.identity }
                             )
-                            dismissedRemoteTrackSids.current.delete(sid)
                             setRemoteAudioAlert(alert =>
                                 alert?.trackSid === sid ? null : alert
                             )
@@ -324,7 +342,6 @@ export default function useAudioHealth(
                 .filter(sid => !seenSids.has(sid))
                 .forEach(sid => {
                     remoteCounters.delete(sid)
-                    dismissedRemoteTrackSids.current.delete(sid)
                     setRemoteAudioAlert(alert =>
                         alert?.trackSid === sid ? null : alert
                     )
@@ -356,19 +373,27 @@ export default function useAudioHealth(
         }
     }, [room])
 
-    // --- Alert visibility -----------------------------------------------------------
+    // --- Callout visibility ------------------------------------------------------
+    // Hiding is tied to the specific problem that was on screen. Once that
+    // problem clears the record is dropped, so the next occurrence is shown again
+    // rather than inheriting a dismissal from last time.
     useEffect(() => {
-        setIsMicAlertVisible(micStatus !== 'ok')
+        if (micStatus === 'ok') setHiddenMicStatus(null)
     }, [micStatus])
 
-    const dismissMicAlert = useCallback(() => setIsMicAlertVisible(false), [])
+    useEffect(() => {
+        if (remoteAudioAlert === null) setHiddenRemoteTrackSid(null)
+    }, [remoteAudioAlert])
 
-    const dismissRemoteAudioAlert = useCallback(() => {
-        setRemoteAudioAlert(alert => {
-            if (alert) dismissedRemoteTrackSids.current.add(alert.trackSid)
-            return null
-        })
-    }, [])
+    const dismissMicAlert = useCallback(() => setHiddenMicStatus(micStatus), [
+        micStatus,
+    ])
+    const showMicAlert = useCallback(() => setHiddenMicStatus(null), [])
+
+    const dismissRemoteAudioAlert = useCallback(
+        () => setHiddenRemoteTrackSid(remoteAudioAlert?.trackSid ?? null),
+        [remoteAudioAlert]
+    )
 
     const restartMic = useCallback(async () => {
         if (!audioTrack) return
@@ -409,8 +434,10 @@ export default function useAudioHealth(
         micStatus,
         isMicAlertVisible,
         dismissMicAlert,
+        showMicAlert,
         restartMic,
         remoteAudioAlert,
+        isRemoteAlertVisible,
         dismissRemoteAudioAlert,
     }
 }

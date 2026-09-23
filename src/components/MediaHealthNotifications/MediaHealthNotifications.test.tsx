@@ -29,6 +29,8 @@ const buildContext = ({ audioHealth = {}, ...overrides }: any = {}) => ({
         dismissMicAlert: jest.fn(),
         restartMic: jest.fn(),
         remoteAudioAlert: null,
+        isRemoteAlertVisible: audioHealth.remoteAudioAlert != null,
+        showMicAlert: jest.fn(),
         dismissRemoteAudioAlert: jest.fn(),
         ...audioHealth,
     },
@@ -158,5 +160,21 @@ describe('the MediaHealthNotifications component', () => {
         callout.prop('onClose')!()
         expect(dismissRemoteAudioAlert).toHaveBeenCalled()
         expect(callout.prop('onAutoHide')).toBeUndefined()
+    })
+
+    it('should keep the remote audio callout closed while the alert is hidden but the problem remains', () => {
+        mockUseVideoContext.mockReturnValue(
+            buildContext({
+                audioHealth: {
+                    remoteAudioAlert: {
+                        identity: 'Patient',
+                        trackSid: 'MTremote',
+                    },
+                    isRemoteAlertVisible: false,
+                },
+            })
+        )
+        const wrapper = shallow(<MediaHealthNotifications />)
+        expect(openCallouts(wrapper)).toEqual([])
     })
 })

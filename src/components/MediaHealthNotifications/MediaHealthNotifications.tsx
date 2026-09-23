@@ -75,7 +75,7 @@ export default function MediaHealthNotifications() {
         !isRoomReconnecting &&
         !showMicAlert &&
         !showScreenShareNotice &&
-        audioHealth.remoteAudioAlert !== null
+        audioHealth.isRemoteAlertVisible
 
     const onRestartMic = async () => {
         setIsRestarting(true)
