@@ -3,6 +3,7 @@ import { EventEmitter } from 'events'
 import useAudioHealth from './useAudioHealth'
 import { subscribeToAudioLevel } from '../../ParticipantInfo/audioLevelStore'
 import { SELECTED_AUDIO_INPUT_KEY } from '../../../constants'
+import { diagnosticsService } from '../../../services/diagnostics/diagnostics.service'
 
 jest.mock('../../ParticipantInfo/audioLevelStore')
 jest.mock('../../../services/diagnostics/diagnostics.service', () => ({
@@ -289,6 +290,91 @@ describe('the useAudioHealth hook', () => {
             act(() => levelSubscriber?.({ volume: 5, isSilent: false }))
             await flushPoll()
             expect(result.current.micStatus).toBe('not-sending')
+        })
+
+        const recoveredFromNotSending = () =>
+            (diagnosticsService.log as jest.Mock).mock.calls.filter(
+                ([category, name, data]) =>
+                    category === 'mic' &&
+                    name === 'recovered' &&
+                    data?.from === 'not-sending'
+            ).length
+
+        const givenStalledLocalAudio = () => {
+            room.localParticipant.audioTracks.set('MTlocal', {
+                trackSid: 'MTlocal',
+                track: audioTrack,
+            })
+            const counter = { bytesSent: 1000 }
+            room.getStats.mockImplementation(() =>
+                Promise.resolve([
+                    {
+                        localAudioTrackStats: [
+                            {
+                                trackSid: 'MTlocal',
+                                bytesSent: counter.bytesSent,
+                            },
+                        ],
+                        remoteAudioTrackStats: [],
+                    },
+                ])
+            )
+            return counter
+        }
+
+        it('should fall back to not-sending rather than ok when a system mute lifts while bytes are still stalled', async () => {
+            const counter = givenStalledLocalAudio()
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            expect(result.current.micStatus).toBe('not-sending')
+
+            // The OS pauses the device, then hands it back. The renegotiation
+            // fault that stopped bytes leaving has not gone anywhere.
+            audioTrack.mediaStreamTrack.muted = true
+            act(() => {
+                audioTrack.mediaStreamTrack.dispatchEvent(new Event('mute'))
+            })
+            expect(result.current.micStatus).toBe('system-muted')
+            await flushPoll()
+            audioTrack.mediaStreamTrack.muted = false
+            act(() => {
+                audioTrack.mediaStreamTrack.dispatchEvent(new Event('unmute'))
+            })
+            expect(result.current.micStatus).toBe('not-sending')
+            expect(recoveredFromNotSending()).toBe(0)
+
+            // Only bytes actually flowing again count as the recovery.
+            counter.bytesSent += 5000
+            await flushPoll()
+            expect(result.current.micStatus).toBe('ok')
+            expect(recoveredFromNotSending()).toBe(1)
+        })
+
+        it('should not log a not-sending recovery just because the microphone was muted', async () => {
+            const counter = givenStalledLocalAudio()
+            const { result } = renderHook(() =>
+                useAudioHealth(room, [audioTrack as any])
+            )
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            await flushPoll()
+            expect(result.current.micStatus).toBe('not-sending')
+
+            audioTrack.isEnabled = false
+            await flushPoll()
+            expect(result.current.micStatus).toBe('ok')
+            expect(recoveredFromNotSending()).toBe(0)
+
+            audioTrack.isEnabled = true
+            counter.bytesSent += 5000
+            await flushPoll()
+            expect(recoveredFromNotSending()).toBe(1)
         })
 
         it('should clear the not-sending alert after a mute and unmute cycle', async () => {

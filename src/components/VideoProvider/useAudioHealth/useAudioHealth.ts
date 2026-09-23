@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
     LocalAudioTrack,
     LocalVideoTrack,
@@ -115,6 +115,23 @@ export default function useAudioHealth(
 
     const isMicAlertVisible =
         micStatus !== 'ok' && micStatus !== hiddenMicStatus
+    // An open 'not-sending' episode: bytes were last seen stalled and have not
+    // been seen flowing since. Kept in a ref because two effects need it: the
+    // stats poll that opens and closes it, and the track-event and silence
+    // handlers, which fall back to it when a status that outranks 'not-sending'
+    // clears rather than assuming the microphone is fine.
+    const isNotSendingOpenRef = useRef(false)
+    const isMicEnabledRef = useRef(isMicEnabled)
+    isMicEnabledRef.current = isMicEnabled
+
+    const statusAfterRecovery = useCallback(
+        (): MicStatus =>
+            isNotSendingOpenRef.current && isMicEnabledRef.current
+                ? 'not-sending'
+                : 'ok',
+        []
+    )
+
     const isRemoteAlertVisible =
         remoteAudioAlert !== null &&
         remoteAudioAlert.trackSid !== hiddenRemoteTrackSid
@@ -130,7 +147,9 @@ export default function useAudioHealth(
         }
         const onUnmute = () => {
             diagnosticsService.log('mic', 'recovered', { from: 'system-muted' })
-            setMicStatus('ok')
+            setMicStatus(previous =>
+                previous === 'system-muted' ? statusAfterRecovery() : previous
+            )
         }
         const onEnded = () => {
             diagnosticsService.log('mic', 'ended', { label })
@@ -155,7 +174,7 @@ export default function useAudioHealth(
             mediaStreamTrack.removeEventListener('unmute', onUnmute)
             mediaStreamTrack.removeEventListener('ended', onEnded)
         }
-    }, [mediaStreamTrack])
+    }, [mediaStreamTrack, statusAfterRecovery])
 
     // --- Digital silence detection ----------------------------------------------
     const shouldMonitorSilence =
@@ -189,14 +208,14 @@ export default function useAudioHealth(
                         diagnosticsService.log('mic', 'recovered', {
                             from: 'silent',
                         })
-                        return 'ok'
+                        return statusAfterRecovery()
                     }
                     return previous
                 })
             }
         })
         return unsubscribe
-    }, [shouldMonitorSilence, mediaStreamTrack])
+    }, [shouldMonitorSilence, mediaStreamTrack, statusAfterRecovery])
 
     // --- Peer connection byte counters (both directions) ------------------------
     useEffect(() => {
@@ -204,21 +223,7 @@ export default function useAudioHealth(
 
         let isActive = true
         const localCounter: ByteCounter = { bytes: 0, stalledPolls: 0 }
-        // Whether we raised the 'not-sending' alert. Clearing it keys off this
-        // rather than off the stall counter: muting resets the counter to zero, so
-        // a counter-based recovery check can never fire again afterwards and the
-        // alert would stay on screen for the rest of the call.
-        let isNotSendingRaised = false
         const remoteCounters = new Map<string, ByteCounter>()
-
-        const clearNotSendingAlert = () => {
-            if (!isNotSendingRaised) return
-            isNotSendingRaised = false
-            diagnosticsService.log('mic', 'recovered', { from: 'not-sending' })
-            setMicStatus(previous =>
-                previous === 'not-sending' ? 'ok' : previous
-            )
-        }
 
         const checkLocalAudio = (stats: LocalAudioTrackStats[]) => {
             const track = room.localParticipant.audioTracks.values().next()
@@ -233,8 +238,13 @@ export default function useAudioHealth(
                 captureTrack.readyState !== 'live'
             ) {
                 // Not capturing, so the byte counter says nothing about health.
+                // The alert stands down, but an open episode is not closed: nothing
+                // has shown bytes leaving again, and calling this a recovery would
+                // put a false 'recovered' in the visit log on every mute.
                 localCounter.stalledPolls = 0
-                clearNotSendingAlert()
+                setMicStatus(previous =>
+                    previous === 'not-sending' ? 'ok' : previous
+                )
                 return
             }
             const stat = stats.find(s => s.trackSid === track.trackSid)
@@ -242,7 +252,14 @@ export default function useAudioHealth(
 
             if (stat.bytesSent <= localCounter.bytes) {
                 localCounter.stalledPolls += 1
-                if (localCounter.stalledPolls === STALLED_POLLS_BEFORE_ALERT) {
+                if (
+                    localCounter.stalledPolls === STALLED_POLLS_BEFORE_ALERT &&
+                    !isNotSendingOpenRef.current
+                ) {
+                    // Open the episode once. After a mute the counter restarts
+                    // while the episode may still be open; that is the same
+                    // problem continuing, not a new one to log.
+                    isNotSendingOpenRef.current = true
                     diagnosticsService.log('mic', 'not-sending', {
                         bytesSent: stat.bytesSent,
                         seconds:
@@ -253,16 +270,23 @@ export default function useAudioHealth(
                     // Raised on every stalled poll, not just the one that crosses
                     // the threshold: another problem may own the status at that
                     // moment, and when it clears the microphone is still not
-                    // reaching the room. Only the log fires once.
-                    isNotSendingRaised = true
+                    // reaching the room.
                     setMicStatus(previous =>
                         previous === 'ok' ? 'not-sending' : previous
                     )
                 }
             } else {
-                // Bytes are leaving the peer connection, so the alert is wrong
-                // regardless of what the stall counter currently reads.
-                clearNotSendingAlert()
+                // Bytes leaving the peer connection is the only evidence that
+                // counts as a recovery, whatever the stall counter reads.
+                if (isNotSendingOpenRef.current) {
+                    isNotSendingOpenRef.current = false
+                    diagnosticsService.log('mic', 'recovered', {
+                        from: 'not-sending',
+                    })
+                }
+                setMicStatus(previous =>
+                    previous === 'not-sending' ? 'ok' : previous
+                )
                 localCounter.stalledPolls = 0
             }
             localCounter.bytes = stat.bytesSent
