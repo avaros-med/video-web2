@@ -1,3 +1,21 @@
+## Avaros 2026-09 (unreleased) - Audio reliability and diagnostics
+
+### Dependency Upgrade
+
+-   `twilio-video` has been upgraded from 2.22.0 to 2.36.0 and `@twilio/video-room-monitor` to 1.0.1. The old SDK predates four years of Chrome, Safari and audio-recovery fixes; publishing a screen-share track triggers a renegotiation that, on a failed attempt, silently stalls every stream on the call. `@react-spring/web` is now an explicit dependency because the room monitor requires it.
+
+### Bugfixes
+
+-   Screen sharing now publishes an explicit `LocalVideoTrack`. If publishing fails the capture is released, the microphone and camera are left untouched, and the user sees a plain-language error instead of a dead call. If the media connection drops while sharing, the share is stopped and the user is told why. (`useScreenShareToggle`)
+-   Audio-level indicators share a single `AudioContext` and one analyser per track instead of creating one per indicator and rebuilding them all on every window focus (which happened at the exact moment the screen-share picker closed). Analysers are only rebuilt on focus on Safari, the browser that needs it. Participant tiles now re-render only when the speaking state changes. (`audioLevelStore`, `useAudioVolume`, `useIsSpeaking`)
+
+### New Features
+
+-   Microphone health monitoring: the app now detects a microphone that the OS has paused (`mute`), has ended, has produced digital silence for 10 seconds, or is capturing but not sending bytes to the room, and shows a persistent notification with a one-click **Reconnect microphone** action. Remote audio that stops arriving for ~9 seconds is also flagged. (`useAudioHealth`, `MediaHealthNotifications`)
+-   In-call alerts are now callouts anchored above the toolbar instead of corner snackbars: microphone problems point at the pulsing red microphone button (**Reconnect microphone**), remote audio problems point at Settings (**Check speaker**), and a stopped screen share offers **Share again**. The affected tile is outlined and labelled (**Muted to others** / **No audio received**). (`MediaAlertCallout`, `useTileAudioAlert`)
+-   Background blur toggle in the toolbar, behind `REACT_APP_ENABLE_BACKGROUND_BLUR=true`, reusing the existing processor pipeline; the processor asset path now honours `PUBLIC_URL` so it works under the `/av/video2` base path. (`ToggleBlurButton`)
+-   Diagnostics timeline: room lifecycle, publications, subscriptions, network quality drops, device changes, screen share and microphone events, plus twilio-video's own warnings, are recorded in memory (`window.avsDiagnostics`) and a summary is appended to the video visit log sent at end of call, so support can see what happened in EMR Admin > Video Visit Logs. Twilio's Room Monitor is available from Settings > Connection Diagnostics or Ctrl/Cmd+Shift+D. (`diagnostics.service`, `useRoomDiagnostics`, `useRoomMonitorShortcut`)
+
 ## 0.7.0 (July 6, 2022)
 
 ### New Feature

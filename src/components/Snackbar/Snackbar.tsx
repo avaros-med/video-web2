@@ -12,7 +12,8 @@ interface SnackbarProps {
     message: string | React.ReactNode
     variant?: 'error' | 'warning' | 'info'
     open: boolean
-    autoHideDuration?: number
+    /** Milliseconds before auto-hide. Pass null to keep the snackbar open until dismissed. */
+    autoHideDuration?: number | null
     handleClose?: () => void
 }
 
@@ -82,7 +83,9 @@ export default function Snackbar({
             }}
             open={open}
             onClose={handleOnClose}
-            autoHideDuration={autoHideDuration ?? 10000}
+            autoHideDuration={
+                autoHideDuration === undefined ? 10000 : autoHideDuration
+            }
         >
             <div
                 className={clsx(classes.container, {

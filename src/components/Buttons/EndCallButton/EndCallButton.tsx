@@ -2,6 +2,7 @@ import moment from 'moment'
 import { useCallback, useState } from 'react'
 import { useAvsSocketContext } from '../../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
+import { diagnosticsService } from '../../../services/diagnostics/diagnostics.service'
 import { videoService } from '../../../services/http/video.service'
 import { useEChartContext } from '../../EChartPanel/useEChartContext'
 import EndCallDialog, {
@@ -52,6 +53,9 @@ export default function EndCallButton(props: { className?: string }) {
                         eventDetails += `\nCall was abandoned`
                     }
                 }
+                // Attach the client-side diagnostics timeline so support can see
+                // reconnects, screen share and microphone problems for this visit.
+                eventDetails += `\n\n${diagnosticsService.getSummary()}`
 
                 try {
                     await videoService.addLog(

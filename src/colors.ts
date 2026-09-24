@@ -10,6 +10,7 @@ const Colors = {
     BLUE: '#00a5f5',
     BLUE_TINT: '#01a0ec',
     RED: '#c7474a',
+    ALERT_RED: '#c81e1e',
     GREEN: '#82c64e',
     YELLOW: '#ffc836',
     ORANGE: '#ff9c2e',

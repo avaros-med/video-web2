@@ -23,7 +23,9 @@ import useTrack from '../../hooks/useTrack/useTrack'
 import { useAppState } from '../../state'
 import { Avatar } from '../UI/Avatar'
 import { ParticipantInfoMenu } from './ParticipantInfoMenu'
-import { useAudioVolume } from './useAudioVolume'
+import { useIsSpeaking } from './useAudioVolume'
+import useTileAudioAlert from '../../hooks/useTileAudioAlert/useTileAudioAlert'
+import { TONE_COLORS } from '../MediaAlertCallout/MediaAlertCallout'
 
 const borderWidth = 2
 
@@ -162,6 +164,26 @@ const useStyles = makeStyles((theme: Theme) =>
         dominantSpeaker: {
             border: `solid ${borderWidth}px #7BEAA5`,
         },
+        audioAlertError: {
+            outline: `2px solid ${TONE_COLORS.error}`,
+            outlineOffset: '-2px',
+        },
+        audioAlertInfo: {
+            outline: `2px solid ${TONE_COLORS.info}`,
+            outlineOffset: '-2px',
+        },
+        audioAlertBadge: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'white',
+            fontSize: '13px',
+            fontWeight: 600,
+            padding: '0.18em 0.6em',
+            '& .material-icons': {
+                fontSize: '16px',
+            },
+        },
     })
 )
 
@@ -205,9 +227,9 @@ export default function ParticipantInfo({
         | LocalAudioTrack
         | RemoteAudioTrack
         | undefined
-    const { volume } = useAudioVolume(audioTrack)
-    const isSpeaking = volume > 0
+    const isSpeaking = useIsSpeaking(audioTrack)
     const isParticipantReconnecting = useParticipantIsReconnecting(participant)
+    const audioAlert = useTileAudioAlert(participant, isLocalParticipant)
 
     const { isGalleryViewActive } = useAppState()
 
@@ -220,6 +242,8 @@ export default function ParticipantInfo({
                 [classes.cursorPointer]: Boolean(onClick),
                 [classes.dominantSpeaker]: isDominantSpeaker,
                 [classes.galleryView]: isGalleryViewActive,
+                [classes.audioAlertError]: audioAlert?.tone === 'error',
+                [classes.audioAlertInfo]: audioAlert?.tone === 'info',
             })}
             onClick={onClick}
             data-cy-participant={participant.identity}
@@ -231,6 +255,16 @@ export default function ParticipantInfo({
             >
                 <NetworkQualityLevel participant={participant} />
                 <div className={classes.infoRowBottom}>
+                    {audioAlert && (
+                        <span
+                            className={classes.audioAlertBadge}
+                            style={{ background: TONE_COLORS[audioAlert.tone] }}
+                            data-cy-audio-alert-badge
+                        >
+                            <i className="material-icons">{audioAlert.icon}</i>
+                            {audioAlert.label}
+                        </span>
+                    )}
                     {isScreenShareEnabled && (
                         <span className={classes.screenShareIconContainer}>
                             <ScreenShareIcon />

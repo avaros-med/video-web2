@@ -1,116 +1,57 @@
-import { interval } from 'd3-timer'
 import { useEffect, useState } from 'react'
 import { AudioTrack, LocalAudioTrack, RemoteAudioTrack } from 'twilio-video'
 import useIsTrackEnabled from '../../hooks/useIsTrackEnabled/useIsTrackEnabled'
 import useMediaStreamTrack from '../../hooks/useMediaStreamTrack/useMediaStreamTrack'
+import { AudioLevelSample, subscribeToAudioLevel } from './audioLevelStore'
 
-export function initializeAnalyser(stream: MediaStream) {
-    const audioContext = new AudioContext() // Create a new audioContext for each audio indicator
-    const audioSource = audioContext.createMediaStreamSource(stream)
-
-    const analyser = audioContext.createAnalyser()
-    analyser.smoothingTimeConstant = 0.2
-    analyser.fftSize = 256
-
-    audioSource.connect(analyser)
-
-    // Here we provide a way for the audioContext to be closed.
-    // Closing the audioContext allows the unused audioSource to be garbage collected.
-    stream.addEventListener('cleanup', () => {
-        if (audioContext.state !== 'closed') {
-            audioContext.close()
-        }
-    })
-
-    return analyser
-}
-
-const isIOS = /iPhone|iPad/.test(navigator.userAgent)
-
-export const useAudioVolume = (audioTrack?: AudioTrack) => {
-    const [analyser, setAnalyser] = useState<AnalyserNode>()
-
+/*
+ * Subscribes to the shared audio-level store for a track. All the AudioContext
+ * and analyser lifecycle lives in audioLevelStore.ts; these hooks only decide
+ * when a track should be observed and how to project the sample into state.
+ */
+function useAudioLevelSample<T>(
+    audioTrack: AudioTrack | undefined,
+    project: (sample: AudioLevelSample) => T,
+    initial: T
+): T {
     const isTrackEnabled = useIsTrackEnabled(
-        audioTrack as LocalAudioTrack | RemoteAudioTrack
+        audioTrack as LocalAudioTrack | RemoteAudioTrack | undefined
     )
     const mediaStreamTrack = useMediaStreamTrack(audioTrack)
-    const [volume, setVolume] = useState<number>(0)
+    const [value, setValue] = useState<T>(initial)
 
     useEffect(() => {
-        if (audioTrack && mediaStreamTrack && isTrackEnabled) {
-            // Here we create a new MediaStream from a clone of the mediaStreamTrack.
-            // A clone is created to allow multiple instances of this component for a single
-            // AudioTrack on iOS Safari. We only clone the mediaStreamTrack on iOS.
-            let newMediaStream = new MediaStream([
-                isIOS ? mediaStreamTrack.clone() : mediaStreamTrack,
-            ])
-
-            // Here we listen for the 'stopped' event on the audioTrack. When the audioTrack is stopped,
-            // we stop the cloned track that is stored in 'newMediaStream'. It is important that we stop
-            // all tracks when they are not in use. Browsers like Firefox don't let you create a new stream
-            // from a new audio device while the active audio device still has active tracks.
-            const stopAllMediaStreamTracks = () => {
-                if (isIOS) {
-                    // If we are on iOS, then we want to stop the MediaStreamTrack that we have previously cloned.
-                    // If we are not on iOS, then we do not stop the MediaStreamTrack since it is the original and still in use.
-                    newMediaStream.getTracks().forEach(track => track.stop())
-                }
-                newMediaStream.dispatchEvent(new Event('cleanup')) // Stop the audioContext
-            }
-            audioTrack.on('stopped', stopAllMediaStreamTracks)
-
-            const reinitializeAnalyser = () => {
-                stopAllMediaStreamTracks()
-                // We only clone the mediaStreamTrack on iOS.
-                newMediaStream = new MediaStream([
-                    isIOS ? mediaStreamTrack.clone() : mediaStreamTrack,
-                ])
-                setAnalyser(initializeAnalyser(newMediaStream))
-            }
-
-            setAnalyser(initializeAnalyser(newMediaStream))
-
-            // Here we reinitialize the AnalyserNode on focus to avoid an issue in Safari
-            // where the analysers stop functioning when the user switches to a new tab
-            // and switches back to the app.
-            window.addEventListener('focus', reinitializeAnalyser)
-
-            return () => {
-                stopAllMediaStreamTracks()
-                window.removeEventListener('focus', reinitializeAnalyser)
-                audioTrack.off('stopped', stopAllMediaStreamTracks)
-            }
+        if (!audioTrack || !mediaStreamTrack || !isTrackEnabled) {
+            setValue(initial)
+            return
         }
-    }, [isTrackEnabled, mediaStreamTrack, audioTrack])
-
-    useEffect(() => {
-        if (isTrackEnabled && analyser) {
-            const sampleArray = new Uint8Array(analyser.frequencyBinCount)
-
-            const timer = interval(() => {
-                analyser.getByteFrequencyData(sampleArray)
-                let values = 0
-
-                const length = sampleArray.length
-                for (let i = 0; i < length; i++) {
-                    values += sampleArray[i]
-                }
-
-                const _volume = Math.min(
-                    14,
-                    Math.max(0, Math.log10(values / length / 3) * 7)
-                )
-                setVolume(_volume)
-            }, 100)
-
-            return () => {
-                setVolume(0)
-                timer.stop()
-            }
+        const unsubscribe = subscribeToAudioLevel(mediaStreamTrack, sample =>
+            setValue(project(sample))
+        )
+        return () => {
+            unsubscribe()
+            setValue(initial)
         }
-    }, [isTrackEnabled, analyser])
+        // `project` and `initial` are stable module-level values at every call site.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [audioTrack, mediaStreamTrack, isTrackEnabled])
 
-    return {
-        volume,
-    }
+    return value
 }
+
+const projectVolume = (sample: AudioLevelSample) => sample.volume
+const projectIsSpeaking = (sample: AudioLevelSample) => sample.volume > 0
+
+/** Volume on a 0..14 scale, updated ~10 times per second while the track is enabled. */
+export const useAudioVolume = (audioTrack?: AudioTrack) => {
+    const volume = useAudioLevelSample(audioTrack, projectVolume, 0)
+    return { volume }
+}
+
+/**
+ * Boolean speaking indicator. Prefer this over useAudioVolume in components that
+ * only need to know whether someone is talking: React skips the re-render when the
+ * boolean does not change, so the tile no longer re-renders ten times a second.
+ */
+export const useIsSpeaking = (audioTrack?: AudioTrack) =>
+    useAudioLevelSample(audioTrack, projectIsSpeaking, false)

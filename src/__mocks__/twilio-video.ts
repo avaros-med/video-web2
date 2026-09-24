@@ -22,7 +22,29 @@ class MockTrack extends EventEmitter {
     }
 }
 
+class MockLocalVideoTrack extends EventEmitter {
+    kind = 'video'
+    name: string
+    mediaStreamTrack: any
+    stop = jest.fn()
+
+    constructor(mediaStreamTrack: any, options: { name?: string } = {}) {
+        super()
+        this.mediaStreamTrack = mediaStreamTrack
+        this.name = options.name ?? ''
+    }
+}
+
+const mockSdkLogger = {
+    methodFactory: () => () => undefined,
+    setLevel: jest.fn(),
+    getLevel: jest.fn(() => 2),
+}
+
 const twilioVideo = {
+    version: '0.0.0-mock',
+    LocalVideoTrack: MockLocalVideoTrack,
+    Logger: { getLogger: jest.fn(() => mockSdkLogger) },
     connect: jest.fn(() => Promise.resolve(mockRoom)),
     createLocalTracks: jest.fn(
         // Here we use setTimeout so we can control when this function resolves with jest.runAllTimers()
@@ -41,5 +63,5 @@ const twilioVideo = {
     ),
 }
 
-export { mockRoom }
+export { mockRoom, MockLocalVideoTrack }
 export default twilioVideo

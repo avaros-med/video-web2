@@ -135,6 +135,27 @@ The Video app has the following features:
 -   [x] Defines participant bandwidth usage with the [Bandwidth Profile API](https://www.twilio.com/docs/video/tutorials/using-bandwidth-profile-api)
 -   [x] Start and stop recording with the [Recording Rules API](https://www.twilio.com/docs/video/api/recording-rules)
 
+## Diagnosing audio and connection problems
+
+The app records a client-side diagnostics timeline for every visit and offers a few tools for looking at a problem while it is happening:
+
+-   **Settings > Connection Diagnostics** (or **Ctrl/Cmd+Shift+D**) opens Twilio's Room Monitor with live per-track bitrate, packet loss and codec details.
+-   In the browser console, `avsDiagnostics.getSummary()` prints the timeline of room, screen share, microphone, device and SDK events for the current session; `avsDiagnostics.getEvents()` returns the raw list.
+-   The same summary is appended to the video visit log that is sent to the ark video service when the call ends, and is visible under **EMR Admin > Video Visit Logs**.
+-   Microphone problems (paused by the OS, disconnected, silent, or not reaching the room) show a red callout above the toolbar pointing at the pulsing microphone button, with a **Reconnect microphone** action. Your own tile is outlined in red and labelled **Muted to others** so the problem is visible at a glance.
+-   Remote audio that stops arriving shows a blue callout pointing at Settings, with a **Check speaker** action that opens Media Devices; the other participant's tile is labelled **No audio received**.
+-   If screen sharing is stopped by a media-connection drop, an orange callout offers **Share again**.
+
+To review these states without a real Twilio room, run `npm run storybook` and open the **In Call** stories (*Microphone Problem*, *Remote Audio Problem*, *Audio Problems*).
+
+## Background blur
+
+A one-tap **Blur my background** button sits next to the camera button. It reuses the background-processor pipeline that ships with this app and persists the choice per browser. It is behind the `REACT_APP_ENABLE_BACKGROUND_BLUR=true` flag until the processor library is upgraded (the installed 1.x does not support Safari) and verified on clinic hardware.
+
+The **In Call / Background Blur** story uses photos of people and approximates the blur on the local tile (the mock has no real video track for the processor to act on).
+
+Photos in these renders are from Pexels (free to use under the [Pexels license](https://www.pexels.com/license/)): clinician, ["Photo of a Doctor Smiling" by Thirdman](https://www.pexels.com/photo/photo-of-a-doctor-smiling-4989179/); patient, ["Smiling Elderly Woman Doing a Peace Sign while Looking at Camera" by Kampus Production](https://www.pexels.com/photo/smiling-elderly-woman-doing-a-peace-sign-while-looking-at-camera-5473381/). They are loaded from Pexels at story time and are not checked into the repo.
+
 ## Browser Support
 
 See browser support table for [twilio-video.js SDK](https://github.com/twilio/twilio-video.js/tree/master/#browser-support).
