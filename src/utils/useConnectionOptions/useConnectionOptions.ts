@@ -1,6 +1,7 @@
 import { ConnectOptions } from 'twilio-video'
 import { isMobile, removeUndefineds } from '..'
 import { useAppState } from '../../state'
+import { isRelayRemembered } from '../relayPolicy/relayPolicy'
 
 export default function useConnectionOptions() {
     const { settings } = useAppState()
@@ -29,6 +30,10 @@ export default function useConnectionOptions() {
         maxAudioBitrate: Number(settings.maxAudioBitrate),
 
         preferredVideoCodecs: 'auto',
+        // A browser that once had to fall back to a relayed connection starts that way (see useRelayFallback).
+        rtcConfiguration: isRelayRemembered()
+            ? { iceTransportPolicy: 'relay' }
+            : undefined,
 
         //@ts-ignore - Internal use only. This property is not exposed in type definitions.
         environment: process.env.REACT_APP_TWILIO_ENVIRONMENT,

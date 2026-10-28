@@ -1,6 +1,7 @@
 import { styled, Theme } from '@material-ui/core/styles'
 
 import PreJoinScreens from './components/PreJoinScreens/PreJoinScreens'
+import RelayReconnectingScreen from './components/RelayReconnectingScreen/RelayReconnectingScreen'
 import MediaHealthNotifications from './components/MediaHealthNotifications/MediaHealthNotifications'
 import ReconnectingNotification from './components/ReconnectingNotification/ReconnectingNotification'
 import RecordingNotifications from './components/RecordingNotifications/RecordingNotifications'
@@ -11,6 +12,7 @@ import { TopMenuBar } from './components/TopMenuBar/TopMenuBar'
 import { Panel } from './components/Panel/Panel'
 import useHeight from './hooks/useHeight/useHeight'
 import useRoomState from './hooks/useRoomState/useRoomState'
+import useVideoContext from './hooks/useVideoContext/useVideoContext'
 
 const RootContainer = styled('div')({
     display: 'grid',
@@ -31,6 +33,7 @@ const RoomContainer = styled('div')({
 
 export default function App() {
     const roomState = useRoomState()
+    const { relayFallback } = useVideoContext()
 
     // Here we would like the height of the main container to be the height of the viewport.
     // On some mobile browsers, 'height: 100vh' sets the height equal to that of the screen,
@@ -42,7 +45,11 @@ export default function App() {
     return (
         <RootContainer style={{ height }}>
             {roomState === 'disconnected' ? (
-                <PreJoinScreens />
+                relayFallback?.isReconnecting ? (
+                    <RelayReconnectingScreen />
+                ) : (
+                    <PreJoinScreens />
+                )
             ) : (
                 <MainContainer>
                     <ReconnectingNotification />

@@ -3,6 +3,7 @@ import {
     ReactNode,
     useCallback,
     useEffect,
+    useRef,
     useState,
 } from 'react'
 import {
@@ -34,6 +35,9 @@ import useScreenShareToggle, {
 } from './useScreenShareToggle/useScreenShareToggle'
 import useAudioHealth, { AudioHealth } from './useAudioHealth/useAudioHealth'
 import useRoomDiagnostics from './useRoomDiagnostics/useRoomDiagnostics'
+import useRelayFallback, {
+    RelayFallback,
+} from './useRelayFallback/useRelayFallback'
 
 /*
  *  The hooks used by the VideoProvider component are different than the hooks found in the 'hooks/' directory. The hooks
@@ -46,7 +50,10 @@ export interface IVideoContext {
     room: Room | null
     localTracks: (LocalAudioTrack | LocalVideoTrack)[]
     isConnecting: boolean
-    connect: (token: string) => Promise<void>
+    connect: (
+        token: string,
+        overrides?: Partial<ConnectOptions>
+    ) => Promise<void>
     onError: ErrorCallback
     getLocalVideoTrack: (
         newOptions?: CreateLocalTrackOptions
@@ -59,6 +66,7 @@ export interface IVideoContext {
     screenShareNotice: ScreenShareNotice | null
     dismissScreenShareNotice: () => void
     audioHealth: AudioHealth
+    relayFallback: RelayFallback
     getAudioAndVideoTracks: () => Promise<void>
     isBackgroundSelectionOpen: boolean
     setIsBackgroundSelectionOpen: (value: boolean) => void
@@ -99,11 +107,21 @@ export function VideoProvider({
         removeLocalVideoTrack,
         getAudioAndVideoTracks,
     } = useLocalTracks()
-    const { room, isConnecting, connect } = useRoom(
+    const { room, isConnecting, connect: roomConnect } = useRoom(
         localTracks,
         onErrorCallback,
         options
     )
+    // The token of the current call, so the relay fallback can rejoin with it.
+    const tokenRef = useRef<string | null>(null)
+    const connect = useCallback(
+        (token: string, overrides?: Partial<ConnectOptions>) => {
+            tokenRef.current = token
+            return roomConnect(token, overrides)
+        },
+        [roomConnect]
+    )
+    const relayFallback = useRelayFallback(room, connect, tokenRef)
 
     const [
         isSharingScreen,
@@ -171,6 +189,7 @@ export function VideoProvider({
                 screenShareNotice,
                 dismissScreenShareNotice,
                 audioHealth,
+                relayFallback,
                 getAudioAndVideoTracks,
                 isBackgroundSelectionOpen,
                 setIsBackgroundSelectionOpen,

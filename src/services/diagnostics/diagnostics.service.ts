@@ -240,7 +240,10 @@ export class DiagnosticsService {
             )} | Remote audio alerts: ${count(
                 'audio-out',
                 'remote-audio-stalled'
-            )} | SDK warnings: ${count('sdk')}`,
+            )} | SDK warnings: ${count('sdk')} | Relay fallback: ${count(
+                'room',
+                'relay-fallback'
+            )}`,
         ]
 
         const notable = this.events.filter(e =>
