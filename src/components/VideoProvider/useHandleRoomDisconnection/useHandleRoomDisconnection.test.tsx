@@ -21,7 +21,7 @@ describe('the useHandleRoomDisconnection hook', () => {
 
     beforeEach(jest.clearAllMocks)
 
-    it('should keep the local tracks and raise no error while the relay fallback rejoins the room', () => {
+    it('should keep the camera and microphone, raise no error, but still stop a screen share while the relay fallback rejoins the room', () => {
         mockIsRelayReconnectInProgress.mockReturnValueOnce(true)
         renderHook(() =>
             useHandleRoomDisconnection(
@@ -39,7 +39,7 @@ describe('the useHandleRoomDisconnection hook', () => {
         expect(mockOnError).not.toHaveBeenCalled()
         expect(mockRemoveLocalAudioTrack).not.toHaveBeenCalled()
         expect(mockRemoveLocalVideoTrack).not.toHaveBeenCalled()
-        expect(mockToggleScreenSharing).not.toHaveBeenCalled()
+        expect(mockToggleScreenSharing).toHaveBeenCalledTimes(1)
     })
 
     it('should do nothing if the room emits a "disconnected" event with no error', () => {

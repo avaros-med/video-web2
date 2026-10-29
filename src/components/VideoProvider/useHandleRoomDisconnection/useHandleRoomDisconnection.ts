@@ -16,14 +16,17 @@ export default function useHandleRoomDisconnection(
         if (room) {
             const onDisconnected = (_: Room, error: TwilioError) => {
                 // useRelayFallback leaves the room on purpose and rejoins it with the same
-                // tracks a moment later: nothing to clean up and nothing went wrong.
-                if (isRelayReconnectInProgress()) return
-                if (error) {
+                // camera and microphone tracks a moment later: those stay and nothing went
+                // wrong. A screen share is not carried over, so it is stopped like any other
+                // disconnect and the user starts it again if they still need it.
+                const isRelayRejoin = isRelayReconnectInProgress()
+                if (error && !isRelayRejoin) {
                     onError(error)
                 }
-
-                removeLocalAudioTrack()
-                removeLocalVideoTrack()
+                if (!isRelayRejoin) {
+                    removeLocalAudioTrack()
+                    removeLocalVideoTrack()
+                }
                 if (isSharingScreen) {
                     toggleScreenShare()
                 }

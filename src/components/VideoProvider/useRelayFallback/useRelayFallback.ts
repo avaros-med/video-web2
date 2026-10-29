@@ -18,6 +18,7 @@ import { diagnosticsService } from '../../../services/diagnostics/diagnostics.se
 import {
     decideFallback,
     forgetRelay,
+    isAutoRelayFallbackEnabled,
     isRelayRemembered,
     MEDIA_CONNECTION_FAILED,
     OutboundSample,
@@ -25,16 +26,19 @@ import {
     rememberRelay,
 } from '../../../utils/relayPolicy/relayPolicy'
 
+export { isAutoRelayFallbackEnabled }
+
 /*
  * Silent relay fallback.
  *
  * Detects the one failure peer-to-peer rooms cannot report on their own: this browser is
  * connected, its camera and microphone are live and unmuted, and yet no bytes leave the
- * peer connection (or twilio-video reports that the media connection failed). When that
- * happens the hook leaves the room and rejoins it with the same token and the same local
- * tracks, forcing the ICE transport policy to 'relay', and remembers in this browser that
- * relay is needed so later calls start that way. The other participant sees this side
- * drop and come back within a few seconds; nobody has to click anything.
+ * peer connection (or twilio-video's own ICE restart fails to recover the media
+ * connection). When that happens the hook leaves the room and rejoins it with the same
+ * token and the same local tracks, forcing the ICE transport policy to 'relay', and,
+ * once the relayed rejoin has actually connected, remembers in this browser that relay
+ * is needed so later calls start that way. The other participant sees this side drop and
+ * come back within a few seconds; nobody has to click anything.
  *
  * Once per call. If a call that is already relayed stalls too, relay is not the answer:
  * the memory is cleared and the usual microphone/audio alerts take over.
@@ -54,25 +58,29 @@ const GRACE_POLLS = Math.ceil(START_GRACE_MS / STATS_POLL_MS)
 export const STALLED_POLLS_BEFORE_FALLBACK = 4 // ~12 s
 /** How long to wait for the SDK's 'disconnected' before rejoining anyway. */
 const DISCONNECT_WAIT_MS = 3000
-
-export function isAutoRelayFallbackEnabled(): boolean {
-    return process.env.REACT_APP_AUTO_RELAY_FALLBACK !== 'false'
-}
+/**
+ * A 53405 'reconnecting' is the SDK starting an ICE restart, which often succeeds on
+ * its own; only a restart that has not produced 'reconnected' within this window
+ * counts as a failed media path.
+ */
+export const RECONNECT_WAIT_MS = 10000
 
 let relayReconnectInProgress = false
 
 /**
  * True while this hook is tearing one room down to rejoin it through relay. The
- * disconnect handler consults it so the local tracks survive and no error is shown.
+ * disconnect handler consults it so the camera and microphone tracks survive and no
+ * error is shown.
  */
 export function isRelayReconnectInProgress(): boolean {
     return relayReconnectInProgress
 }
 
+/** useRoom's connect: resolves with the room, or null when the SDK refused the connection. */
 export type RoomConnect = (
     token: string,
     overrides?: Partial<ConnectOptions>
-) => Promise<void>
+) => Promise<Room | null>
 
 /**
  * Bytes sent per kind for the local camera and microphone tracks that are currently
@@ -161,9 +169,11 @@ export default function useRelayFallback(
                 reason,
                 ...data,
             })
-            rememberRelay()
             relayReconnectInProgress = true
             setIsReconnecting(true)
+            // The visit log's start time is the original join, not the rejoin.
+            // @ts-ignore - set by useRoom
+            const sessionStartedAt = window.sessionStartedAt
             try {
                 await new Promise<void>(resolve => {
                     const timer = window.setTimeout(resolve, DISCONNECT_WAIT_MS)
@@ -175,10 +185,25 @@ export default function useRelayFallback(
                 })
                 relayActiveRef.current = true
                 setIsRelayActive(true)
-                await connect(token, {
+                const relayedRoom = await connect(token, {
                     rtcConfiguration: { iceTransportPolicy: 'relay' },
                 })
-                diagnosticsService.log('room', 'relay-fallback-connected')
+                if (sessionStartedAt) {
+                    // @ts-ignore - see above
+                    window.sessionStartedAt = sessionStartedAt
+                }
+                if (relayedRoom) {
+                    // Only a rejoin that actually connected is worth remembering.
+                    rememberRelay()
+                    diagnosticsService.log('room', 'relay-fallback-connected')
+                } else {
+                    diagnosticsService.log('room', 'relay-fallback-failed', {
+                        reason: 'rejoin-failed',
+                    })
+                    forgetRelay()
+                    relayActiveRef.current = false
+                    setIsRelayActive(false)
+                }
             } finally {
                 relayReconnectInProgress = false
                 setIsReconnecting(false)
@@ -203,15 +228,36 @@ export default function useRelayFallback(
         let polls = 0
         let isActive = true
 
-        const onReconnecting = (error?: TwilioError) => {
-            if (error?.code === MEDIA_CONNECTION_FAILED) {
-                moveToRelayRef.current('media-connection-failed', {
-                    code: error.code,
-                    message: error.message,
-                })
+        // A media-connection failure only counts once the SDK's own ICE restart has
+        // had RECONNECT_WAIT_MS to succeed; 'reconnected' (or leaving) cancels it.
+        let reconnectTimer: number | null = null
+        const cancelReconnectWait = () => {
+            if (reconnectTimer !== null) {
+                window.clearTimeout(reconnectTimer)
+                reconnectTimer = null
             }
         }
+        const onReconnecting = (error?: TwilioError) => {
+            if (
+                error?.code !== MEDIA_CONNECTION_FAILED ||
+                reconnectTimer !== null
+            ) {
+                return
+            }
+            const { code, message } = error
+            reconnectTimer = window.setTimeout(() => {
+                reconnectTimer = null
+                if (!isActive) return
+                moveToRelayRef.current('media-connection-failed', {
+                    code,
+                    message,
+                    waitedSeconds: RECONNECT_WAIT_MS / 1000,
+                })
+            }, RECONNECT_WAIT_MS)
+        }
         room.on('reconnecting', onReconnecting)
+        room.on('reconnected', cancelReconnectWait)
+        room.on('disconnected', cancelReconnectWait)
 
         const poll = async () => {
             polls += 1
@@ -238,7 +284,10 @@ export default function useRelayFallback(
         return () => {
             isActive = false
             window.clearInterval(timer)
+            cancelReconnectWait()
             room.off('reconnecting', onReconnecting)
+            room.off('reconnected', cancelReconnectWait)
+            room.off('disconnected', cancelReconnectWait)
         }
     }, [room, isEnabled])
 

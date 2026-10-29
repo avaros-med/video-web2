@@ -50,10 +50,11 @@ export interface IVideoContext {
     room: Room | null
     localTracks: (LocalAudioTrack | LocalVideoTrack)[]
     isConnecting: boolean
+    /** Resolves with the room, or null when the SDK refused the connection (onError was called). */
     connect: (
         token: string,
         overrides?: Partial<ConnectOptions>
-    ) => Promise<void>
+    ) => Promise<Room | null>
     onError: ErrorCallback
     getLocalVideoTrack: (
         newOptions?: CreateLocalTrackOptions

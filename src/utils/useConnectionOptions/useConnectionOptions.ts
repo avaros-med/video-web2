@@ -1,7 +1,19 @@
 import { ConnectOptions } from 'twilio-video'
 import { isMobile, removeUndefineds } from '..'
 import { useAppState } from '../../state'
-import { isRelayRemembered } from '../relayPolicy/relayPolicy'
+import {
+    forgetRelay,
+    isAutoRelayFallbackEnabled,
+    isRelayRemembered,
+} from '../relayPolicy/relayPolicy'
+
+function startRelayed(): boolean {
+    if (!isAutoRelayFallbackEnabled()) {
+        forgetRelay()
+        return false
+    }
+    return isRelayRemembered()
+}
 
 export default function useConnectionOptions() {
     const { settings } = useAppState()
@@ -30,8 +42,9 @@ export default function useConnectionOptions() {
         maxAudioBitrate: Number(settings.maxAudioBitrate),
 
         preferredVideoCodecs: 'auto',
-        // A browser that once had to fall back to a relayed connection starts that way (see useRelayFallback).
-        rtcConfiguration: isRelayRemembered()
+        // A browser that once had to fall back to a relayed connection starts that way (see
+        // useRelayFallback). The kill switch also reverts such browsers to direct media.
+        rtcConfiguration: startRelayed()
             ? { iceTransportPolicy: 'relay' }
             : undefined,
 

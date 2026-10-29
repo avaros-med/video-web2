@@ -15,6 +15,11 @@ import { FORCE_RELAY_KEY } from '../../constants'
 /** twilio-video error raised when the media connection cannot be (re)established. */
 export const MEDIA_CONNECTION_FAILED = 53405
 
+/** Kill switch for the whole feature: REACT_APP_AUTO_RELAY_FALLBACK=false. */
+export function isAutoRelayFallbackEnabled(): boolean {
+    return process.env.REACT_APP_AUTO_RELAY_FALLBACK !== 'false'
+}
+
 export function isRelayRemembered(): boolean {
     try {
         return window.localStorage.getItem(FORCE_RELAY_KEY) === 'true'
