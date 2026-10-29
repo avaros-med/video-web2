@@ -23,10 +23,14 @@ export default function useRoom(
     }, [options])
 
     const connect = useCallback(
-        token => {
+        (
+            token: string,
+            overrides?: Partial<ConnectOptions>
+        ): Promise<Room | null> => {
             setIsConnecting(true)
             return Video.connect(token, {
                 ...optionsRef.current,
+                ...overrides,
                 tracks: localTracks,
             }).then(
                 newRoom => {
@@ -70,10 +74,12 @@ export default function useRoom(
                         // Add a listener to disconnect from the room when a mobile user closes their browser
                         window.addEventListener('pagehide', disconnect)
                     }
+                    return newRoom
                 },
                 error => {
                     onError(error)
                     setIsConnecting(false)
+                    return null
                 }
             )
         },
