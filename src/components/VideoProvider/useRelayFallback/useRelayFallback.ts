@@ -21,6 +21,7 @@ import {
     hasConnectedRemote,
     isAutoRelayFallbackEnabled,
     isRelayRemembered,
+    isTokenUsable,
     MEDIA_CONNECTION_FAILED,
     OutboundSample,
     OutboundStallDetector,
@@ -183,6 +184,15 @@ export default function useRelayFallback(
                 diagnosticsService.log('room', 'relay-fallback-skipped', {
                     reason,
                     why: 'no token',
+                })
+                return
+            }
+            // The rejoin reuses the join's token; a live call is never dropped for a
+            // rejoin that the token could not complete.
+            if (!isTokenUsable(token)) {
+                diagnosticsService.log('room', 'relay-fallback-skipped', {
+                    reason,
+                    why: 'token expired',
                 })
                 return
             }

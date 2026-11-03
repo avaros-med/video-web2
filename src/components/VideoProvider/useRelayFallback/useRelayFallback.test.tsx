@@ -54,6 +54,18 @@ function makeRoom(bytesSent = () => 0) {
 }
 
 const DISCONNECTED_DELAY_MS = 50
+/** A JWT with the given expiry, seconds from now; nobody here checks its signature. */
+const jwtExpiringIn = (seconds: number) => {
+    const b64 = (o: unknown) =>
+        window
+            .btoa(JSON.stringify(o))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '')
+    const exp = Math.floor(Date.now() / 1000) + seconds
+    return `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ exp })}.sig`
+}
+const tok = jwtExpiringIn(4 * 3600)
 const relayedRoom = { sid: 'RM2' } as any
 const connectOk = () => jest.fn(() => Promise.resolve(relayedRoom))
 
@@ -100,7 +112,7 @@ describe('the useRelayFallback hook', () => {
 
     it('moves the call to relay when the SDK cannot recover a failed media connection', async () => {
         const room = makeRoom()
-        const tokenRef = { current: 'tok' }
+        const tokenRef = { current: tok }
         const startedAt = new Date('2026-10-28T13:00:00Z')
         // @ts-ignore
         window.sessionStartedAt = startedAt
@@ -124,7 +136,7 @@ describe('the useRelayFallback hook', () => {
             jest.advanceTimersByTime(DISCONNECTED_DELAY_MS) // the mocked 'disconnected'
             await flush()
         })
-        expect(connect).toHaveBeenCalledWith('tok', relayOverrides)
+        expect(connect).toHaveBeenCalledWith(tok, relayOverrides)
         expect(isRelayReconnectInProgress()).toBe(false)
         expect(result.current.isReconnecting).toBe(false)
         expect(result.current.isRelayActive).toBe(true)
@@ -155,7 +167,7 @@ describe('the useRelayFallback hook', () => {
         const connect = jest.fn(() => Promise.resolve(relayed))
         const { rerender } = renderHook(
             ({ current }) =>
-                useRelayFallback(current, connect, { current: 'tok' }, true),
+                useRelayFallback(current, connect, { current: tok }, true),
             { initialProps: { current: room } }
         )
         await failMediaConnection(room)
@@ -176,7 +188,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom(() => 0)
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await act(async () => {
             jest.advanceTimersByTime(START_GRACE_MS)
@@ -203,7 +215,7 @@ describe('the useRelayFallback hook', () => {
         room.participants = new Map([['PA1', { state: 'reconnecting' }]])
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await failMediaConnection(room)
         expect(room.disconnect).not.toHaveBeenCalled()
@@ -225,7 +237,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom()
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await act(async () => {
             room.emit('reconnecting', {
@@ -258,7 +270,7 @@ describe('the useRelayFallback hook', () => {
         room.state = 'reconnecting'
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await failMediaConnection(room)
         // the window ended while they were away: skipped, not judged
@@ -279,7 +291,7 @@ describe('the useRelayFallback hook', () => {
             jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
             await flush()
         })
-        expect(connect).toHaveBeenCalledWith('tok', relayOverrides)
+        expect(connect).toHaveBeenCalledWith(tok, relayOverrides)
     })
 
     it('does not treat waiting alone in the room as a stall', async () => {
@@ -287,7 +299,7 @@ describe('the useRelayFallback hook', () => {
         room.participants = new Map()
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await act(async () => {
             jest.advanceTimersByTime(START_GRACE_MS + 8 * STATS_POLL_MS)
@@ -301,7 +313,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom()
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await act(async () => {
             room.emit('reconnecting', { code: 53405 })
@@ -319,7 +331,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom(() => 0)
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
 
         // during the grace period nothing happens even though nothing is sent
@@ -349,7 +361,7 @@ describe('the useRelayFallback hook', () => {
         room.participants = new Map()
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         // waiting alone for longer than the grace period
         await act(async () => {
@@ -375,7 +387,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom(() => (bytes += 1000))
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await act(async () => {
             jest.advanceTimersByTime(START_GRACE_MS + 8 * STATS_POLL_MS)
@@ -389,7 +401,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom()
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await act(async () => {
             room.emit('reconnecting', { code: 53405 })
@@ -406,7 +418,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom()
         const connect = connectOk()
         const { result } = renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         expect(result.current.isRelayActive).toBe(true)
         await failMediaConnection(room)
@@ -428,7 +440,7 @@ describe('the useRelayFallback hook', () => {
         const connect = jest.fn(() => Promise.resolve(relayed))
         const { result, rerender } = renderHook(
             ({ current }) =>
-                useRelayFallback(current, connect, { current: 'tok' }, true),
+                useRelayFallback(current, connect, { current: tok }, true),
             { initialProps: { current: room } }
         )
         await failMediaConnection(room)
@@ -464,7 +476,7 @@ describe('the useRelayFallback hook', () => {
             jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
             await flush()
         })
-        expect(connect).toHaveBeenCalledWith('tok', relayOverrides)
+        expect(connect).toHaveBeenCalledWith(tok, relayOverrides)
         expect(logSpy).not.toHaveBeenCalledWith(
             'room',
             'relay-fallback-failed',
@@ -481,7 +493,7 @@ describe('the useRelayFallback hook', () => {
         const connect = jest.fn(() => Promise.resolve(relayed))
         const { result, rerender } = renderHook(
             ({ current }) =>
-                useRelayFallback(current, connect, { current: 'tok' }, true),
+                useRelayFallback(current, connect, { current: tok }, true),
             { initialProps: { current: room } }
         )
         await failMediaConnection(room)
@@ -511,18 +523,38 @@ describe('the useRelayFallback hook', () => {
         )
     })
 
+    it('leaves a live call alone when the token could not complete the rejoin', async () => {
+        const room = makeRoom()
+        const connect = connectOk()
+        renderHook(() =>
+            useRelayFallback(
+                room,
+                connect,
+                { current: jwtExpiringIn(30) },
+                true
+            )
+        )
+        await failMediaConnection(room)
+        expect(room.disconnect).not.toHaveBeenCalled()
+        expect(connect).not.toHaveBeenCalled()
+        expect(logSpy).toHaveBeenCalledWith('room', 'relay-fallback-skipped', {
+            reason: 'media-connection-failed',
+            why: 'token expired',
+        })
+    })
+
     it('does not pin relay when the relayed rejoin itself fails', async () => {
         const room = makeRoom()
         const connect = jest.fn(() => Promise.resolve(null))
         const { result } = renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await failMediaConnection(room)
         await act(async () => {
             jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
             await flush()
         })
-        expect(connect).toHaveBeenCalledWith('tok', relayOverrides)
+        expect(connect).toHaveBeenCalledWith(tok, relayOverrides)
         expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBeNull()
         expect(result.current.isRelayActive).toBe(false)
         expect(result.current.isReconnecting).toBe(false)
@@ -539,7 +571,7 @@ describe('the useRelayFallback hook', () => {
         const room = makeRoom()
         const connect = connectOk()
         renderHook(() =>
-            useRelayFallback(room, connect, { current: 'tok' }, true)
+            useRelayFallback(room, connect, { current: tok }, true)
         )
         await act(async () => {
             room.emit('reconnecting', {
@@ -553,7 +585,7 @@ describe('the useRelayFallback hook', () => {
 
         const disabledRoom = makeRoom()
         renderHook(() =>
-            useRelayFallback(disabledRoom, connect, { current: 'tok' }, false)
+            useRelayFallback(disabledRoom, connect, { current: tok }, false)
         )
         await act(async () => {
             disabledRoom.emit('reconnecting', { code: 53405 })

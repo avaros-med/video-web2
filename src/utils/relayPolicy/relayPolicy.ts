@@ -126,3 +126,32 @@ export function decideFallback(
     if (alreadyAttempted) return 'none'
     return isRelayActive ? 'give-up-relay' : 'move-to-relay'
 }
+
+/** A rejoin needs the token to outlive the disconnect and the connect; this is the margin. */
+export const TOKEN_MARGIN_MS = 60 * 1000
+
+/**
+ * When the access token expires, from its JWT `exp` claim, as epoch milliseconds; null
+ * when the token cannot be read. The rejoin reuses the token the call was joined with,
+ * so a token near its end must not be the reason a live call gets dropped.
+ */
+export function tokenExpiresAt(token: string): number | null {
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    try {
+        const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const claims = JSON.parse(window.atob(payload))
+        return typeof claims.exp === 'number' ? claims.exp * 1000 : null
+    } catch {
+        return null
+    }
+}
+
+/** True when the token is readable and still good for a rejoin starting now. */
+export function isTokenUsable(
+    token: string,
+    now: number = Date.now()
+): boolean {
+    const expiresAt = tokenExpiresAt(token)
+    return expiresAt !== null && expiresAt - now > TOKEN_MARGIN_MS
+}
