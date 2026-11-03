@@ -9,6 +9,7 @@ import useScreenShareParticipant from '../../hooks/useScreenShareParticipant/use
 import useRoomMonitorShortcut from '../../hooks/useRoomMonitorShortcut/useRoomMonitorShortcut'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import { socketService } from '../../services/ws/socket.service'
+import { isRelayReconnectInProgress } from '../VideoProvider/useRelayFallback/useRelayFallback'
 import { useAppState } from '../../state'
 import BackgroundSelectionDialog from '../BackgroundSelectionDialog/BackgroundSelectionDialog'
 import ChatWindow from '../ChatWindow/ChatWindow'
@@ -113,6 +114,13 @@ export default function Room() {
             socketEventHandler,
             onNetworkError
         )
+        // A leave closes the socket. The relay fallback's rejoin unmounts Room for a
+        // few seconds too, but the other side may still be sending: the socket stays
+        // open across it, and the next mount's initSocket closes it, so the visit
+        // still has one socket at a time.
+        return () => {
+            if (!isRelayReconnectInProgress()) socketService.closeSocket()
+        }
     }, [URLRoomName, socketEventHandler, onNetworkError])
 
     return (

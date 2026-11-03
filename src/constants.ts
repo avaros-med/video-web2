@@ -15,3 +15,6 @@ export const SELECTED_BACKGROUND_SETTINGS_KEY =
 
 export const GALLERY_VIEW_ASPECT_RATIO = 9 / 16 // 16:9
 export const GALLERY_VIEW_MARGIN = 3
+
+// Set in this browser once a call had to be moved to a relayed (TURN) connection; later calls start that way.
+export const FORCE_RELAY_KEY = 'TwilioVideoApp-forceRelay'
