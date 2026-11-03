@@ -472,6 +472,45 @@ describe('the useRelayFallback hook', () => {
         )
     })
 
+    it('does not remember relay when bytes start flowing only after the relayed call gave relay up', async () => {
+        const room = makeRoom()
+        let relayedBytes = 0
+        // flat for the whole stall, then moving again
+        const relayed = makeRoom(() => relayedBytes)
+        relayed.sid = 'RM2'
+        const connect = jest.fn(() => Promise.resolve(relayed))
+        const { result, rerender } = renderHook(
+            ({ current }) =>
+                useRelayFallback(current, connect, { current: 'tok' }, true),
+            { initialProps: { current: room } }
+        )
+        await failMediaConnection(room)
+        await act(async () => {
+            jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
+            await flush()
+        })
+        rerender({ current: relayed })
+        // the relayed call stalls too: relay is given up
+        await act(async () => {
+            jest.advanceTimersByTime(START_GRACE_MS + 5 * STATS_POLL_MS)
+            await flush()
+        })
+        expect(result.current.isRelayActive).toBe(false)
+        expect(logSpy).toHaveBeenCalledWith(
+            'room',
+            'relay-fallback-failed',
+            expect.objectContaining({ reason: 'outbound-stall' })
+        )
+        // bytes moving now prove nothing: the forget stands
+        relayedBytes = 500
+        await onePoll()
+        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBeNull()
+        expect(logSpy).not.toHaveBeenCalledWith(
+            'room',
+            'relay-fallback-remembered'
+        )
+    })
+
     it('does not pin relay when the relayed rejoin itself fails', async () => {
         const room = makeRoom()
         const connect = jest.fn(() => Promise.resolve(null))

@@ -171,6 +171,8 @@ export default function useRelayFallback(
                     reason,
                     ...data,
                 })
+                // A forget always wins over a remember still waiting on bytes.
+                pendingRememberRef.current = false
                 forgetRelay()
                 setRelayActive(false)
                 return
