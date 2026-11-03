@@ -23,6 +23,9 @@ function makeTrack(kind: string, overrides: Record<string, unknown> = {}) {
 function makeRoom(bytesSent = () => 0) {
     const room: any = new EventEmitter()
     room.sid = 'RM1'
+    room.state = 'connected'
+    // one remote participant, connected: the normal two-person call
+    room.participants = new Map([['PA1', { state: 'connected' }]])
     room.localParticipant = {
         audioTracks: new Map([
             ['MTa', { trackSid: 'MTa', track: makeTrack('audio') }],
@@ -53,6 +56,14 @@ function makeRoom(bytesSent = () => 0) {
 const DISCONNECTED_DELAY_MS = 50
 const relayedRoom = { sid: 'RM2' } as any
 const connectOk = () => jest.fn(() => Promise.resolve(relayedRoom))
+
+/** Run one stats poll. */
+const onePoll = async () => {
+    await act(async () => {
+        jest.advanceTimersByTime(STATS_POLL_MS)
+        await flush()
+    })
+}
 const relayOverrides = { rtcConfiguration: { iceTransportPolicy: 'relay' } }
 
 const flush = async () => {
@@ -89,13 +100,17 @@ describe('the useRelayFallback hook', () => {
 
     it('moves the call to relay when the SDK cannot recover a failed media connection', async () => {
         const room = makeRoom()
-        const connect = connectOk()
         const tokenRef = { current: 'tok' }
         const startedAt = new Date('2026-10-28T13:00:00Z')
         // @ts-ignore
         window.sessionStartedAt = startedAt
-        const { result } = renderHook(() =>
-            useRelayFallback(room, connect, tokenRef, true)
+        let relayedBytes = 0
+        const relayed = makeRoom(() => (relayedBytes += 500))
+        relayed.sid = 'RM2'
+        const connect = jest.fn(() => Promise.resolve(relayed))
+        const { result, rerender } = renderHook(
+            ({ current }) => useRelayFallback(current, connect, tokenRef, true),
+            { initialProps: { current: room } }
         )
 
         await failMediaConnection(room)
@@ -113,7 +128,6 @@ describe('the useRelayFallback hook', () => {
         expect(isRelayReconnectInProgress()).toBe(false)
         expect(result.current.isReconnecting).toBe(false)
         expect(result.current.isRelayActive).toBe(true)
-        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBe('true')
         // @ts-ignore - the visit log keeps the original start time
         expect(window.sessionStartedAt).toBe(startedAt)
         expect(logSpy).toHaveBeenCalledWith('room', 'relay-fallback', {
@@ -123,6 +137,99 @@ describe('the useRelayFallback hook', () => {
             waitedSeconds: 10,
         })
         expect(logSpy).toHaveBeenCalledWith('room', 'relay-fallback-connected')
+        // ...and still nothing is remembered until relayed media is seen flowing
+        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBeNull()
+
+        rerender({ current: relayed })
+        await onePoll() // baseline
+        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBeNull()
+        await onePoll() // bytes moved
+        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBe('true')
+        expect(logSpy).toHaveBeenCalledWith('room', 'relay-fallback-remembered')
+    })
+
+    it('does not remember relay when the relayed rejoin connects but still carries nothing', async () => {
+        const room = makeRoom()
+        const relayed = makeRoom(() => 0)
+        relayed.sid = 'RM2'
+        const connect = jest.fn(() => Promise.resolve(relayed))
+        const { rerender } = renderHook(
+            ({ current }) =>
+                useRelayFallback(current, connect, { current: 'tok' }, true),
+            { initialProps: { current: room } }
+        )
+        await failMediaConnection(room)
+        await act(async () => {
+            jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
+            await flush()
+        })
+        rerender({ current: relayed })
+        for (let i = 0; i < 6; i++) await onePoll()
+        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBeNull()
+        expect(logSpy).not.toHaveBeenCalledWith(
+            'room',
+            'relay-fallback-remembered'
+        )
+    })
+
+    it("does not read the SDK's own reconnect as an outbound stall", async () => {
+        const room = makeRoom(() => 0)
+        const connect = connectOk()
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: 'tok' }, true)
+        )
+        await act(async () => {
+            jest.advanceTimersByTime(START_GRACE_MS)
+            await flush()
+        })
+        // flat counters while the room is reconnecting do not count
+        room.state = 'reconnecting'
+        for (let i = 0; i < 8; i++) await onePoll()
+        expect(room.disconnect).not.toHaveBeenCalled()
+        // once connected again the detector starts from a fresh baseline
+        room.state = 'connected'
+        for (let i = 0; i < 4; i++) await onePoll()
+        expect(room.disconnect).not.toHaveBeenCalled()
+        await onePoll()
+        expect(room.disconnect).toHaveBeenCalledTimes(1)
+    })
+
+    it('leaves the call alone when the other participant is the one reconnecting', async () => {
+        const room = makeRoom(() => 0)
+        room.participants = new Map([['PA1', { state: 'reconnecting' }]])
+        const connect = connectOk()
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: 'tok' }, true)
+        )
+        await failMediaConnection(room)
+        expect(room.disconnect).not.toHaveBeenCalled()
+        expect(connect).not.toHaveBeenCalled()
+        expect(logSpy).toHaveBeenCalledWith(
+            'room',
+            'relay-fallback-skipped',
+            expect.objectContaining({ reason: 'media-connection-failed' })
+        )
+        // nor do flat counters count while they are away
+        await act(async () => {
+            jest.advanceTimersByTime(START_GRACE_MS + 6 * STATS_POLL_MS)
+            await flush()
+        })
+        expect(room.disconnect).not.toHaveBeenCalled()
+    })
+
+    it('does not treat waiting alone in the room as a stall', async () => {
+        const room = makeRoom(() => 0)
+        room.participants = new Map()
+        const connect = connectOk()
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: 'tok' }, true)
+        )
+        await act(async () => {
+            jest.advanceTimersByTime(START_GRACE_MS + 8 * STATS_POLL_MS)
+            await flush()
+        })
+        expect(room.disconnect).not.toHaveBeenCalled()
+        expect(connect).not.toHaveBeenCalled()
     })
 
     it("leaves a call alone when the SDK's own ICE restart recovers in time", async () => {

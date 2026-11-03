@@ -89,6 +89,27 @@ export class OutboundStallDetector {
         })
         return stalled
     }
+
+    /** Forget every baseline, e.g. after a reconnect during which no bytes could flow. */
+    reset(): void {
+        this.counters.clear()
+    }
+}
+
+/**
+ * Whether this browser currently has someone to send to: at least one remote participant,
+ * and none of them mid-reconnect. While that is not the case, flat byte counters and a
+ * failed media connection say nothing about this browser's own network path.
+ */
+export function hasConnectedRemote(room: {
+    participants?: Map<string, { state?: string }>
+}): boolean {
+    if (!room.participants || room.participants.size === 0) return false
+    let allConnected = true
+    room.participants.forEach(participant => {
+        if (participant.state !== 'connected') allConnected = false
+    })
+    return allConnected
 }
 
 export type FallbackDecision = 'move-to-relay' | 'give-up-relay' | 'none'

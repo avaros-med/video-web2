@@ -1,4 +1,5 @@
 import {
+    hasConnectedRemote,
     decideFallback,
     forgetRelay,
     isRelayRemembered,
@@ -71,5 +72,43 @@ describe('decideFallback', () => {
         expect(decideFallback(true, false)).toBe('give-up-relay')
         expect(decideFallback(false, true)).toBe('none')
         expect(decideFallback(true, true)).toBe('none')
+    })
+})
+
+describe('OutboundStallDetector.reset', () => {
+    it('forgets its baselines so the next sample starts the count over', () => {
+        const detector = new OutboundStallDetector(2)
+        detector.observe([{ kind: 'audio', bytesSent: 100 }])
+        detector.observe([{ kind: 'audio', bytesSent: 100 }])
+        detector.reset()
+        expect(detector.observe([{ kind: 'audio', bytesSent: 100 }])).toEqual(
+            []
+        )
+        expect(detector.observe([{ kind: 'audio', bytesSent: 100 }])).toEqual(
+            []
+        )
+        expect(detector.observe([{ kind: 'audio', bytesSent: 100 }])).toEqual([
+            'audio',
+        ])
+    })
+})
+
+describe('hasConnectedRemote', () => {
+    it('needs at least one remote participant and none of them reconnecting', () => {
+        expect(hasConnectedRemote({})).toBe(false)
+        expect(hasConnectedRemote({ participants: new Map() })).toBe(false)
+        expect(
+            hasConnectedRemote({
+                participants: new Map([['PA1', { state: 'connected' }]]),
+            })
+        ).toBe(true)
+        expect(
+            hasConnectedRemote({
+                participants: new Map([
+                    ['PA1', { state: 'connected' }],
+                    ['PA2', { state: 'reconnecting' }],
+                ]),
+            })
+        ).toBe(false)
     })
 })

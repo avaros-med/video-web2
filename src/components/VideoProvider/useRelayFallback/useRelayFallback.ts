@@ -18,6 +18,7 @@ import { diagnosticsService } from '../../../services/diagnostics/diagnostics.se
 import {
     decideFallback,
     forgetRelay,
+    hasConnectedRemote,
     isAutoRelayFallbackEnabled,
     isRelayRemembered,
     MEDIA_CONNECTION_FAILED,
@@ -36,9 +37,13 @@ export { isAutoRelayFallbackEnabled }
  * peer connection (or twilio-video's own ICE restart fails to recover the media
  * connection). When that happens the hook leaves the room and rejoins it with the same
  * token and the same local tracks, forcing the ICE transport policy to 'relay', and,
- * once the relayed rejoin has actually connected, remembers in this browser that relay
- * is needed so later calls start that way. The other participant sees this side drop and
- * come back within a few seconds; nobody has to click anything.
+ * once bytes are actually flowing over the relayed rejoin, remembers in this browser that
+ * relay is needed so later calls start that way. The other participant sees this side
+ * drop and come back within a few seconds; nobody has to click anything.
+ *
+ * Only this browser's path is judged. While the SDK is reconnecting the room, while the
+ * other participant is reconnecting, or while nobody else is in the room, flat byte
+ * counters and a 53405 mean nothing about this side, so neither counts.
  *
  * Once per call. If a call that is already relayed stalls too, relay is not the answer:
  * the memory is cleared and the usual microphone/audio alerts take over.
@@ -134,6 +139,20 @@ export default function useRelayFallback(
     const [isRelayActive, setIsRelayActive] = useState(isRelayRemembered)
     const relayActiveRef = useRef(isRelayActive)
     const attemptedRef = useRef(false)
+    /** The relayed rejoin connected; remember relay once its media is seen flowing. */
+    const pendingRememberRef = useRef(false)
+    // A rejoin can still be in flight when the provider unmounts (user left the page).
+    const mountedRef = useRef(true)
+    useEffect(() => {
+        mountedRef.current = true
+        return () => {
+            mountedRef.current = false
+        }
+    }, [])
+    const setRelayActive = useCallback((value: boolean) => {
+        relayActiveRef.current = value
+        if (mountedRef.current) setIsRelayActive(value)
+    }, [])
 
     const moveToRelay = useCallback(
         async (reason: string, data: Record<string, unknown>) => {
@@ -151,8 +170,7 @@ export default function useRelayFallback(
                     ...data,
                 })
                 forgetRelay()
-                relayActiveRef.current = false
-                setIsRelayActive(false)
+                setRelayActive(false)
                 return
             }
 
@@ -170,7 +188,7 @@ export default function useRelayFallback(
                 ...data,
             })
             relayReconnectInProgress = true
-            setIsReconnecting(true)
+            if (mountedRef.current) setIsReconnecting(true)
             // The visit log's start time is the original join, not the rejoin.
             // @ts-ignore - set by useRoom
             const sessionStartedAt = window.sessionStartedAt
@@ -183,8 +201,7 @@ export default function useRelayFallback(
                     })
                     room.disconnect()
                 })
-                relayActiveRef.current = true
-                setIsRelayActive(true)
+                setRelayActive(true)
                 const relayedRoom = await connect(token, {
                     rtcConfiguration: { iceTransportPolicy: 'relay' },
                 })
@@ -193,23 +210,24 @@ export default function useRelayFallback(
                     window.sessionStartedAt = sessionStartedAt
                 }
                 if (relayedRoom) {
-                    // Only a rejoin that actually connected is worth remembering.
-                    rememberRelay()
+                    // Remembered only once the relayed room's poll sees bytes leaving:
+                    // a rejoin that connects but still carries nothing proves nothing.
+                    pendingRememberRef.current = true
                     diagnosticsService.log('room', 'relay-fallback-connected')
                 } else {
+                    pendingRememberRef.current = false
                     diagnosticsService.log('room', 'relay-fallback-failed', {
                         reason: 'rejoin-failed',
                     })
                     forgetRelay()
-                    relayActiveRef.current = false
-                    setIsRelayActive(false)
+                    setRelayActive(false)
                 }
             } finally {
                 relayReconnectInProgress = false
-                setIsReconnecting(false)
+                if (mountedRef.current) setIsReconnecting(false)
             }
         },
-        [room, connect, tokenRef]
+        [room, connect, tokenRef, setRelayActive]
     )
 
     // Always the latest moveToRelay, so the room effect below only re-runs for a new room.
@@ -222,10 +240,13 @@ export default function useRelayFallback(
         if (!room || !isEnabled) return
         // A new room is a new call (or the relayed rejoin): one attempt each.
         attemptedRef.current = false
+        // A fresh, non-relayed call drops any remembering left over from a rejoin that never flowed.
+        if (!relayActiveRef.current) pendingRememberRef.current = false
         const detector = new OutboundStallDetector(
             STALLED_POLLS_BEFORE_FALLBACK
         )
         let polls = 0
+        let lastTotalBytes = -1
         let isActive = true
 
         // A media-connection failure only counts once the SDK's own ICE restart has
@@ -248,6 +269,15 @@ export default function useRelayFallback(
             reconnectTimer = window.setTimeout(() => {
                 reconnectTimer = null
                 if (!isActive) return
+                // In a peer-to-peer room the other side going offline fails this
+                // browser's ICE too; that is their outage, not our network path.
+                if (!hasConnectedRemote(room)) {
+                    diagnosticsService.log('room', 'relay-fallback-skipped', {
+                        reason: 'media-connection-failed',
+                        why: 'remote participant reconnecting or absent',
+                    })
+                    return
+                }
                 moveToRelayRef.current('media-connection-failed', {
                     code,
                     message,
@@ -261,7 +291,13 @@ export default function useRelayFallback(
 
         const poll = async () => {
             polls += 1
-            if (polls <= GRACE_POLLS) return
+            // Nothing can flow while the SDK is reconnecting the room, while the other
+            // participant is reconnecting, or while nobody else is here: start over.
+            if (room.state !== 'connected' || !hasConnectedRemote(room)) {
+                detector.reset()
+                lastTotalBytes = -1
+                return
+            }
             if (typeof room.getStats !== 'function') return
             let reports: StatsReport[]
             try {
@@ -270,7 +306,20 @@ export default function useRelayFallback(
                 return
             }
             if (!isActive) return
-            const stalled = detector.observe(outboundSamples(room, reports))
+            const samples = outboundSamples(room, reports)
+            const totalBytes = samples.reduce((sum, s) => sum + s.bytesSent, 0)
+            if (
+                pendingRememberRef.current &&
+                lastTotalBytes >= 0 &&
+                totalBytes > lastTotalBytes
+            ) {
+                pendingRememberRef.current = false
+                rememberRelay()
+                diagnosticsService.log('room', 'relay-fallback-remembered')
+            }
+            lastTotalBytes = totalBytes
+            if (polls <= GRACE_POLLS) return
+            const stalled = detector.observe(samples)
             if (stalled.length) {
                 moveToRelayRef.current('outbound-stall', {
                     kinds: stalled.join('+'),
