@@ -391,6 +391,57 @@ describe('the useRelayFallback hook', () => {
         )
     })
 
+    it('a later direct call on the same page starts from what the browser remembers, not from the last call', async () => {
+        const room = makeRoom()
+        const relayed = makeRoom(() => 0)
+        relayed.sid = 'RM2'
+        const connect = jest.fn(() => Promise.resolve(relayed))
+        const { result, rerender } = renderHook(
+            ({ current }) =>
+                useRelayFallback(current, connect, { current: 'tok' }, true),
+            { initialProps: { current: room } }
+        )
+        await failMediaConnection(room)
+        await act(async () => {
+            jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
+            await flush()
+        })
+        rerender({ current: relayed })
+        expect(result.current.isRelayActive).toBe(true)
+        // hung up before any relayed bytes flowed: nothing remembered
+        rerender({ current: null })
+        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBeNull()
+
+        // the next call starts direct, as useConnectionOptions would start it
+        let bytes = 0
+        const direct = makeRoom(() => (bytes += 500))
+        direct.sid = 'RM3'
+        rerender({ current: direct })
+        expect(result.current.isRelayActive).toBe(false)
+        await onePoll()
+        await onePoll() // bytes moved on a direct call: that proves nothing about relay
+        expect(window.localStorage.getItem(FORCE_RELAY_KEY)).toBeNull()
+        expect(logSpy).not.toHaveBeenCalledWith(
+            'room',
+            'relay-fallback-remembered'
+        )
+
+        // and a failure on this direct call falls back, instead of giving relay up
+        connect.mockClear()
+        await failMediaConnection(direct)
+        expect(direct.disconnect).toHaveBeenCalledTimes(1)
+        await act(async () => {
+            jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
+            await flush()
+        })
+        expect(connect).toHaveBeenCalledWith('tok', relayOverrides)
+        expect(logSpy).not.toHaveBeenCalledWith(
+            'room',
+            'relay-fallback-failed',
+            expect.anything()
+        )
+    })
+
     it('does not pin relay when the relayed rejoin itself fails', async () => {
         const room = makeRoom()
         const connect = jest.fn(() => Promise.resolve(null))

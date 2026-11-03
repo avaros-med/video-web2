@@ -141,6 +141,8 @@ export default function useRelayFallback(
     const attemptedRef = useRef(false)
     /** The relayed rejoin connected; remember relay once its media is seen flowing. */
     const pendingRememberRef = useRef(false)
+    /** Set while moveToRelay is rejoining, so the room effect knows the next room is that rejoin. */
+    const relayRejoinRef = useRef(false)
     // A rejoin can still be in flight when the provider unmounts (user left the page).
     const mountedRef = useRef(true)
     useEffect(() => {
@@ -202,6 +204,7 @@ export default function useRelayFallback(
                     room.disconnect()
                 })
                 setRelayActive(true)
+                relayRejoinRef.current = true
                 const relayedRoom = await connect(token, {
                     rtcConfiguration: { iceTransportPolicy: 'relay' },
                 })
@@ -215,6 +218,7 @@ export default function useRelayFallback(
                     pendingRememberRef.current = true
                     diagnosticsService.log('room', 'relay-fallback-connected')
                 } else {
+                    relayRejoinRef.current = false
                     pendingRememberRef.current = false
                     diagnosticsService.log('room', 'relay-fallback-failed', {
                         reason: 'rejoin-failed',
@@ -240,8 +244,15 @@ export default function useRelayFallback(
         if (!room || !isEnabled) return
         // A new room is a new call (or the relayed rejoin): one attempt each.
         attemptedRef.current = false
-        // A fresh, non-relayed call drops any remembering left over from a rejoin that never flowed.
-        if (!relayActiveRef.current) pendingRememberRef.current = false
+        const isRelayRejoin = relayRejoinRef.current
+        relayRejoinRef.current = false
+        if (!isRelayRejoin) {
+            // A new call runs the way useConnectionOptions started it, which is what
+            // this browser remembers, whatever the previous call ended as; and nothing
+            // is left to remember from a rejoin whose media never flowed.
+            setRelayActive(isRelayRemembered())
+            pendingRememberRef.current = false
+        }
         const detector = new OutboundStallDetector(
             STALLED_POLLS_BEFORE_FALLBACK
         )
@@ -369,7 +380,7 @@ export default function useRelayFallback(
             room.off('participantConnected', onRemoteBack)
             room.off('participantReconnected', onRemoteBack)
         }
-    }, [room, isEnabled])
+    }, [room, isEnabled, setRelayActive])
 
     return { isReconnecting, isRelayActive }
 }
