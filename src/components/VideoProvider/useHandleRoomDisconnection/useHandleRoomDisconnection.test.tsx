@@ -2,6 +2,14 @@ import { act, renderHook } from '@testing-library/react-hooks'
 import { Room } from 'twilio-video'
 import EventEmitter from 'events'
 import useHandleRoomDisconnection from './useHandleRoomDisconnection'
+import { isRelayReconnectInProgress } from '../useRelayFallback/useRelayFallback'
+
+jest.mock('../useRelayFallback/useRelayFallback', () => ({
+    isRelayReconnectInProgress: jest.fn(() => false),
+}))
+const mockIsRelayReconnectInProgress = isRelayReconnectInProgress as jest.Mock<
+    any
+>
 
 const mockOnError = jest.fn()
 const mockRemoveLocalAudioTrack = jest.fn()
@@ -12,6 +20,27 @@ describe('the useHandleRoomDisconnection hook', () => {
     let mockRoom: any = new EventEmitter()
 
     beforeEach(jest.clearAllMocks)
+
+    it('should keep the camera and microphone, raise no error, but still stop a screen share while the relay fallback rejoins the room', () => {
+        mockIsRelayReconnectInProgress.mockReturnValueOnce(true)
+        renderHook(() =>
+            useHandleRoomDisconnection(
+                mockRoom,
+                mockOnError,
+                mockRemoveLocalAudioTrack,
+                mockRemoveLocalVideoTrack,
+                true,
+                mockToggleScreenSharing
+            )
+        )
+        act(() => {
+            mockRoom.emit('disconnected', mockRoom, { code: 53405 })
+        })
+        expect(mockOnError).not.toHaveBeenCalled()
+        expect(mockRemoveLocalAudioTrack).not.toHaveBeenCalled()
+        expect(mockRemoveLocalVideoTrack).not.toHaveBeenCalled()
+        expect(mockToggleScreenSharing).toHaveBeenCalledTimes(1)
+    })
 
     it('should do nothing if the room emits a "disconnected" event with no error', () => {
         renderHook(() =>

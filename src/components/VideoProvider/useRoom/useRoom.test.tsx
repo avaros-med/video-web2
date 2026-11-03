@@ -25,6 +25,23 @@ describe('the useRoom hook', () => {
         expect(result.current.isConnecting).toBe(false)
     })
 
+    it('should resolve with the room, or null when the SDK refuses the connection', async () => {
+        const onError = jest.fn()
+        const { result } = renderHook(() => useRoom([], onError, {}))
+        let connected: any
+        await act(async () => {
+            connected = await result.current.connect('token')
+        })
+        expect(connected).toBe(mockRoom)
+
+        mockVideoConnect.mockImplementationOnce(() => Promise.reject('refused'))
+        await act(async () => {
+            connected = await result.current.connect('token')
+        })
+        expect(connected).toBeNull()
+        expect(onError).toHaveBeenCalledWith('refused')
+    })
+
     it('should set the priority of video tracks to low', async () => {
         const { result, waitForNextUpdate } = renderHook(() =>
             useRoom([{ kind: 'video' } as LocalTrack], () => {}, {})
@@ -87,7 +104,9 @@ describe('the useRoom hook', () => {
             Promise.reject('mockError')
         )
         const { result } = renderHook(() => useRoom([], mockOnError, {}))
-        await act(() => result.current.connect('token'))
+        await act(async () => {
+            await result.current.connect('token')
+        })
         expect(mockOnError).toHaveBeenCalledWith('mockError')
         expect(result.current.isConnecting).toBe(false)
     })
