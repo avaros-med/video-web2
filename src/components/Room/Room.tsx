@@ -113,6 +113,9 @@ export default function Room() {
             socketEventHandler,
             onNetworkError
         )
+        // The socket belongs to this mount: a leave, or the relay fallback's rejoin,
+        // must not leave a second one open behind the next mount.
+        return () => socketService.closeSocket()
     }, [URLRoomName, socketEventHandler, onNetworkError])
 
     return (

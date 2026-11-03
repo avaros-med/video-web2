@@ -6,6 +6,33 @@ const WS_RECONNECT_MAX_INTERVAL = 7000
 export let socket: WebSocket | null = null
 
 let reconnectAttemptCounter: number = 0
+let reconnectTimer: number | null = null
+
+/**
+ * Close the socket this service owns, if any, and drop a reconnect still pending.
+ * The old socket's handlers are detached first, so its own close does not reopen it:
+ * one socket per visit, however many times the Room mounts (a leave and rejoin, or
+ * the relay fallback's mid-call rejoin).
+ */
+const closeSocket = (): void => {
+    if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer)
+        reconnectTimer = null
+    }
+    const old = socket
+    socket = null
+    if (!old) return
+    old.onopen = null
+    old.onmessage = null
+    old.onerror = null
+    old.onclose = null
+    if (
+        old.readyState === WebSocket.CONNECTING ||
+        old.readyState === WebSocket.OPEN
+    ) {
+        old.close()
+    }
+}
 
 const initSocket = (
     roomId: string,
@@ -15,6 +42,7 @@ const initSocket = (
     if (!WS_URL) {
         return Promise.resolve(null)
     }
+    closeSocket()
 
     return new Promise(resolve => {
         // Create websocket
@@ -59,10 +87,10 @@ const reconnect = (
     eventHandler: (event: BaseEvent) => void,
     onNetworkError: () => void
 ) => {
-    setTimeout(
-        () => initSocket(roomId, eventHandler, onNetworkError),
-        getRandomNumber(WS_RECONNECT_MIN_INTERVAL, WS_RECONNECT_MAX_INTERVAL)
-    )
+    reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null
+        initSocket(roomId, eventHandler, onNetworkError)
+    }, getRandomNumber(WS_RECONNECT_MIN_INTERVAL, WS_RECONNECT_MAX_INTERVAL))
 }
 
 const isOpen = (): boolean => socket?.readyState === socket?.OPEN
@@ -150,6 +178,7 @@ export const generateBaseEventId = (): string => {
 
 export const socketService = {
     initSocket,
+    closeSocket,
     reconnect,
     isOpen,
     dispatchEvent,
