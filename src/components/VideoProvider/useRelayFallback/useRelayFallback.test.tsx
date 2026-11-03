@@ -186,8 +186,12 @@ describe('the useRelayFallback hook', () => {
         room.state = 'reconnecting'
         for (let i = 0; i < 8; i++) await onePoll()
         expect(room.disconnect).not.toHaveBeenCalled()
-        // once connected again the detector starts from a fresh baseline
+        // once connected again the grace period and the detector start over
         room.state = 'connected'
+        await act(async () => {
+            jest.advanceTimersByTime(START_GRACE_MS)
+            await flush()
+        })
         for (let i = 0; i < 4; i++) await onePoll()
         expect(room.disconnect).not.toHaveBeenCalled()
         await onePoll()
@@ -338,6 +342,32 @@ describe('the useRelayFallback hook', () => {
             kinds: 'audio+video',
             seconds: 12,
         })
+    })
+
+    it('gives a late-joining participant the whole grace period before judging the stall', async () => {
+        const room = makeRoom(() => 0)
+        room.participants = new Map()
+        const connect = connectOk()
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: 'tok' }, true)
+        )
+        // waiting alone for longer than the grace period
+        await act(async () => {
+            jest.advanceTimersByTime(START_GRACE_MS + 4 * STATS_POLL_MS)
+            await flush()
+        })
+        room.participants = new Map([['PA1', { state: 'connected' }]])
+        // the grace period counts from here, not from the join
+        await act(async () => {
+            jest.advanceTimersByTime(START_GRACE_MS)
+            await flush()
+        })
+        expect(room.disconnect).not.toHaveBeenCalled()
+        // a baseline poll and four flat ones after it, as from a normal join
+        for (let i = 0; i < 4; i++) await onePoll()
+        expect(room.disconnect).not.toHaveBeenCalled()
+        await onePoll()
+        expect(room.disconnect).toHaveBeenCalledTimes(1)
     })
 
     it('does not fall back while bytes keep flowing', async () => {

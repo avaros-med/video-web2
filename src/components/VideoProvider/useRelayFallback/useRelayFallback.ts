@@ -330,14 +330,16 @@ export default function useRelayFallback(
         room.on('participantReconnected', onRemoteBack)
 
         const poll = async () => {
-            polls += 1
             // Nothing can flow while the SDK is reconnecting the room, while the other
-            // participant is reconnecting, or while nobody else is here: start over.
+            // participant is reconnecting, or while nobody else is here: start over,
+            // grace included, since the media path only starts once they are in.
             if (room.state !== 'connected' || !hasConnectedRemote(room)) {
                 detector.reset()
                 lastTotalBytes = -1
+                polls = 0
                 return
             }
+            polls += 1
             if (typeof room.getStats !== 'function') return
             let reports: StatsReport[]
             try {
