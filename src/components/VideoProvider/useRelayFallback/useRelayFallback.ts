@@ -251,26 +251,30 @@ export default function useRelayFallback(
 
         // A media-connection failure only counts once the SDK's own ICE restart has
         // had RECONNECT_WAIT_MS to succeed; 'reconnected' (or leaving) cancels it.
+        // The window also starts over whenever the other participant comes (back)
+        // in: in a peer-to-peer room their outage fails this browser's ICE too, and
+        // the restart after their return needs the whole window to prove itself.
+        type Failure = { code: number; message: string }
         let reconnectTimer: number | null = null
+        /** The failure a running window will judge. */
+        let pendingFailure: Failure | null = null
+        /** The failure the SDK reported last, kept until the room recovers or leaves. */
+        let lastFailure: Failure | null = null
         const cancelReconnectWait = () => {
             if (reconnectTimer !== null) {
                 window.clearTimeout(reconnectTimer)
                 reconnectTimer = null
             }
+            pendingFailure = null
+            lastFailure = null
         }
-        const onReconnecting = (error?: TwilioError) => {
-            if (
-                error?.code !== MEDIA_CONNECTION_FAILED ||
-                reconnectTimer !== null
-            ) {
-                return
-            }
-            const { code, message } = error
+        const armReconnectWait = () => {
             reconnectTimer = window.setTimeout(() => {
                 reconnectTimer = null
-                if (!isActive) return
-                // In a peer-to-peer room the other side going offline fails this
-                // browser's ICE too; that is their outage, not our network path.
+                const failure = pendingFailure
+                pendingFailure = null
+                if (!isActive || !failure) return
+                // The other side going offline is their outage, not our network path.
                 if (!hasConnectedRemote(room)) {
                     diagnosticsService.log('room', 'relay-fallback-skipped', {
                         reason: 'media-connection-failed',
@@ -279,15 +283,40 @@ export default function useRelayFallback(
                     return
                 }
                 moveToRelayRef.current('media-connection-failed', {
-                    code,
-                    message,
+                    ...failure,
                     waitedSeconds: RECONNECT_WAIT_MS / 1000,
                 })
             }, RECONNECT_WAIT_MS)
         }
+        const onReconnecting = (error?: TwilioError) => {
+            if (
+                error?.code !== MEDIA_CONNECTION_FAILED ||
+                reconnectTimer !== null
+            ) {
+                return
+            }
+            lastFailure = { code: error.code, message: error.message }
+            pendingFailure = lastFailure
+            armReconnectWait()
+        }
+        // The other participant is (back) in. A running window starts over; and if the
+        // room is still reconnecting from a failure whose window already ended while
+        // they were away, that failure gets a window now.
+        const onRemoteBack = () => {
+            if (reconnectTimer !== null) {
+                window.clearTimeout(reconnectTimer)
+                reconnectTimer = null
+            } else if (room.state !== 'reconnecting' || !lastFailure) {
+                return
+            }
+            pendingFailure = lastFailure
+            armReconnectWait()
+        }
         room.on('reconnecting', onReconnecting)
         room.on('reconnected', cancelReconnectWait)
         room.on('disconnected', cancelReconnectWait)
+        room.on('participantConnected', onRemoteBack)
+        room.on('participantReconnected', onRemoteBack)
 
         const poll = async () => {
             polls += 1
@@ -337,6 +366,8 @@ export default function useRelayFallback(
             room.off('reconnecting', onReconnecting)
             room.off('reconnected', cancelReconnectWait)
             room.off('disconnected', cancelReconnectWait)
+            room.off('participantConnected', onRemoteBack)
+            room.off('participantReconnected', onRemoteBack)
         }
     }, [room, isEnabled])
 

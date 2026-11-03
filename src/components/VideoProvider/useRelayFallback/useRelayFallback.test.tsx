@@ -217,6 +217,67 @@ describe('the useRelayFallback hook', () => {
         expect(room.disconnect).not.toHaveBeenCalled()
     })
 
+    it('restarts the recovery window when the other participant comes back late in it', async () => {
+        const room = makeRoom()
+        const connect = connectOk()
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: 'tok' }, true)
+        )
+        await act(async () => {
+            room.emit('reconnecting', {
+                code: 53405,
+                message: 'Media connection failed',
+            })
+            jest.advanceTimersByTime(RECONNECT_WAIT_MS - 1000)
+            // their outage ends one second before the window would have closed
+            room.emit('participantReconnected', { state: 'connected' })
+            jest.advanceTimersByTime(1000)
+            await flush()
+        })
+        // our ICE restart after their return gets a whole window of its own
+        expect(room.disconnect).not.toHaveBeenCalled()
+        await act(async () => {
+            jest.advanceTimersByTime(RECONNECT_WAIT_MS - 1000)
+            await flush()
+        })
+        expect(room.disconnect).toHaveBeenCalledTimes(1)
+        expect(logSpy).toHaveBeenCalledWith(
+            'room',
+            'relay-fallback',
+            expect.objectContaining({ reason: 'media-connection-failed' })
+        )
+    })
+
+    it('judges the failure once the other participant is back, if the room is still reconnecting', async () => {
+        const room = makeRoom()
+        room.participants = new Map([['PA1', { state: 'reconnecting' }]])
+        room.state = 'reconnecting'
+        const connect = connectOk()
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: 'tok' }, true)
+        )
+        await failMediaConnection(room)
+        // the window ended while they were away: skipped, not judged
+        expect(room.disconnect).not.toHaveBeenCalled()
+        await act(async () => {
+            room.participants = new Map([['PA1', { state: 'connected' }]])
+            room.emit('participantReconnected', { state: 'connected' })
+            jest.advanceTimersByTime(RECONNECT_WAIT_MS - 1000)
+            await flush()
+        })
+        expect(room.disconnect).not.toHaveBeenCalled()
+        await act(async () => {
+            jest.advanceTimersByTime(1000)
+            await flush()
+        })
+        expect(room.disconnect).toHaveBeenCalledTimes(1)
+        await act(async () => {
+            jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
+            await flush()
+        })
+        expect(connect).toHaveBeenCalledWith('tok', relayOverrides)
+    })
+
     it('does not treat waiting alone in the room as a stall', async () => {
         const room = makeRoom(() => 0)
         room.participants = new Map()
