@@ -297,6 +297,17 @@ export default function useRelayFallback(
                 const failure = pendingFailure
                 pendingFailure = null
                 if (!isActive || !failure) return
+                // This browser has no network: the failed path is ours to wait out,
+                // not route around. A rejoin now cannot reach the signaling server,
+                // and the disconnect it starts with would end a call the SDK's own
+                // restart recovers once the network is back. 'online' re-arms below.
+                if (!navigator.onLine) {
+                    diagnosticsService.log('room', 'relay-fallback-skipped', {
+                        reason: 'media-connection-failed',
+                        why: 'offline',
+                    })
+                    return
+                }
                 // The other side going offline is their outage, not our network path.
                 if (!hasConnectedRemote(room)) {
                     diagnosticsService.log('room', 'relay-fallback-skipped', {
@@ -335,17 +346,26 @@ export default function useRelayFallback(
             pendingFailure = lastFailure
             armReconnectWait()
         }
+        // The network is back: the same as the other participant returning. A running
+        // window starts over, and a failure skipped while offline gets its window
+        // now, so the SDK's own restart has its chance before any rejoin.
+        const onOnline = onRemoteBack
         room.on('reconnecting', onReconnecting)
         room.on('reconnected', cancelReconnectWait)
         room.on('disconnected', cancelReconnectWait)
         room.on('participantConnected', onRemoteBack)
         room.on('participantReconnected', onRemoteBack)
+        window.addEventListener('online', onOnline)
 
         const poll = async () => {
             // Nothing can flow while the SDK is reconnecting the room, while the other
             // participant is reconnecting, or while nobody else is here: start over,
             // grace included, since the media path only starts once they are in.
-            if (room.state !== 'connected' || !hasConnectedRemote(room)) {
+            if (
+                room.state !== 'connected' ||
+                !hasConnectedRemote(room) ||
+                !navigator.onLine
+            ) {
                 detector.reset()
                 lastTotalBytes = -1
                 polls = 0
@@ -393,6 +413,7 @@ export default function useRelayFallback(
             room.off('disconnected', cancelReconnectWait)
             room.off('participantConnected', onRemoteBack)
             room.off('participantReconnected', onRemoteBack)
+            window.removeEventListener('online', onOnline)
         }
     }, [room, isEnabled, setRelayActive])
 
