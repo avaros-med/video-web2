@@ -94,6 +94,14 @@ async function failMediaConnection(room: any) {
     })
 }
 
+/** jsdom exposes navigator.onLine as a prototype getter; redefine it per test (restored in afterEach). */
+function setOnline(value: boolean) {
+    Object.defineProperty(navigator, 'onLine', {
+        configurable: true,
+        get: () => value,
+    })
+}
+
 describe('the useRelayFallback hook', () => {
     let logSpy: jest.SpyInstance
     beforeEach(() => {
@@ -108,6 +116,7 @@ describe('the useRelayFallback hook', () => {
     afterEach(() => {
         logSpy.mockRestore()
         jest.useRealTimers()
+        setOnline(true)
     })
 
     it('moves the call to relay when the SDK cannot recover a failed media connection', async () => {
@@ -281,6 +290,55 @@ describe('the useRelayFallback hook', () => {
             jest.advanceTimersByTime(RECONNECT_WAIT_MS - 1000)
             await flush()
         })
+        expect(room.disconnect).not.toHaveBeenCalled()
+        await act(async () => {
+            jest.advanceTimersByTime(1000)
+            await flush()
+        })
+        expect(room.disconnect).toHaveBeenCalledTimes(1)
+        await act(async () => {
+            jest.advanceTimersByTime(DISCONNECTED_DELAY_MS)
+            await flush()
+        })
+        expect(connect).toHaveBeenCalledWith(tok, relayOverrides)
+    })
+
+    it('leaves the room alone when the media connection fails while this browser is offline', async () => {
+        const room = makeRoom()
+        const connect = connectOk()
+        setOnline(false)
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: tok }, true)
+        )
+        await failMediaConnection(room)
+        // a laptop Wi-Fi drop looks like a dead direct path from inside the window;
+        // the SDK's own restart recovers it once the network is back, so no rejoin
+        expect(room.disconnect).not.toHaveBeenCalled()
+        expect(connect).not.toHaveBeenCalled()
+        expect(logSpy).toHaveBeenCalledWith('room', 'relay-fallback-skipped', {
+            reason: 'media-connection-failed',
+            why: 'offline',
+        })
+    })
+
+    it('judges the failure once the network is back, if the room is still reconnecting', async () => {
+        const room = makeRoom()
+        room.state = 'reconnecting'
+        const connect = connectOk()
+        setOnline(false)
+        renderHook(() =>
+            useRelayFallback(room, connect, { current: tok }, true)
+        )
+        await failMediaConnection(room)
+        // the window ended while offline: skipped, not judged
+        expect(room.disconnect).not.toHaveBeenCalled()
+        setOnline(true)
+        await act(async () => {
+            window.dispatchEvent(new Event('online'))
+            jest.advanceTimersByTime(RECONNECT_WAIT_MS - 1000)
+            await flush()
+        })
+        // the restart after the network returns gets a whole window of its own
         expect(room.disconnect).not.toHaveBeenCalled()
         await act(async () => {
             jest.advanceTimersByTime(1000)
