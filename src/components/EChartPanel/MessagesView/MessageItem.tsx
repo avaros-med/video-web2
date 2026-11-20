@@ -1,20 +1,22 @@
 import { Grid } from '@material-ui/core'
 import moment from 'moment'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import styled, { css } from 'styled-components'
 import Colors from '../../../colors'
+import { isNotFound, videoService } from '../../../services/http/video.service'
 import {
-    AttachmentMessage,
+    ChatItem,
+    displayName,
+    FileOffer,
     Message,
 } from '../../../services/models/Message.model'
 import { utilsService } from '../../../services/utils.service'
 import { Button } from '../../UI/Button'
-import { useHttpDemographic } from '../EChartView/useHttpDemographic'
-import { useEChartContext } from '../useEChartContext'
 import { PatientAuthenticationDialog } from './PatientAuthenticationDialog'
 
 interface Props {
-    message: Message | AttachmentMessage
+    message: ChatItem
     isLocalRecipient: boolean
 }
 
@@ -65,6 +67,11 @@ const MessageStyles = styled.div`
     .word-break-all {
         word-break: break-all;
     }
+
+    .color-hint {
+        color: ${Colors.TEXT_SECONDARY};
+        white-space: nowrap;
+    }
 `
 
 export const MessageItem = ({ message, isLocalRecipient }: Props) => {
@@ -77,21 +84,20 @@ export const MessageItem = ({ message, isLocalRecipient }: Props) => {
                 className="mb-1"
             >
                 <SenderNameStyles className="mr-2">
-                    {message.senderName}
+                    {displayName(message.senderName)}
                 </SenderNameStyles>
                 <CreatedAtStyles>
                     {moment(message.createdAt).format('h:mm A')}
                 </CreatedAtStyles>
             </Grid>
             {message instanceof Message && (
-                <MessageContent
-                    message={message}
-                    isLocalRecipient={isLocalRecipient}
-                />
+                <MessageStyles theme={{ isLocalRecipient }}>
+                    {message.message}
+                </MessageStyles>
             )}
-            {message instanceof AttachmentMessage && (
-                <AttachmentMessageContent
-                    message={message}
+            {message instanceof FileOffer && (
+                <FileOfferContent
+                    offer={message}
                     isLocalRecipient={isLocalRecipient}
                 />
             )}
@@ -99,70 +105,68 @@ export const MessageItem = ({ message, isLocalRecipient }: Props) => {
     )
 }
 
-const MessageContent = ({
-    message,
-    isLocalRecipient,
-}: {
-    message: Message
-    isLocalRecipient: boolean
-}) => {
-    return (
-        <MessageStyles theme={{ isLocalRecipient }}>
-            {message.message}
-        </MessageStyles>
-    )
-}
+type OfferState = 'offered' | 'downloading' | 'taken' | 'gone' | 'failed'
 
-const AttachmentMessageContent = ({
-    message,
+/**
+ * A file offered in the room. The sender sees it as sent. Anyone else downloads it once
+ * (ehr hands each file out once, within 10 minutes); a chart document asks for the
+ * patient's date of birth first.
+ */
+const FileOfferContent = ({
+    offer,
     isLocalRecipient,
 }: {
-    message: AttachmentMessage
+    offer: FileOffer
     isLocalRecipient: boolean
 }) => {
-    const { demographic } = useEChartContext().demographic
-    const { isLoading, getDocumentUrl } = useHttpDemographic()
+    const { URLRoomName } = useParams<{ URLRoomName?: string }>()
+    const [state, setState] = useState<OfferState>('offered')
     const [showAuthenticationDialog, setShowAuthenticationDialog] = useState<
         boolean
     >(false)
 
-    const isAuthenticated = useMemo(() => !!isLocalRecipient, [
-        isLocalRecipient,
-    ])
-
-    const canView = isAuthenticated || !message.fromProvider
-
-    const onView = useCallback(() => {
-        // View document as a provider
-        if (message.fromProvider && demographic) {
-            getDocumentUrl(
-                demographic.demographicNo,
-                message.demographicDocumentID,
-                message.documentName,
-                message.documentType
-            ).then((url: string) => {
-                utilsService.downloadByUrl(url, message.documentName)
-            })
-
-            // View document as a patient
-        } else if (!message.fromProvider) {
-            fetch(message.bytes)
-                .then(res => res.blob())
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob)
-                    utilsService.downloadByUrl(url, message.documentName)
-                })
-                .catch(() => {})
+    const onDownload = useCallback(() => {
+        if (!URLRoomName) {
+            return
         }
-    }, [
-        demographic,
-        message.demographicDocumentID,
-        message.documentName,
-        message.documentType,
-        message.fromProvider,
-        message.bytes,
-        getDocumentUrl,
-    ])
+        setState('downloading')
+        videoService
+            .downloadFile(URLRoomName, offer.id)
+            .then(blob => {
+                utilsService.saveBlob(blob, offer.name)
+                setState('taken')
+            })
+            .catch(error => setState(isNotFound(error) ? 'gone' : 'failed'))
+    }, [URLRoomName, offer.id, offer.name])
+
+    let action = null
+    if (isLocalRecipient) {
+        action = <span className="color-hint ml-5">Sent</span>
+    } else if (state === 'taken') {
+        action = <span className="color-hint ml-5">Downloaded</span>
+    } else if (state === 'gone') {
+        action = <span className="color-hint ml-5">No longer available</span>
+    } else {
+        action = (
+            <Button
+                classes="d-inline-flex p-0 ml-5"
+                intent="text-primary"
+                label={
+                    offer.isDocument
+                        ? 'Open'
+                        : state === 'failed'
+                        ? 'Try again'
+                        : 'Download'
+                }
+                isLoading={state === 'downloading'}
+                onClick={() =>
+                    offer.isDocument
+                        ? setShowAuthenticationDialog(true)
+                        : onDownload()
+                }
+            />
+        )
+    }
 
     return (
         <MessageStyles theme={{ isLocalRecipient }}>
@@ -173,30 +177,20 @@ const AttachmentMessageContent = ({
             >
                 <Grid container alignItems="center">
                     <i className="material-icons color-blue mr-3">attachment</i>
-                    <span className="word-break-all">
-                        {message.documentName}
-                    </span>
+                    <span className="word-break-all">{offer.name}</span>
                 </Grid>
-                <Button
-                    classes="d-inline-flex p-0 ml-5"
-                    intent="text-primary"
-                    label={canView ? 'View' : 'Accept'}
-                    isLoading={isLoading}
-                    onClick={() =>
-                        canView ? onView() : setShowAuthenticationDialog(true)
-                    }
-                />
+                {action}
             </Grid>
 
-            <PatientAuthenticationDialog
-                open={showAuthenticationDialog}
-                documentId={message.demographicDocumentID}
-                documentName={message.documentName}
-                documentType={message.documentType}
-                demographicName={message.demographicName}
-                verifierName={message.senderName}
-                onClose={() => setShowAuthenticationDialog(false)}
-            />
+            {offer.isDocument && !isLocalRecipient && (
+                <PatientAuthenticationDialog
+                    open={showAuthenticationDialog}
+                    offer={offer}
+                    onOpened={() => setState('taken')}
+                    onGone={() => setState('gone')}
+                    onClose={() => setShowAuthenticationDialog(false)}
+                />
+            )}
         </MessageStyles>
     )
 }

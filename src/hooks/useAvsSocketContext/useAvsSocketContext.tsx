@@ -6,23 +6,24 @@ import {
     useState,
 } from 'react'
 import { useParams } from 'react-router-dom'
-import { useHttpDemographic } from '../../components/EChartPanel/EChartView/useHttpDemographic'
-import { useEChartContext } from '../../components/EChartPanel/useEChartContext'
 import {
     MessagesHookState,
     useMessages,
 } from '../../components/EChartPanel/useMessages'
-import { AttachmentAuthenticated } from '../../services/event-bus/events'
-import { AttachmentMessage, Message } from '../../services/models/Message.model'
-import { utilsService } from '../../services/utils.service'
+import { RoomEvent } from '../../services/events/roomEvents.service'
+import { videoService } from '../../services/http/video.service'
 import {
-    AuthenticateAttachment,
-    BlockChat,
-    SendAttachment,
-} from '../../services/ws/eventout'
-import { BaseEvent, socketService } from '../../services/ws/socket.service'
+    ChatItem,
+    FileOffer,
+    Message,
+} from '../../services/models/Message.model'
 import useVideoContext from '../useVideoContext/useVideoContext'
 
+/**
+ * The room's chat, fed by the room's event stream on ehr (roomEvents.service.ts): the
+ * lines and file offers in order, whether the chat is off, and whether the stream is
+ * unavailable. Room opens the stream and hands it `roomEventHandler`.
+ */
 interface ContextState {
     messages: MessagesHookState
     networkError: {
@@ -30,16 +31,16 @@ interface ContextState {
         onNetworkError: () => void
     }
     isChatDisabled: boolean
-    disableChat: () => void
-    socketEventHandler: (event: BaseEvent) => void
+    disableChat: () => Promise<void>
+    roomEventHandler: (event: RoomEvent) => void
 }
 
 const initialState: ContextState = {
     messages: {} as any,
     networkError: {} as any,
-    socketEventHandler: {} as any,
+    roomEventHandler: () => {},
     isChatDisabled: process.env.REACT_APP_CHAT_DISABLED_BY_DEFAULT === 'true',
-    disableChat: () => {},
+    disableChat: () => Promise.resolve(),
 }
 
 const LocalStateContext = createContext<ContextState>(initialState)
@@ -55,207 +56,53 @@ export function AvsSocketContextProvider({ children }: any) {
         setHasNewMessages,
         reset: resetMessages,
     } = useMessages()
-    const {
-        getDocumentUrl,
-        authenticateDemographicDocument,
-    } = useHttpDemographic()
-    const { demographic } = useEChartContext().demographic
-    const [isChatDisabled, setisChatDisabled] = useState<boolean>(
+    const [isChatDisabled, setIsChatDisabled] = useState<boolean>(
         initialState.isChatDisabled
     )
     const [hasNetworkError, setHasNetworkError] = useState<boolean>(false)
 
-    const localParticipantName = useMemo(
-        () => room?.localParticipant.identity ?? '',
+    const localIdentity = useMemo(
+        () => room?.localParticipant?.identity ?? '',
         [room]
     )
 
-    const addMessageHandler = useCallback(
-        (message: Message) => {
-            addMessage(message)
-
-            // Set new-messages flag if new message is not from the local participant
-            if (message.senderName !== room?.localParticipant?.identity) {
+    const add = useCallback(
+        (item: ChatItem) => {
+            addMessage(item)
+            // A line or a file from someone else is news; this page's own is not.
+            if (item.senderName !== localIdentity) {
                 setHasNewMessages(true)
             }
         },
-        [room, addMessage, setHasNewMessages]
+        [localIdentity, addMessage, setHasNewMessages]
     )
 
-    const attachmentRequestHandler = useCallback(
-        (attachmentMessage: AttachmentMessage) => {
-            addMessage(attachmentMessage)
-
-            // Set new-messages flag if new message is not from the local participant
-            if (
-                attachmentMessage.senderName !==
-                room?.localParticipant?.identity
-            ) {
-                setHasNewMessages(true)
-            }
-        },
-        [room, addMessage, setHasNewMessages]
-    )
-
-    const authenticateAttachmentHandler = useCallback(
-        (authenticateAttachment: AuthenticateAttachment) => {
-            if (!demographic) {
-                return
-            }
-
-            // Authenticate the attachment
-            ;((): Promise<boolean> => {
-                return authenticateDemographicDocument(
-                    authenticateAttachment.ID,
-                    authenticateAttachment.name,
-                    authenticateAttachment.type,
-                    authenticateAttachment.patientDOB
-                )
-            })()
-                // Get attachment url
-                .then(
-                    (isAuthenticated: boolean): Promise<string | null> => {
-                        if (!isAuthenticated) {
-                            return Promise.resolve(null)
-                        }
-
-                        return getDocumentUrl(
-                            demographic.demographicNo,
-                            authenticateAttachment.ID,
-                            authenticateAttachment.name,
-                            authenticateAttachment.type
-                        )
-                    }
-                )
-
-                // Get attachment file object
-                .then(
-                    (url: string | null): Promise<File | null> => {
-                        if (!url) {
-                            return Promise.resolve(null)
-                        }
-
-                        return utilsService.downloadDocument(
-                            url,
-                            authenticateAttachment.name
-                        )
-                    }
-                )
-
-                // Send attachment bytes to participants
-                .then((file: File | null) => {
-                    if (!file) {
-                        return
-                    }
-
-                    utilsService
-                        .getFileContent(file)
-                        .then((filecontent: any) => {
-                            const eventout: SendAttachment = {
-                                name: authenticateAttachment.name,
-                                bytes: filecontent,
-                                senderName: localParticipantName,
-                                roomName: URLRoomName!,
-                            }
-                            socketService.dispatchEvent(
-                                'SendAttachment',
-                                eventout
-                            )
-                        })
-                })
-        },
-        [
-            URLRoomName,
-            demographic,
-            localParticipantName,
-            getDocumentUrl,
-            authenticateDemographicDocument,
-        ]
-    )
-
-    const sendAttachmentHandler = useCallback(
-        (sentAttachment: SendAttachment) => {
-            fetch(sentAttachment.bytes)
-                .then(res => res.blob())
-                .then(blob => {
-                    const url = window.URL.createObjectURL(blob)
-                    utilsService.downloadByUrl(url, sentAttachment.name)
-
-                    // Emit an AttachmentAuthenticated event to notify authentication dialog
-                    AttachmentAuthenticated.emit()
-                })
-                .catch(() => {})
-        },
-        []
-    )
-
-    const socketEventHandler = useCallback(
-        (event: BaseEvent) => {
+    const roomEventHandler = useCallback(
+        (event: RoomEvent) => {
             switch (event.type) {
-                case 'Message': {
-                    const newMessage = new Message(
-                        Message.deserialize(event.payload)
-                    )
-                    addMessageHandler(newMessage)
+                case 'Message':
+                    add(Message.deserialize(event.payload))
                     break
-                }
-
-                case 'SendAttachmentRequest': {
-                    const newAttachmentMessage = new AttachmentMessage(
-                        AttachmentMessage.deserialize(event.payload)
-                    )
-                    attachmentRequestHandler(newAttachmentMessage)
+                case 'FileOffered':
+                    add(FileOffer.deserialize(event.payload, false))
                     break
-                }
-
-                case 'AuthenticateAttachment': {
-                    const authenticateAttachment = event.payload as AuthenticateAttachment
-
-                    // Continue if the local participant is the original attachment sender
-                    if (
-                        localParticipantName ===
-                        authenticateAttachment.senderName
-                    ) {
-                        authenticateAttachmentHandler(authenticateAttachment)
-                    }
+                case 'DocumentOffered':
+                    add(FileOffer.deserialize(event.payload, true))
                     break
-                }
-
-                case 'SendAttachment': {
-                    const sentAttachment = event.payload as SendAttachment
-
-                    // Open the attachment if the local participant is not the original attachment sender
-                    if (localParticipantName !== sentAttachment.senderName) {
-                        sendAttachmentHandler(sentAttachment)
-                    }
+                case 'ChatTurnedOff':
+                    setIsChatDisabled(true)
                     break
-                }
-
-                case 'BlockChat': {
-                    setisChatDisabled(true)
-                    break
-                }
             }
         },
-        [
-            localParticipantName,
-            addMessageHandler,
-            attachmentRequestHandler,
-            authenticateAttachmentHandler,
-            sendAttachmentHandler,
-        ]
+        [add]
     )
 
-    const onDisableChat = useCallback(() => {
-        const eventout: BlockChat = {
-            roomName: URLRoomName!,
-        }
-        socketService.dispatchEvent('BlockChat', eventout)
+    const disableChat = useCallback(async () => {
+        if (!URLRoomName) return
+        await videoService.turnChatOff(URLRoomName)
     }, [URLRoomName])
 
-    const onNetworkError = useCallback(() => {
-        setHasNetworkError(true)
-    }, [])
+    const onNetworkError = useCallback(() => setHasNetworkError(true), [])
 
     return (
         <LocalStateContext.Provider
@@ -268,9 +115,9 @@ export function AvsSocketContextProvider({ children }: any) {
                     reset: resetMessages,
                 },
                 networkError: { hasNetworkError, onNetworkError },
-                socketEventHandler,
+                roomEventHandler,
                 isChatDisabled,
-                disableChat: onDisableChat,
+                disableChat,
             }}
         >
             {children}

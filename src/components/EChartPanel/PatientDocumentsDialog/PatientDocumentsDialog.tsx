@@ -5,7 +5,7 @@ import {
     DialogTitle,
 } from '@material-ui/core'
 import { Demographic } from '../../../services/models/Demographic.model'
-import { DemographicDocument } from '../../../services/models/DemographicDocument.model'
+import { ChartItem } from '../../../services/models/ChartItem.model'
 import { Button } from '../../UI/Button'
 import { FontWeightBoldStyles } from '../../UI/styles/styles'
 import { PatientField } from '../EChartView/PatientField'
@@ -15,7 +15,7 @@ import PatientDocumentsList from './PatientDocumentsList'
 
 interface Props {
     open: boolean
-    onSend(demographicDocument: DemographicDocument): void
+    onSend(chartItem: ChartItem): void
     onClose(): void
 }
 

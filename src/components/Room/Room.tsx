@@ -8,7 +8,7 @@ import useChatContext from '../../hooks/useChatContext/useChatContext'
 import useScreenShareParticipant from '../../hooks/useScreenShareParticipant/useScreenShareParticipant'
 import useRoomMonitorShortcut from '../../hooks/useRoomMonitorShortcut/useRoomMonitorShortcut'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
-import { socketService } from '../../services/ws/socket.service'
+import { roomEventsService } from '../../services/events/roomEvents.service'
 import { isRelayReconnectInProgress } from '../VideoProvider/useRelayFallback/useRelayFallback'
 import { useAppState } from '../../state'
 import BackgroundSelectionDialog from '../BackgroundSelectionDialog/BackgroundSelectionDialog'
@@ -85,7 +85,7 @@ export function useSetSpeakerViewOnScreenShare(
 export default function Room() {
     const classes = useStyles()
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
-    const { socketEventHandler } = useAvsSocketContext()
+    const { roomEventHandler } = useAvsSocketContext()
     const { onNetworkError } = useAvsSocketContext().networkError
     const { isChatWindowOpen } = useChatContext()
     const { isBackgroundSelectionOpen, room } = useVideoContext()
@@ -104,24 +104,20 @@ export default function Room() {
         isGalleryViewActive
     )
 
-    // Initialize Avaros video socket service
+    // The room's event stream on ehr: the chat and file offers, one stream per visit.
     useEffect(() => {
         if (!URLRoomName) {
             return
         }
-        socketService.initSocket(
-            URLRoomName,
-            socketEventHandler,
-            onNetworkError
-        )
-        // A leave closes the socket. The relay fallback's rejoin unmounts Room for a
-        // few seconds too, but the other side may still be sending: the socket stays
-        // open across it, and the next mount's initSocket closes it, so the visit
-        // still has one socket at a time.
+        roomEventsService.open(URLRoomName, roomEventHandler, onNetworkError)
+        // A leave closes the stream. The relay fallback's rejoin unmounts Room for a few
+        // seconds too, but the other side may still be sending: the stream stays open
+        // across it, and the next mount's open closes it, so the visit still has one
+        // stream at a time.
         return () => {
-            if (!isRelayReconnectInProgress()) socketService.closeSocket()
+            if (!isRelayReconnectInProgress()) roomEventsService.close()
         }
-    }, [URLRoomName, socketEventHandler, onNetworkError])
+    }, [URLRoomName, roomEventHandler, onNetworkError])
 
     return (
         <div

@@ -1,9 +1,11 @@
 import moment from 'moment'
 import { useCallback, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { useAvsSocketContext } from '../../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import { diagnosticsService } from '../../../services/diagnostics/diagnostics.service'
 import { videoService } from '../../../services/http/video.service'
+import { utilsService } from '../../../services/utils.service'
 import { useEChartContext } from '../../EChartPanel/useEChartContext'
 import EndCallDialog, {
     EndCallDialogResponse,
@@ -14,8 +16,8 @@ import { IconButton } from '../../UI/IconButton'
 const MOMENT_DATETIME_FORMAT = 'MMM. Do, YYYY hh:mma' // Jan. 1st, 2000 5:30pm
 
 export default function EndCallButton(props: { className?: string }) {
-    const { room } = useVideoContext()
-    const { currentUser, appointment } = useVideoContext()
+    const { URLRoomName } = useParams<{ URLRoomName?: string }>()
+    const { room, currentUser, videoRoom } = useVideoContext()
     const { reset: resetMessages } = useAvsSocketContext().messages
     const {
         clearDemographic: resetDemographic,
@@ -32,15 +34,15 @@ export default function EndCallButton(props: { className?: string }) {
                 return
             }
 
-            // Add log about video visit
-            if (appointment) {
+            // The visit log row (ehr fills in the clinic, the provider, the times and this
+            // caller's address): when this person's call started, and what they said of it.
+            if (URLRoomName && videoRoom) {
+                const sessionStartedAt = utilsService.sessionStartedAt()
                 const startAt = moment(
-                    // @ts-ignore
-                    window.sessionStartedAt || appointment?.startAt
+                    sessionStartedAt || videoRoom.startAt
                 ).format(MOMENT_DATETIME_FORMAT)
                 const endAt = moment().format(MOMENT_DATETIME_FORMAT)
 
-                const eventId = appointment.roomID
                 let eventDetails = `Start at: ${startAt}\nEnd at: ${endAt}`
                 if (endCallDialogResponse) {
                     if (endCallDialogResponse.comments) {
@@ -58,10 +60,9 @@ export default function EndCallButton(props: { className?: string }) {
                 eventDetails += `\n\n${diagnosticsService.getSummary()}`
 
                 try {
-                    await videoService.addLog(
-                        appointment,
-                        isDoctor,
-                        eventId,
+                    await videoService.logVisit(
+                        URLRoomName,
+                        sessionStartedAt,
                         eventDetails
                     )
                 } catch (error) {
@@ -76,8 +77,9 @@ export default function EndCallButton(props: { className?: string }) {
         },
         [
             room,
+            URLRoomName,
             currentUser,
-            appointment,
+            videoRoom,
             resetMessages,
             resetDemographic,
             resetPanel,

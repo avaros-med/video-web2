@@ -1,99 +1,59 @@
 import { useCallback } from 'react'
+import { useParams } from 'react-router-dom'
 import { useHttp } from '../../../hooks/useHttp'
-import { oscarService } from '../../../services/http/oscar.service'
+import { videoService } from '../../../services/http/video.service'
+import { ChartItem } from '../../../services/models/ChartItem.model'
 import { Demographic } from '../../../services/models/Demographic.model'
-import { DemographicDocument } from '../../../services/models/DemographicDocument.model'
 
 enum REQUEST {
     SEARCH_DEMOGRAPHICS = 'SEARCH_DEMOGRAPHICS',
     GET_DOCUMENTS = 'GET_DOCUMENTS',
-    GET_DOCUMENT_URL = 'GET_DOCUMENT_URL',
-    AUTHENTICATE_DOCUMENT = 'AUTHENTICATE_DOCUMENT',
     CREATE_NOTE = 'CREATE_NOTE',
 }
 
+/**
+ * The provider's side panel on ehr (ehr docs/schedule-video.md V5, V15): the patient
+ * search, the patient's chart items and the encounter note, on the room's clinic's ehr.
+ */
 export const useHttpDemographic = () => {
+    const { URLRoomName } = useParams<{ URLRoomName?: string }>()
+    const roomName = URLRoomName ?? ''
     const { responseData, isLoading, requestId, sendRequest } = useHttp()
 
     const searchDemographic = useCallback(
-        (searchTerm: string): Promise<Demographic[]> => {
-            return sendRequest(
-                oscarService.searchDemographic.bind({}, searchTerm),
+        (searchTerm: string): Promise<Demographic[]> =>
+            sendRequest(
+                () => videoService.searchPatients(roomName, searchTerm),
                 REQUEST.SEARCH_DEMOGRAPHICS
-            )
-        },
-        [sendRequest]
+            ),
+        [roomName, sendRequest]
     )
 
     const getDocuments = useCallback(
-        (demographicNo: number): Promise<DemographicDocument[]> => {
-            return sendRequest(
-                oscarService.getDemographicDocuments.bind({}, demographicNo),
+        (demographicNo: number): Promise<ChartItem[]> =>
+            sendRequest(
+                () => videoService.getChartItems(roomName, demographicNo),
                 REQUEST.GET_DOCUMENTS
-            )
-        },
-        [sendRequest]
+            ),
+        [roomName, sendRequest]
     )
 
-    const getDocumentUrl = useCallback(
-        (
-            demographicNo: number,
-            id: number,
-            name: string,
-            type: string
-        ): Promise<string> => {
-            return sendRequest(
-                oscarService.getDemographicDocumentUrl.bind(
-                    {},
-                    demographicNo,
-                    id,
-                    name,
-                    type
-                ),
-                REQUEST.GET_DOCUMENT_URL
-            )
-        },
-        [sendRequest]
-    )
-
-    const authenticateDemographicDocument = useCallback(
-        async (
-            id: number,
-            name: string,
-            type: string,
-            patientDOB: string
-        ): Promise<boolean> => {
-            return sendRequest(
-                oscarService.authenticateDemographicDocument.bind(
-                    {},
-                    id,
-                    name,
-                    type,
-                    patientDOB
-                ),
-                REQUEST.AUTHENTICATE_DOCUMENT
-            )
-                .then(response => response)
-                .catch(() => false)
-        },
-        [sendRequest]
-    )
-
+    // Rejects when the note was not filed (useHttp resolves with the error otherwise).
     const createNote = useCallback(
-        (demographicNo: number, note: string): Promise<void> => {
-            return sendRequest(
-                oscarService.createNote.bind({}, demographicNo, note),
-                REQUEST.CREATE_NOTE
-            )
-        },
-        [sendRequest]
+        (demographicNo: number, note: string): Promise<void> =>
+            videoService.addNote(roomName, demographicNo, note),
+        [roomName]
     )
 
     const demographics: Demographic[] =
-        requestId === REQUEST.SEARCH_DEMOGRAPHICS ? responseData ?? [] : []
+        requestId === REQUEST.SEARCH_DEMOGRAPHICS && Array.isArray(responseData)
+            ? responseData
+            : []
 
-    const demographicDocuments: DemographicDocument[] =
-        requestId === REQUEST.GET_DOCUMENTS ? responseData ?? [] : []
+    const demographicDocuments: ChartItem[] =
+        requestId === REQUEST.GET_DOCUMENTS && Array.isArray(responseData)
+            ? responseData
+            : []
 
     return {
         isLoading,
@@ -101,8 +61,6 @@ export const useHttpDemographic = () => {
         demographicDocuments,
         searchDemographic,
         getDocuments,
-        getDocumentUrl,
-        authenticateDemographicDocument,
         createNote,
     }
 }

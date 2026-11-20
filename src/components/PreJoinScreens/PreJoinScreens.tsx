@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
-import { videoService } from '../../services/http/video.service'
 import { useAppState } from '../../state'
 import IntroContainer from '../IntroContainer/IntroContainer'
 import DeviceSelectionScreen from './DeviceSelectionScreen/DeviceSelectionScreen'
@@ -16,32 +15,25 @@ export enum Steps {
 
 export default function PreJoinScreens() {
     const { user } = useAppState()
-    const { getAudioAndVideoTracks } = useVideoContext()
+    const {
+        getAudioAndVideoTracks,
+        videoRoom,
+        videoRoomStatus,
+    } = useVideoContext()
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
     const [step, setStep] = useState(Steps.roomNameStep)
 
     const [name, setName] = useState<string>(user?.displayName || '')
     const [pin, setPin] = useState<string>('')
-    const [hasPin, setHasPin] = useState<boolean>(false)
     const [roomName, setRoomName] = useState<string>('')
 
     const [mediaError, setMediaError] = useState<Error>()
-    const [roomExists, setRoomExists] = useState<boolean>(true)
 
-    // Validate room name exists
-    useEffect(() => {
-        if (!URLRoomName) {
-            setRoomExists(false)
-            return
-        }
-        videoService
-            .validateRoomExists(URLRoomName)
-            .then(response => {
-                setRoomExists(response.roomExists)
-                setHasPin(response.hasPIN)
-            })
-            .catch(() => setRoomExists(false))
-    }, [URLRoomName])
+    // The room is ehr's answer for the address's name (VideoProvider): a locked room asks
+    // for its PIN; an unknown one, or ehr unreachable, shows the error screen.
+    const roomExists =
+        videoRoomStatus === 'loading' || videoRoomStatus === 'found'
+    const hasPin = !!videoRoom?.isLocked
 
     useEffect(() => {
         if (URLRoomName) {
@@ -111,7 +103,11 @@ export default function PreJoinScreens() {
                 </>
             )}
 
-            {(hasError || !roomExists) && <ErrorScreens />}
+            {(hasError || !roomExists) && (
+                <ErrorScreens
+                    isNotFound={hasError || videoRoomStatus === 'not_found'}
+                />
+            )}
         </IntroContainer>
     )
 }

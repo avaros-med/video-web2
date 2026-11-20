@@ -1,125 +1,255 @@
-import axios, { AxiosError, AxiosResponse } from 'axios'
-import { Appointment } from '../models/Appointment.model'
-import { utilsService } from '../utils.service'
+import axios, { AxiosError } from 'axios'
+import { ChartItem, ChartItemType } from '../models/ChartItem.model'
+import { Demographic } from '../models/Demographic.model'
+import { VideoRoom } from '../models/VideoRoom.model'
+import { authHeaders, panelUrl, roomUrl } from './ehr'
 
-const BASE_URL = process.env.REACT_APP_VIDEO_BASE_URL
+/**
+ * The room page's calls to the clinic's ehr (ehr docs/schedule-video.md §4). Every call
+ * carries the signed-in provider's JWT when the browser has one (`authHeaders`): it is
+ * what makes the caller the provider. Without it the routes answer the patient.
+ */
 
-const getAppointmentByRoomName = (roomName: string): Promise<Appointment> => {
-    const url = `${BASE_URL}/video-appointment-by-room/${roomName}`
+const config = () => ({ headers: authHeaders() })
 
-    return new Promise((resolve, reject) => {
-        axios
-            .get(url)
-            .then((response: AxiosResponse) => {
-                if (response?.data) {
-                    resolve(Appointment.deserialize(response.data))
-                } else {
-                    reject('Unable to get appointment')
-                }
-            })
-            .catch((error: AxiosError) => reject(error))
-    })
+export const isNotFound = (error: unknown): boolean =>
+    (error as AxiosError)?.response?.status === 404
+
+/** The room, its visit, and for the provider their name and the patient. 404 for none. */
+const getRoom = async (roomName: string): Promise<VideoRoom> => {
+    const { data } = await axios.get(roomUrl(roomName), config())
+    return VideoRoom.deserialize(data)
 }
 
-const validateRoomExists = (
-    roomName: string
-): Promise<ValidateRoomResponse> => {
-    const url = `${BASE_URL}/room-exists/${roomName}`
-
-    return new Promise((resolve, reject) => {
-        axios
-            .get(url)
-            .then((response: AxiosResponse) => {
-                if (response?.data) {
-                    resolve({
-                        roomExists: !!response.data.roomExists,
-                        hasPIN: !!response.data.hasPIN,
-                    })
-                } else {
-                    reject('Unable to validate room exists')
-                }
-            })
-            .catch((error: AxiosError) => reject(error))
-    })
+/** Whether the PIN is the room's (an unlocked room takes any). */
+const checkPin = async (roomName: string, pin: string): Promise<boolean> => {
+    const { data } = await axios.post(
+        roomUrl(roomName, '/pin'),
+        { pin },
+        config()
+    )
+    return !!data?.valid
 }
 
-const validatePin = (roomName: string, pin: string): Promise<boolean> => {
-    const url = `${BASE_URL}/room/${roomName}/lock/${pin}`
-
-    return new Promise((resolve, reject) => {
-        axios
-            .get(url)
-            .then((response: AxiosResponse) => {
-                if (response?.data) {
-                    resolve(!!response.data.pinValid)
-                } else {
-                    reject('Unable to validate pin')
-                }
-            })
-            .catch((error: AxiosError) => reject(error))
-    })
+export interface RoomToken {
+    token: string
+    /** The name given with a random `_123456` suffix: this person's identity in the room. */
+    identity: string
+    provider: boolean
 }
 
-const addLog = async (
-    appointment: Appointment,
-    isDoctor: boolean,
-    eventId: number,
+/** A Twilio token for the room, for the name typed. */
+const getToken = async (
+    roomName: string,
+    identity: string
+): Promise<RoomToken> => {
+    const { data } = await axios.post(
+        roomUrl(roomName, '/token'),
+        { identity },
+        config()
+    )
+    return {
+        token: data.token,
+        identity: data.identity,
+        provider: !!data.provider,
+    }
+}
+
+/** A chat line; it comes back to every page in the room, this one too, on the stream. */
+const sendMessage = async (
+    roomName: string,
+    message: string,
+    senderName: string
+): Promise<{ id: string }> => {
+    const { data } = await axios.post(
+        roomUrl(roomName, '/messages'),
+        { message, senderName },
+        config()
+    )
+    return { id: String(data?.id ?? '') }
+}
+
+/** The provider turns the room's chat off. */
+const turnChatOff = async (roomName: string): Promise<void> => {
+    await axios.post(roomUrl(roomName, '/chat-off'), {}, config())
+}
+
+export interface Offer {
+    id: string
+    name: string
+}
+
+/** Offers a file in the room: at most 10 MB, downloaded once, within 10 minutes. */
+const offerFile = async (
+    roomName: string,
+    file: File,
+    senderName: string
+): Promise<Offer> => {
+    const form = new FormData()
+    form.append('file', file, file.name)
+    form.append('senderName', senderName)
+    const { data } = await axios.post(
+        roomUrl(roomName, '/files'),
+        form,
+        config()
+    )
+    return { id: data.id, name: data.name }
+}
+
+/** A file offered in the room, once; 404 once taken or expired. */
+const downloadFile = async (roomName: string, id: string): Promise<Blob> => {
+    const { data } = await axios.get(
+        roomUrl(roomName, `/files/${encodeURIComponent(id)}`),
+        {
+            ...config(),
+            responseType: 'blob',
+        }
+    )
+    return data
+}
+
+/** The provider removes someone from the call, by their Twilio sid or identity. */
+const removeParticipant = async (
+    roomName: string,
+    participant: string
+): Promise<void> => {
+    await axios.post(
+        roomUrl(
+            roomName,
+            `/participants/${encodeURIComponent(participant)}/disconnect`
+        ),
+        {},
+        config()
+    )
+}
+
+/**
+ * The provider offers a chart document: the PDF this page downloaded from the EMR's print
+ * path (with the provider's EMR session), and which chart item it is.
+ */
+const offerDocument = async (
+    roomName: string,
+    file: Blob,
+    item: { type: ChartItemType; id: number },
+    senderName: string
+): Promise<Offer> => {
+    const form = new FormData()
+    form.append('file', file, 'document.pdf')
+    form.append('type', item.type)
+    form.append('itemId', String(item.id))
+    form.append('senderName', senderName)
+    const { data } = await axios.post(
+        roomUrl(roomName, '/documents'),
+        form,
+        config()
+    )
+    return { id: data.id, name: data.name }
+}
+
+export type OpenedDocument = { blob: Blob } | 'wrong_birth_date' | 'gone'
+
+/** The patient opens a chart document with their date of birth (YYYY-MM-DD). */
+const openDocument = async (
+    roomName: string,
+    id: string,
+    birthDate: string
+): Promise<OpenedDocument> => {
+    try {
+        const { data } = await axios.post(
+            roomUrl(roomName, `/documents/${encodeURIComponent(id)}/open`),
+            { birthDate },
+            { ...config(), responseType: 'blob' }
+        )
+        return { blob: data }
+    } catch (error) {
+        const status = (error as AxiosError)?.response?.status
+        if (status === 403) return 'wrong_birth_date'
+        if (status === 404) return 'gone'
+        throw error
+    }
+}
+
+/**
+ * A visit log row (ehr fills in the clinic, the provider, the times and this caller's
+ * address): at the end of a visit, and when a file is sent.
+ */
+const logVisit = async (
+    roomName: string,
+    startedAt: Date | null,
     eventDetails: string
 ): Promise<void> => {
-    // @ts-ignore
-    const startAt = window.sessionStartedAt || appointment?.startAt
-    const endAt = new Date()
-    const ip = await utilsService.getIp()
-
-    const payload: LogPayload = {
-        eventId,
-        eventDetails,
-        clientName: appointment.clientName,
-        organizationID: appointment.clientName,
-        startAt: startAt.toISOString(),
-        endAt: endAt.toISOString(),
-        clinicalUserInformation: appointment.details.providerName,
-        clinicalUserLocation: isDoctor ? ip : null,
-        participantLocation: isDoctor ? null : ip,
-        providerID: appointment.providerID,
-        physicianFlag: isDoctor ? 'Doctor' : 'Other',
-    }
-
-    const url = `${BASE_URL}/video-logger/`
-    return axios.post(url, payload)
+    await axios.post(
+        roomUrl(roomName, '/visits'),
+        {
+            startedAt: startedAt ? startedAt.toISOString() : undefined,
+            eventDetails,
+        },
+        config()
+    )
 }
 
-const removeParticipant = (
+// --- the provider's side panel ---------------------------------------------------------
+
+const searchPatients = async (
     roomName: string,
-    participantId: string
-): Promise<boolean> => {
-    const url = `${BASE_URL}/rooms/${roomName}/participants/${participantId}/disconnect`
-    return axios.post(url)
+    search: string
+): Promise<Demographic[]> => {
+    const { data } = await axios.get(panelUrl(roomName, '/patients'), {
+        ...config(),
+        params: { search },
+    })
+    return (data?.patients ?? []).map((obj: any) =>
+        Demographic.deserialize(obj)
+    )
 }
 
-export interface ValidateRoomResponse {
-    hasPIN: boolean
-    roomExists: boolean
+const getChartItems = async (
+    roomName: string,
+    demographicNo: number
+): Promise<ChartItem[]> => {
+    const { data } = await axios.get(
+        panelUrl(roomName, `/patients/${demographicNo}/documents`),
+        config()
+    )
+    return (data?.documents ?? []).map((obj: any) => ChartItem.deserialize(obj))
 }
 
-export interface LogPayload {
-    eventId: number
-    eventDetails: string
-    clientName: string
-    organizationID: string | null
-    startAt: string
-    endAt: string
-    clinicalUserInformation: string | null
-    clinicalUserLocation: string | null
-    participantLocation: string | null
-    providerID: number | null
-    physicianFlag: 'Doctor' | 'Other'
+/** Files a new signed encounter note on the patient's eChart. */
+const addNote = async (
+    roomName: string,
+    demographicNo: number,
+    note: string
+): Promise<void> => {
+    await axios.post(
+        panelUrl(roomName, `/patients/${demographicNo}/notes`),
+        { note },
+        config()
+    )
+}
+
+/** The chart item's PDF from the EMR's own print path, with the provider's EMR session. */
+const downloadChartItem = async (item: ChartItem): Promise<Blob> => {
+    const { data } = await axios.get(item.downloadPath, {
+        responseType: 'blob',
+        withCredentials: true,
+    })
+    return data
 }
 
 export const videoService = {
-    getAppointmentByRoomName,
-    validateRoomExists,
-    validatePin,
+    getRoom,
+    checkPin,
+    getToken,
+    sendMessage,
+    turnChatOff,
+    offerFile,
+    downloadFile,
     removeParticipant,
-    addLog,
+    offerDocument,
+    openDocument,
+    logVisit,
+    searchPatients,
+    getChartItems,
+    addNote,
+    downloadChartItem,
 }

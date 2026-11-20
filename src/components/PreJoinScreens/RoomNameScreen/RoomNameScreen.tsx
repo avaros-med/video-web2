@@ -43,7 +43,7 @@ export default function RoomNameScreen({
     handleSubmit,
 }: RoomNameScreenProps) {
     const classes = useStyles()
-    const { currentUser, appointment, isAppointmentLoading } = useVideoContext()
+    const { currentUser, videoRoom, videoRoomStatus } = useVideoContext()
     const [isPinValid, setIsPinValid] = useState<boolean | undefined>(
         !hasPin ? true : undefined
     )
@@ -68,7 +68,7 @@ export default function RoomNameScreen({
 
         let _isPinValid: boolean | undefined = undefined
         try {
-            _isPinValid = await videoService.validatePin(roomName, pin)
+            _isPinValid = await videoService.checkPin(roomName, pin)
         } catch (error) {
             console.error(error)
         }
@@ -80,19 +80,19 @@ export default function RoomNameScreen({
             <FormInputStyles>
                 <form onSubmit={event => isPinValid && handleSubmit(event)}>
                     <AppLogoBlock classes="mb-4" />
-                    {appointment && (
+                    {videoRoom && (
                         <>
                             <AppointmentCard
                                 classes="mb-4"
-                                appointment={appointment}
+                                videoRoom={videoRoom}
                             />
                             <ProviderCard
                                 classes="mb-5"
-                                appointment={appointment}
+                                videoRoom={videoRoom}
                             />
                         </>
                     )}
-                    {isAppointmentLoading && (
+                    {videoRoomStatus === 'loading' && (
                         <Spinner size={SpinnerSize.SMALL} />
                     )}
 
@@ -127,7 +127,11 @@ export default function RoomNameScreen({
                         <Button
                             type="submit"
                             label="Continue"
-                            disabled={!name || !roomName}
+                            disabled={
+                                !name ||
+                                !roomName ||
+                                videoRoomStatus !== 'found'
+                            }
                             onClick={(event: any) => {
                                 if (!isPinValid) {
                                     event.preventDefault()

@@ -265,7 +265,12 @@ export default function Menu(props: { buttonClassName?: string }) {
                         intent="danger"
                         label="Disable"
                         onClick={() => {
-                            disableChat()
+                            disableChat().catch(error =>
+                                console.error(
+                                    'Could not turn the chat off',
+                                    error
+                                )
+                            )
                             setDisableChatConfirmOpen(false)
                         }}
                     />

@@ -53,7 +53,11 @@ export const ParticipantInfoMenu = ({
         if (!roomName) {
             return
         }
-        videoService.removeParticipant(roomName, participantId)
+        videoService
+            .removeParticipant(roomName, participantId)
+            .catch(error =>
+                console.error('Could not remove the participant', error)
+            )
     }, [roomName, participantId])
 
     if (!currentUser || isLocalParticipant || !roomName) {

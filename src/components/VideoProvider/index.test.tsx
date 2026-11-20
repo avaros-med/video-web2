@@ -28,15 +28,12 @@ jest.mock('./useLocalTracks/useLocalTracks', () =>
     }))
 )
 jest.mock('../../state')
-jest.mock('../../hooks/useHttpAppointment', () => ({
-    useHttpAppointment: () => ({
-        appointment: null,
-        isLoading: false,
-        getAppointmentByRoomName: jest.fn(),
-    }),
-}))
-jest.mock('../../hooks/useCurrentUser', () => ({
-    useCurrentUser: () => ({ currentUser: null }),
+jest.mock('../../hooks/useVideoRoom', () => ({
+    useVideoRoom: jest.fn(() => ({
+        videoRoom: null,
+        status: 'loading',
+        reload: jest.fn(),
+    })),
 }))
 jest.mock('./useHandleRoomDisconnection/useHandleRoomDisconnection')
 jest.mock('./useHandleTrackPublicationFailed/useHandleTrackPublicationFailed')

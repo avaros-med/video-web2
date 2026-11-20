@@ -1,8 +1,7 @@
 import { Spinner, SpinnerSize } from '@blueprintjs/core'
-import moment from 'moment'
 import { useEffect, useMemo } from 'react'
 import styled from 'styled-components'
-import { DemographicDocument } from '../../../services/models/DemographicDocument.model'
+import { ChartItem } from '../../../services/models/ChartItem.model'
 import { IconButton } from '../../UI/IconButton'
 import { FontWeightBoldStyles, TextHintStyles } from '../../UI/styles/styles'
 import { useHttpDemographic } from '../EChartView/useHttpDemographic'
@@ -11,7 +10,7 @@ import { HeaderTabs } from './HeaderTabs'
 import { defaultTab, HEADER_TAB, useHeaderTabs } from './useHeaderTabs'
 
 interface Props {
-    onSend(demographicDemographic: DemographicDocument): void
+    onSend(chartItem: ChartItem): void
 }
 
 const Styles = styled.div`
@@ -50,7 +49,7 @@ export default function PatientDocumentsList({ onSend }: Props) {
         [demographicDocuments]
     )
 
-    const list = useMemo((): DemographicDocument[] => {
+    const list = useMemo((): ChartItem[] => {
         switch (tabSelected.value) {
             case HEADER_TAB.DOCUMENTS: {
                 return documents
@@ -74,7 +73,7 @@ export default function PatientDocumentsList({ onSend }: Props) {
             <div className="scroll-container">
                 {list?.map(document => (
                     <DocumentItem
-                        key={document.id}
+                        key={`${document.type}-${document.id}`}
                         document={document}
                         onClick={() => onSend(document)}
                     />
@@ -105,7 +104,7 @@ const DocumentItem = ({
     document,
     onClick,
 }: {
-    document: DemographicDocument
+    document: ChartItem
     onClick: () => void
 }) => {
     return (
@@ -114,9 +113,7 @@ const DocumentItem = ({
                 {document.title}
             </FontWeightBoldStyles>
             <div className="d-flex align-items-center">
-                <div className="mr-3">
-                    {moment(document.createdAt).format('YYYY-MM-DD HH:mm:ss')}
-                </div>
+                <div className="mr-3">{document.createdAt ?? ''}</div>
                 <IconButton
                     intent="primary-fade"
                     icon="send"

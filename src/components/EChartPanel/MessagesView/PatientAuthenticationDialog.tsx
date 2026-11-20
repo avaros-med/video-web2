@@ -9,24 +9,19 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import Colors from '../../../colors'
-import {
-    eventBus,
-    EventBusData,
-} from '../../../services/event-bus/eventBus.service'
-import { AttachmentAuthenticated } from '../../../services/event-bus/events'
-import { DemographicDocumentType } from '../../../services/models/DemographicDocument.model'
-import { AuthenticateAttachment } from '../../../services/ws/eventout'
-import { socketService } from '../../../services/ws/socket.service'
+import { videoService } from '../../../services/http/video.service'
+import { FileOffer } from '../../../services/models/Message.model'
+import { utilsService } from '../../../services/utils.service'
 import { Button } from '../../UI/Button'
 import { InputMask } from '../../UI/InputMask'
 
 interface Props {
     open: boolean
-    documentId: number
-    documentName: string
-    documentType: DemographicDocumentType
-    demographicName: string
-    verifierName: string
+    offer: FileOffer
+    /** The document was downloaded: it cannot be opened again. */
+    onOpened(): void
+    /** The document is no longer offered (opened, expired, or too many wrong dates). */
+    onGone(): void
     onClose(): void
 }
 
@@ -52,65 +47,60 @@ const Styles = styled.div`
     }
 `
 
+/**
+ * The patient opens a chart document the provider passed (ehr docs/schedule-video.md
+ * V15): ehr hands it over once, when the date of birth typed is the chart's. A wrong one
+ * can be corrected; after five, ehr withdraws the offer.
+ */
 export const PatientAuthenticationDialog = ({
     open,
-    documentId,
-    documentName,
-    documentType,
-    demographicName,
-    verifierName,
+    offer,
+    onOpened,
+    onGone,
     onClose,
 }: Props) => {
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
     const [dob, setDob] = useState<string>('')
-    const [hasError, setHasError] = useState<boolean>(false)
+    const [error, setError] = useState<string | undefined>(undefined)
     const [isLoading, setIsLoading] = useState<boolean>(false)
-    const [errorTimer, setErrorTimer] = useState<any>(null)
-
-    useEffect(() => setIsLoading(false), [open])
 
     useEffect(() => {
-        const subscription = eventBus
-            .getObservable()
-            .subscribe((event: EventBusData) => {
-                switch (event.action) {
-                    case AttachmentAuthenticated.action: {
-                        setHasError(false)
-                        setIsLoading(false)
-                        onClose()
-                        if (errorTimer) {
-                            clearTimeout(errorTimer)
-                            setErrorTimer(null)
-                        }
-                        break
-                    }
-                }
-            })
+        setIsLoading(false)
+        setError(undefined)
+    }, [open])
 
-        return () => {
-            subscription.unsubscribe()
+    const onSubmit = useCallback(async () => {
+        if (!URLRoomName) {
+            return
         }
-    }, [onClose, errorTimer])
-
-    const onSubmit = useCallback(() => {
-        const eventout: AuthenticateAttachment = {
-            ID: documentId,
-            name: documentName,
-            type: documentType,
-            patientDOB: dob,
-            roomName: URLRoomName!,
-            senderName: verifierName,
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+            setError('Enter your date of birth as YYYY-MM-DD')
+            return
         }
-        socketService.dispatchEvent('AuthenticateAttachment', eventout)
         setIsLoading(true)
-
-        // Set error state if not authenticated by a certain number of seconds
-        const timer = setTimeout(() => {
-            setHasError(true)
+        try {
+            const result = await videoService.openDocument(
+                URLRoomName,
+                offer.id,
+                dob
+            )
+            if (result === 'wrong_birth_date') {
+                setError('Invalid Date of Birth')
+            } else if (result === 'gone') {
+                onGone()
+                onClose()
+            } else {
+                utilsService.saveBlob(result.blob, offer.name)
+                onOpened()
+                onClose()
+            }
+        } catch (openError) {
+            console.error('Could not open the document', openError)
+            setError('The document could not be opened. Please try again.')
+        } finally {
             setIsLoading(false)
-        }, 10000)
-        setErrorTimer(timer)
-    }, [documentId, documentName, documentType, verifierName, URLRoomName, dob])
+        }
+    }, [URLRoomName, offer.id, offer.name, dob, onOpened, onGone, onClose])
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth={true} maxWidth="xs">
@@ -123,12 +113,12 @@ export const PatientAuthenticationDialog = ({
                     </div>
                     <div>
                         <DialogTitle className="pl-0">
-                            Authenticate Required
+                            Authentication Required
                         </DialogTitle>
                         <DialogContent className="p-0">
                             <div>
-                                Please enter the Date of Birth of{' '}
-                                <b>{demographicName}</b> to download attachment
+                                Please enter your Date of Birth to download{' '}
+                                <b>{offer.name}</b>
                             </div>
                             <InputMask
                                 classes="p-1 mt-3"
@@ -137,13 +127,9 @@ export const PatientAuthenticationDialog = ({
                                 value={dob}
                                 onChange={value => {
                                     setDob(value)
-                                    setHasError(false)
+                                    setError(undefined)
                                 }}
-                                error={
-                                    hasError
-                                        ? 'Invalid Date of Birth'
-                                        : undefined
-                                }
+                                error={error}
                             />
                         </DialogContent>
                         <DialogActions>

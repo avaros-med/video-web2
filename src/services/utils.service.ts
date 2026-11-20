@@ -1,4 +1,3 @@
-import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios'
 import moment from 'moment'
 
 // Return time remaining until given date in 01:25:55 format
@@ -25,93 +24,30 @@ const getTimeRemaining = (date: Date): string | null => {
     return [hours, minutes, seconds].join(':')
 }
 
-const getRandomNumber = (min: number, max: number) => {
-    min = Math.ceil(min)
-    max = Math.floor(max)
-    return Math.floor(Math.random() * (max - min) + min)
-}
-
-const downloadByUrl = (url: string, filename: string) => {
-    if (!filename.endsWith('.pdf')) {
-        filename += '.pdf'
-    }
-
+/** Saves a file the page received (a download from ehr) under its own name. */
+const saveBlob = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob)
     const anchorEl = document.createElement('a')
     anchorEl.href = url
-    anchorEl.target = '_blank'
     anchorEl.download = filename || 'download'
     document.body.appendChild(anchorEl)
     anchorEl.click()
-
-    const clickHandler = () => {
-        setTimeout(() => {
-            window.URL.revokeObjectURL(url)
-            document.body.removeChild(anchorEl)
-        }, 100)
-    }
-
-    anchorEl.addEventListener('click', clickHandler, false)
+    setTimeout(() => {
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(anchorEl)
+    }, 100)
 }
 
-const downloadDocument = (url: string, fileName: string): Promise<File> => {
-    return new Promise((resolve, reject) => {
-        const config: AxiosRequestConfig = {
-            responseType: 'blob',
-        }
-        axios.get(url, config).then(
-            (response: AxiosResponse) => {
-                const file = new File([response.data], fileName)
-                if (file) {
-                    resolve(file)
-                } else {
-                    reject()
-                }
-            },
-            (error: AxiosError) => {
-                reject(error)
-            }
-        )
-    })
-}
-
-const getFileContent = (file: File): Promise<any> => {
-    if (!file) {
-        return Promise.reject('Missing file')
-    }
-
-    return new Promise((resolve, reject) => {
-        var reader = new FileReader()
-        reader.readAsDataURL(file)
-        reader.onload = function() {
-            const content = reader.result || ''
-            resolve(content)
-        }
-        reader.onerror = function(error) {
-            reject(error)
-        }
-    })
-}
-
-const getIp = async (): Promise<string> => {
-    try {
-        const response = await fetch('https://ifconfig.me/ip').then(res =>
-            res.text()
-        )
-        if (response) {
-            return Promise.resolve(response)
-        }
-        return Promise.reject('Unable to get IP')
-    } catch (error) {
-        console.error(error)
-        return Promise.reject(error)
-    }
-}
+/**
+ * When this person's call started (useRoom sets it on connecting; the relay fallback's
+ * rejoin keeps it): the visit log's start. null before a call.
+ */
+const sessionStartedAt = (): Date | null =>
+    ((window as unknown) as { sessionStartedAt?: Date }).sessionStartedAt ??
+    null
 
 export const utilsService = {
     getTimeRemaining,
-    getRandomNumber,
-    downloadByUrl,
-    downloadDocument,
-    getFileContent,
-    getIp,
+    saveBlob,
+    sessionStartedAt,
 }

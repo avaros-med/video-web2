@@ -1,11 +1,4 @@
-import {
-    createContext,
-    ReactNode,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react'
+import { createContext, ReactNode, useCallback, useRef, useState } from 'react'
 import {
     ConnectOptions,
     CreateLocalTrackOptions,
@@ -17,10 +10,9 @@ import { ErrorCallback } from '../../types'
 import { SelectedParticipantProvider } from './useSelectedParticipant/useSelectedParticipant'
 
 import { useParams } from 'react-router-dom'
-import { useCurrentUser } from '../../hooks/useCurrentUser'
-import { useHttpAppointment } from '../../hooks/useHttpAppointment'
-import { Appointment } from '../../services/models/Appointment.model'
+import { useVideoRoom, VideoRoomStatus } from '../../hooks/useVideoRoom'
 import { CurrentUser } from '../../services/models/CurrentUser.model'
+import { VideoRoom } from '../../services/models/VideoRoom.model'
 import AttachVisibilityHandler from './AttachVisibilityHandler/AttachVisibilityHandler'
 import useBackgroundSettings, {
     BackgroundSettings,
@@ -73,9 +65,12 @@ export interface IVideoContext {
     setIsBackgroundSelectionOpen: (value: boolean) => void
     backgroundSettings: BackgroundSettings
     setBackgroundSettings: (settings: BackgroundSettings) => void
+    /** The signed-in provider (ehr knows them by their JWT); null for the patient. */
     currentUser: CurrentUser | null
-    appointment: Appointment | null
-    isAppointmentLoading: boolean
+    /** The room the address names, with its visit (ehr); null until read, or when there is none. */
+    videoRoom: VideoRoom | null
+    videoRoomStatus: VideoRoomStatus
+    reloadVideoRoom: () => void
 }
 
 export const VideoContext = createContext<IVideoContext>(null!)
@@ -133,18 +128,11 @@ export function VideoProvider({
 
     const { URLRoomName: roomName } = useParams<{ URLRoomName?: string }>()
     const {
-        appointment,
-        isLoading: isAppointmentLoading,
-        getAppointmentByRoomName,
-    } = useHttpAppointment()
-
-    // Get appointment details on load
-    useEffect(() => {
-        if (!roomName) {
-            return
-        }
-        getAppointmentByRoomName(roomName)
-    }, [roomName, getAppointmentByRoomName])
+        videoRoom,
+        status: videoRoomStatus,
+        reload: reloadVideoRoom,
+    } = useVideoRoom(roomName)
+    const currentUser = videoRoom?.signedInProvider ?? null
 
     // Register callback functions to be called on room disconnect.
     useHandleRoomDisconnection(
@@ -171,8 +159,6 @@ export function VideoProvider({
         room
     )
 
-    const { currentUser } = useCurrentUser()
-
     return (
         <VideoContext.Provider
             value={{
@@ -197,8 +183,9 @@ export function VideoProvider({
                 backgroundSettings,
                 setBackgroundSettings,
                 currentUser,
-                appointment,
-                isAppointmentLoading,
+                videoRoom,
+                videoRoomStatus,
+                reloadVideoRoom,
             }}
         >
             <SelectedParticipantProvider room={room}>

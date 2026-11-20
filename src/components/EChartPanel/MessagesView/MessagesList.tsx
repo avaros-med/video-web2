@@ -2,10 +2,7 @@ import { useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { useAvsSocketContext } from '../../../hooks/useAvsSocketContext/useAvsSocketContext'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
-import {
-    AttachmentMessage,
-    Message,
-} from '../../../services/models/Message.model'
+import { ChatItem, FileOffer } from '../../../services/models/Message.model'
 import { TextHintStyles } from '../../UI/styles/styles'
 import { MessageItem } from './MessageItem'
 
@@ -55,21 +52,18 @@ export const MessagesList = ({ classes }: Props) => {
         <Styles className={classes ?? ''} ref={scrollContainerRef}>
             {messages?.length > 0 ? (
                 <>
-                    {messages.map(
-                        (
-                            message: Message | AttachmentMessage,
-                            index: number
-                        ) => (
-                            <MessageItem
-                                key={index}
-                                message={message}
-                                isLocalRecipient={
-                                    room?.localParticipant.identity ===
-                                    message.senderName
-                                }
-                            />
-                        )
-                    )}
+                    {messages.map((message: ChatItem) => (
+                        <MessageItem
+                            key={`${
+                                message instanceof FileOffer ? 'file' : 'line'
+                            }-${message.id}`}
+                            message={message}
+                            isLocalRecipient={
+                                room?.localParticipant.identity ===
+                                message.senderName
+                            }
+                        />
+                    ))}
                 </>
             ) : (
                 <EmptyStateStyles>

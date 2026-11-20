@@ -2,12 +2,9 @@ import React from 'react'
 import { act, renderHook } from '@testing-library/react-hooks'
 
 import AppStateProvider, { useAppState } from './index'
-import useFirebaseAuth from './useFirebaseAuth/useFirebaseAuth'
 import usePasscodeAuth from './usePasscodeAuth/usePasscodeAuth'
+import { videoService } from '../services/http/video.service'
 
-jest.mock('./useFirebaseAuth/useFirebaseAuth', () =>
-    jest.fn(() => ({ user: 'firebaseUser' }))
-)
 jest.mock('./usePasscodeAuth/usePasscodeAuth', () =>
     jest.fn(() => ({ user: 'passcodeUser' }))
 )
@@ -16,17 +13,19 @@ jest.mock('./useActiveSinkId/useActiveSinkId.ts', () => () => [
     () => {},
 ])
 
-const mockUsePasscodeAuth = usePasscodeAuth as jest.Mock<any>
+jest.mock('../services/http/video.service', () => ({
+    videoService: {
+        getToken: jest.fn(() =>
+            Promise.resolve({
+                token: 'mockVideoToken',
+                identity: 'testname_123456',
+                provider: false,
+            })
+        ),
+    },
+}))
 
-// @ts-ignore
-window.fetch = jest.fn(() =>
-    Promise.resolve({
-        text: () => 'mockVideoToken',
-        json: () => ({
-            token: 'mockVideoToken',
-        }),
-    })
-)
+const mockUsePasscodeAuth = usePasscodeAuth as jest.Mock<any>
 
 const wrapper: React.FC = ({ children }) => (
     <AppStateProvider>{children}</AppStateProvider>
@@ -49,41 +48,29 @@ describe('the useAppState hook', () => {
         )
     })
 
-    it('should get a token using the REACT_APP_TOKEN_ENDPOINT environment variable when avaiable', async () => {
-        process.env.REACT_APP_TOKEN_ENDPOINT = 'http://test.com/api/token'
-
+    it("gets the room's token from ehr, for the name typed", async () => {
         const { result } = renderHook(useAppState, { wrapper })
 
         let token
         await act(async () => {
-            token = await result.current.getToken('testname', 'testroom')
+            token = await result.current.getToken(
+                'testname',
+                'braamc_999998-abc'
+            )
         })
 
-        expect(token).toEqual({ token: 'mockVideoToken' })
-
-        expect(window.fetch).toHaveBeenCalledWith('http://test.com/api/token', {
-            headers: { 'content-type': 'application/json' },
-            body:
-                '{"user_identity":"testname","room_name":"testroom","create_conversation":true}',
-            method: 'POST',
-        })
+        expect(token).toEqual({ token: 'mockVideoToken', room_type: undefined })
+        expect(videoService.getToken).toHaveBeenCalledWith(
+            'braamc_999998-abc',
+            'testname'
+        )
     })
 
     describe('with auth disabled', () => {
-        it('should not use any auth hooks', async () => {
+        it('should not use the passcode auth hook', async () => {
             delete process.env.REACT_APP_SET_AUTH
             renderHook(useAppState, { wrapper })
-            expect(useFirebaseAuth).not.toHaveBeenCalled()
             expect(usePasscodeAuth).not.toHaveBeenCalled()
-        })
-    })
-
-    describe('with firebase auth enabled', () => {
-        it('should use the useFirebaseAuth hook', async () => {
-            process.env.REACT_APP_SET_AUTH = 'firebase'
-            const { result } = renderHook(useAppState, { wrapper })
-            expect(useFirebaseAuth).toHaveBeenCalled()
-            expect(result.current.user).toBe('firebaseUser')
         })
     })
 

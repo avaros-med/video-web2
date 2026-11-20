@@ -34,3 +34,6 @@ junit.xml
 serviceAccountKey.json
 
 public/virtualbackground/
+test-results/
+e2e/.auth/
+.cert/

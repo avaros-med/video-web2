@@ -1,11 +1,10 @@
-import { ChangeEvent, useCallback, useMemo, useRef, useState } from 'react'
+import { ChangeEvent, useCallback, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import { videoService } from '../../../services/http/video.service'
 import { utilsService } from '../../../services/utils.service'
-import { SendAttachmentRequest } from '../../../services/ws/eventout'
-import { socketService } from '../../../services/ws/socket.service'
+import Snackbar from '../../Snackbar/Snackbar'
 import { IconButton } from '../../UI/IconButton'
 
 interface Props {
@@ -14,7 +13,8 @@ interface Props {
 
 const ACCEPTED_UPLOAD_TYPES =
     'image/png,image/x-png,image/gif,image/jpeg,image/jpg,application/pdf'
-const FILE_MAX_SIZE_IN_MB = 100
+/** ehr keeps a file offered in the room for one download, at most 10 MB. */
+export const FILE_MAX_SIZE_IN_MB = 10
 
 const Styles = styled.div`
     position: relative;
@@ -38,91 +38,70 @@ const Styles = styled.div`
     }
 `
 
+/**
+ * A file from this device, offered in the room through ehr: everyone else in the room
+ * may download it once, within 10 minutes. The visit log notes it.
+ */
 export const SendPatientAttachment = ({ classes }: Props) => {
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
-    const { room, appointment } = useVideoContext()
-    const [, setFile] = useState<File | null>(null)
+    const { room } = useVideoContext()
+    const [error, setError] = useState<string | null>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    const localParticipantName = useMemo(
-        (): string => room?.localParticipant.identity ?? '',
-        [room]
-    )
-
     const clearInput = () => {
-        // Clear input field
         if (inputRef?.current) {
             inputRef.current.value = ''
         }
     }
 
     const onSend = useCallback(
-        async (_file: File) => {
-            const fileContent = await utilsService.getFileContent(_file)
-            if (!fileContent) {
+        async (file: File) => {
+            if (!URLRoomName || !room) {
                 return
             }
-
-            const eventout: SendAttachmentRequest = {
-                ID: utilsService.getRandomNumber(100000, 999999),
-                name: _file.name,
-                type: 'document',
-                demographicName: localParticipantName,
-                roomName: URLRoomName!,
-                fromProvider: false,
-                senderName: localParticipantName,
-                bytes: fileContent,
+            try {
+                await videoService.offerFile(
+                    URLRoomName,
+                    file,
+                    room.localParticipant.identity
+                )
+            } catch (sendError) {
+                console.error('Could not send the file', sendError)
+                setError('The file was not sent. Please try again.')
+                return
             }
-            socketService.dispatchEvent('SendAttachmentRequest', eventout)
-
-            // Add log
-            if (appointment) {
-                try {
-                    const isDoctor = false
-                    const eventId = appointment.roomID
-                    const eventDetails = `Patient sent file: ${_file.name}`
-
-                    await videoService.addLog(
-                        appointment,
-                        isDoctor,
-                        eventId,
-                        eventDetails
-                    )
-                } catch (error) {
-                    console.error(error)
-                }
+            try {
+                await videoService.logVisit(
+                    URLRoomName,
+                    utilsService.sessionStartedAt(),
+                    `Patient sent file: ${file.name}`
+                )
+            } catch (logError) {
+                console.error(logError)
             }
         },
-        [appointment, URLRoomName, localParticipantName]
+        [URLRoomName, room]
     )
 
     const onChangeHandler = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
-            if (event?.target?.files?.length) {
-                const _file = event.target.files[0]
-                if (_file) {
-                    // Check file type
-                    if (
-                        !_file.type?.length ||
-                        ACCEPTED_UPLOAD_TYPES.indexOf(_file.type) === -1
-                    ) {
-                        clearInput()
-                        return
-                    }
-
-                    // Check file size
-                    if (_file.size > 1048576 * FILE_MAX_SIZE_IN_MB) {
-                        clearInput()
-                        return
-                    }
-
-                    setFile(_file)
-                    clearInput()
-
-                    // Send file
-                    onSend(_file)
-                }
+            const file = event?.target?.files?.[0]
+            clearInput()
+            if (!file) {
+                return
             }
+            if (
+                !file.type?.length ||
+                ACCEPTED_UPLOAD_TYPES.indexOf(file.type) === -1
+            ) {
+                setError('Only images and PDF files can be sent.')
+                return
+            }
+            if (file.size > 1048576 * FILE_MAX_SIZE_IN_MB) {
+                setError(`Files can be at most ${FILE_MAX_SIZE_IN_MB} MB.`)
+                return
+            }
+            onSend(file)
         },
         [onSend]
     )
@@ -139,6 +118,14 @@ export const SendPatientAttachment = ({ classes }: Props) => {
                 type="file"
                 onChange={onChangeHandler}
                 accept={ACCEPTED_UPLOAD_TYPES}
+            />
+            <Snackbar
+                open={!!error}
+                handleClose={() => setError(null)}
+                variant="error"
+                headline="File not sent"
+                message={error ?? ''}
+                autoHideDuration={4000}
             />
         </Styles>
     )

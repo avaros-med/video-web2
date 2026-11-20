@@ -8,10 +8,9 @@ import {
     SettingsAction,
 } from './settings/settingsReducer'
 import useActiveSinkId from './useActiveSinkId/useActiveSinkId'
-import useFirebaseAuth from './useFirebaseAuth/useFirebaseAuth'
 import { useLocalStorageState } from '../hooks/useLocalStorageState/useLocalStorageState'
 import usePasscodeAuth from './usePasscodeAuth/usePasscodeAuth'
-import { User } from 'firebase'
+import { videoService } from '../services/http/video.service'
 
 export interface StateContextType {
     error: TwilioError | Error | null
@@ -21,10 +20,11 @@ export interface StateContextType {
         room: string,
         passcode?: string
     ): Promise<{ room_type: RoomType; token: string }>
-    user?:
-        | User
-        | null
-        | { displayName: undefined; photoURL: undefined; passcode?: string }
+    user?: {
+        displayName: string | undefined
+        photoURL: string | undefined
+        passcode?: string
+    } | null
     signIn?(passcode?: string): Promise<void>
     signOut?(): Promise<void>
     isAuthReady?: boolean
@@ -46,15 +46,6 @@ export interface StateContextType {
 
 export const StateContext = createContext<StateContextType>(null!)
 
-/*
-  The 'react-hooks/rules-of-hooks' linting rules prevent React Hooks from being called
-  inside of if() statements. This is because hooks must always be called in the same order
-  every time a component is rendered. The 'react-hooks/rules-of-hooks' rule is disabled below
-  because the "if (process.env.REACT_APP_SET_AUTH === 'firebase')" statements are evaluated
-  at build time (not runtime). If the statement evaluates to false, then the code is not
-  included in the bundle that is produced (due to tree-shaking). Thus, in this instance, it
-  is ok to call hooks inside if() statements.
-*/
 export default function AppStateProvider(props: React.PropsWithChildren<{}>) {
     const [error, setError] = useState<TwilioError | null>(null)
     const [isFetching, setIsFetching] = useState(false)
@@ -88,12 +79,7 @@ export default function AppStateProvider(props: React.PropsWithChildren<{}>) {
         setMaxGalleryViewParticipants,
     } as StateContextType
 
-    if (process.env.REACT_APP_SET_AUTH === 'firebase') {
-        contextValue = {
-            ...contextValue,
-            ...useFirebaseAuth(), // eslint-disable-line react-hooks/rules-of-hooks
-        }
-    } else if (process.env.REACT_APP_SET_AUTH === 'passcode') {
+    if (process.env.REACT_APP_SET_AUTH === 'passcode') {
         contextValue = {
             ...contextValue,
             ...usePasscodeAuth(), // eslint-disable-line react-hooks/rules-of-hooks
@@ -101,52 +87,18 @@ export default function AppStateProvider(props: React.PropsWithChildren<{}>) {
     } else {
         contextValue = {
             ...contextValue,
-            getToken: async (user_identity, room_name) => {
-                const endpoint =
-                    process.env.REACT_APP_TOKEN_ENDPOINT || '/token'
-
-                return fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'content-type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        user_identity,
-                        room_name,
-                        create_conversation:
-                            process.env
-                                .REACT_APP_DISABLE_TWILIO_CONVERSATIONS !==
-                            'true',
-                    }),
-                }).then(res => res.json())
+            // ehr's token for the room (ehr docs/schedule-video.md §4): anyone with the room's
+            // link gets one, as in ark. The room type is the build's (REACT_APP_ROOM_TYPE).
+            getToken: async (identity, roomName) => {
+                const { token } = await videoService.getToken(
+                    roomName,
+                    identity
+                )
+                return { token, room_type: undefined as any }
             },
-            updateRecordingRules: async (room_sid, rules) => {
-                const endpoint =
-                    process.env.REACT_APP_TOKEN_ENDPOINT || '/recordingrules'
-
-                return fetch(endpoint, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ room_sid, rules }),
-                    method: 'POST',
-                })
-                    .then(async res => {
-                        const jsonResponse = await res.json()
-
-                        if (!res.ok) {
-                            const recordingError = new Error(
-                                jsonResponse.error?.message ||
-                                    'There was an error updating recording rules'
-                            )
-                            recordingError.code = jsonResponse.error?.code
-                            return Promise.reject(recordingError)
-                        }
-
-                        return jsonResponse
-                    })
-                    .catch(err => setError(err))
-            },
+            // Recording is off for video visits: ehr has no recording route.
+            updateRecordingRules: async () =>
+                Promise.reject(new Error('Recording is not available')),
         }
     }
 

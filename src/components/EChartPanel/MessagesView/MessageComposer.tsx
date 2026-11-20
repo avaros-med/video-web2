@@ -4,9 +4,8 @@ import { useParams } from 'react-router-dom'
 import styled from 'styled-components'
 import Colors from '../../../colors'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
-import { utilsService } from '../../../services/utils.service'
-import { SendMessage } from '../../../services/ws/eventout'
-import { socketService } from '../../../services/ws/socket.service'
+import { videoService } from '../../../services/http/video.service'
+import Snackbar from '../../Snackbar/Snackbar'
 import { Button } from '../../UI/Button'
 import { Input } from '../../UI/Input'
 import { SendPatientAttachment } from './SendPatientAttachment'
@@ -32,25 +31,28 @@ export const MessageComposer = () => {
     const { URLRoomName } = useParams<{ URLRoomName?: string }>()
     const { room, currentUser } = useVideoContext()
     const [message, setMessage] = useState<string>('')
+    const [isSending, setIsSending] = useState<boolean>(false)
+    const [hasError, setHasError] = useState<boolean>(false)
 
+    // This person's identity in the room: the line comes back on the stream under it.
     const senderName = room!.localParticipant.identity
 
     const onSendMessage = useCallback(() => {
-        if (!URLRoomName || !message?.trim().length) {
+        const text = message.trim()
+        if (!URLRoomName || !text.length || isSending) {
             return
         }
 
-        const eventout: SendMessage = {
-            ID: utilsService.getRandomNumber(100000, 999999),
-            description: message.trim(),
-            fromProvider: !!currentUser,
-            roomName: URLRoomName,
-            senderName,
-            createdAt: new Date().toISOString(),
-        }
-        socketService.dispatchEvent('Message', eventout)
-        setMessage('')
-    }, [URLRoomName, currentUser, message, senderName])
+        setIsSending(true)
+        videoService
+            .sendMessage(URLRoomName, text, senderName)
+            .then(() => setMessage(''))
+            .catch(error => {
+                console.error('Could not send the message', error)
+                setHasError(true)
+            })
+            .finally(() => setIsSending(false))
+    }, [URLRoomName, message, senderName, isSending])
 
     return (
         <Styles>
@@ -70,6 +72,7 @@ export const MessageComposer = () => {
                     classes="ml-3"
                     intent="primary-fade"
                     label="Send"
+                    isLoading={isSending}
                     onClick={onSendMessage}
                 />
                 {currentUser ? (
@@ -78,6 +81,14 @@ export const MessageComposer = () => {
                     <SendPatientAttachment classes="ml-3" />
                 )}
             </Grid>
+            <Snackbar
+                open={hasError}
+                handleClose={() => setHasError(false)}
+                variant="error"
+                headline="Your message was not sent"
+                message="Please try again."
+                autoHideDuration={4000}
+            />
         </Styles>
     )
 }

@@ -242,14 +242,10 @@ exports[`the ConnectionOptionsDialog component when connected to a room should r
   </WithStyles(ForwardRef(DialogContent))>
   <WithStyles(ForwardRef(Divider)) />
   <WithStyles(ForwardRef(DialogActions))>
-    <WithStyles(ForwardRef(Button))
-      className="makeStyles-button-2"
-      color="primary"
+    <Button
+      label="Done"
       onClick={[Function]}
-      variant="contained"
-    >
-      Done
-    </WithStyles(ForwardRef(Button))>
+    />
   </WithStyles(ForwardRef(DialogActions))>
 </WithStyles(ForwardRef(Dialog))>
 `;
@@ -496,14 +492,10 @@ exports[`the ConnectionOptionsDialog component when not connected to a room shou
   </WithStyles(ForwardRef(DialogContent))>
   <WithStyles(ForwardRef(Divider)) />
   <WithStyles(ForwardRef(DialogActions))>
-    <WithStyles(ForwardRef(Button))
-      className="makeStyles-button-2"
-      color="primary"
+    <Button
+      label="Done"
       onClick={[Function]}
-      variant="contained"
-    >
-      Done
-    </WithStyles(ForwardRef(Button))>
+    />
   </WithStyles(ForwardRef(DialogActions))>
 </WithStyles(ForwardRef(Dialog))>
 `;

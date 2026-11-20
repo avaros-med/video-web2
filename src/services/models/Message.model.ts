@@ -1,67 +1,67 @@
-import { DemographicDocumentType } from './DemographicDocument.model'
-
+/**
+ * What the room's chat shows, from the room's stream (ehr docs/schedule-video.md §4): a
+ * line (`Message`) and a file offered (`FileOffered`, or `DocumentOffered` for a chart
+ * document the patient opens with their date of birth).
+ *
+ * `senderName` is the sender's Twilio identity (the name they joined with and a
+ * `_123456` suffix): unique in the room, so it tells this page's own lines from the
+ * others'. `displayName` strips the suffix for showing.
+ */
 export class Message {
-    ID!: number
+    id!: string
     message!: string
-    roomName!: string
-    fromProvider!: boolean
     senderName!: string
+    fromProvider!: boolean
     createdAt!: Date
 
     constructor(message: Message) {
-        this.ID = message.ID
-        this.message = message.message
-        this.roomName = message.roomName
-        this.fromProvider = message.fromProvider
-        this.senderName = message.senderName
-        this.createdAt = message.createdAt
+        Object.assign(this, message)
     }
 
     static deserialize(obj: any): Message {
-        const model: Message = Object.assign({}, obj)
-        if (obj.createdAt) {
-            model.createdAt = new Date(obj.createdAt)
-        }
-        model.message = obj.description
-        return model
+        return new Message({
+            id: String(obj?.id ?? ''),
+            message: obj?.message ?? '',
+            senderName: obj?.senderName ?? '',
+            fromProvider: !!obj?.fromProvider,
+            createdAt: obj?.sentAt ? new Date(obj.sentAt) : new Date(),
+        })
     }
 }
 
-export class AttachmentMessage {
-    ID!: number
-    demographicDocumentID!: number
-    documentName!: string
-    documentType!: DemographicDocumentType
-    demographicName!: string
+export class FileOffer {
+    id!: string
+    name!: string
+    size!: number
+    contentType!: string
+    expiresAt!: Date
     senderName!: string
     fromProvider!: boolean
-    bytes!: string
+    /** A chart document: opened with the patient's date of birth. */
+    isDocument!: boolean
     createdAt!: Date
 
-    constructor(attachmentMessage: AttachmentMessage) {
-        this.ID = attachmentMessage.ID
-        this.demographicDocumentID = attachmentMessage.demographicDocumentID
-        this.documentName = attachmentMessage.documentName
-        this.documentType = attachmentMessage.documentType
-        this.demographicName = attachmentMessage.demographicName
-        this.senderName = attachmentMessage.senderName
-        this.fromProvider = attachmentMessage.fromProvider
-        this.bytes = attachmentMessage.bytes
-        this.createdAt = attachmentMessage.createdAt
+    constructor(offer: FileOffer) {
+        Object.assign(this, offer)
     }
 
-    static deserialize(obj: any): AttachmentMessage {
-        const model: AttachmentMessage = {
-            ID: obj.ID,
-            demographicDocumentID: obj.id ?? obj.ID,
-            documentName: obj.name,
-            documentType: obj.type,
-            demographicName: obj.demographicName,
-            senderName: obj.senderName,
-            fromProvider: obj.fromProvider,
-            bytes: obj.bytes,
+    static deserialize(obj: any, isDocument: boolean): FileOffer {
+        return new FileOffer({
+            id: String(obj?.id ?? ''),
+            name: obj?.name ?? 'file',
+            size: Number(obj?.size ?? 0),
+            contentType: obj?.contentType ?? 'application/octet-stream',
+            expiresAt: new Date(obj?.expiresAt),
+            senderName: obj?.senderName ?? '',
+            fromProvider: !!obj?.fromProvider,
+            isDocument,
             createdAt: new Date(),
-        }
-        return model
+        })
     }
 }
+
+export type ChatItem = Message | FileOffer
+
+/** The name someone joined with: their identity without the `_123456` suffix. */
+export const displayName = (identity: string): string =>
+    (identity ?? '').replace(/_\d{6}$/, '')

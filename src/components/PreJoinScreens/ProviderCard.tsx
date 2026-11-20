@@ -1,11 +1,11 @@
 import styled from 'styled-components'
 import Colors from '../../colors'
-import { Appointment } from '../../services/models/Appointment.model'
+import { VideoRoom } from '../../services/models/VideoRoom.model'
 import { Avatar } from '../UI/Avatar'
 
 interface Props {
     classes?: string
-    appointment: Appointment
+    videoRoom: VideoRoom
 }
 
 const Styles = styled.div`
@@ -25,8 +25,8 @@ const Styles = styled.div`
     }
 `
 
-export const ProviderCard = ({ classes, appointment }: Props) => {
-    const providerName = appointment.details.providerName ?? ''
+export const ProviderCard = ({ classes, videoRoom }: Props) => {
+    const providerName = VideoRoom.getProviderName(videoRoom)
 
     return (
         <Styles className={classes ?? ''}>

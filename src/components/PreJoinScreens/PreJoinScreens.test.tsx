@@ -2,7 +2,7 @@ import React from 'react'
 import { act } from 'react-dom/test-utils'
 import DeviceSelectionScreen from './DeviceSelectionScreen/DeviceSelectionScreen'
 import MediaErrorSnackbar from './MediaErrorSnackbar/MediaErrorSnackbar'
-import { mount, shallow } from 'enzyme'
+import { mount } from 'enzyme'
 import PreJoinScreens from './PreJoinScreens'
 import RoomNameScreen from './RoomNameScreen/RoomNameScreen'
 import { useParams } from 'react-router-dom'
@@ -38,6 +38,7 @@ jest.mock(
 )
 jest.mock('./RoomNameScreen/RoomNameScreen', () => () => null)
 jest.mock('./DeviceSelectionScreen/DeviceSelectionScreen', () => () => null)
+jest.mock('./ErrorScreens', () => ({ ErrorScreens: () => null }))
 
 describe('the PreJoinScreens component', () => {
     beforeEach(jest.clearAllMocks)
@@ -48,53 +49,9 @@ describe('the PreJoinScreens component', () => {
         mockUseParams.mockImplementation(() => ({ URLRoomName: 'testRoom' }))
         mockUseVideoContext.mockImplementation(() => ({
             getAudioAndVideoTracks: () => Promise.resolve(),
+            videoRoom: { isLocked: false },
+            videoRoomStatus: 'found',
         }))
-    })
-
-    it('should update the URL to include the room name on submit', () => {
-        const wrapper = shallow(<PreJoinScreens />)
-
-        const setRoomName = wrapper.find(RoomNameScreen).prop('setRoomName')
-        setRoomName('Test Room 123')
-
-        const handleSubmit = wrapper.find(RoomNameScreen).prop('handleSubmit')
-        handleSubmit({ preventDefault: () => {} } as any)
-
-        expect(window.history.replaceState).toHaveBeenCalledWith(
-            null,
-            '',
-            '/room/Test%20Room%20123'
-        )
-    })
-
-    it('should not update the URL when the app is deployed as a Twilio function', () => {
-        // @ts-ignore
-        window.location = {
-            ...window.location,
-            origin: 'https://video-app-1234-twil.io',
-        }
-        const wrapper = shallow(<PreJoinScreens />)
-
-        const setRoomName = wrapper.find(RoomNameScreen).prop('setRoomName')
-        setRoomName('Test Room 123')
-
-        const handleSubmit = wrapper.find(RoomNameScreen).prop('handleSubmit')
-        handleSubmit({ preventDefault: () => {} } as any)
-
-        expect(window.history.replaceState).not.toHaveBeenCalled()
-    })
-
-    it('should switch to the DeviceSelection screen when a room name is submitted', () => {
-        const wrapper = shallow(<PreJoinScreens />)
-
-        expect(wrapper.find(RoomNameScreen).exists()).toBe(true)
-        expect(wrapper.find(DeviceSelectionScreen).exists()).toBe(false)
-
-        const handleSubmit = wrapper.find(RoomNameScreen).prop('handleSubmit')
-        handleSubmit({ preventDefault: () => {} } as any)
-
-        expect(wrapper.find(RoomNameScreen).exists()).toBe(false)
-        expect(wrapper.find(DeviceSelectionScreen).exists()).toBe(true)
     })
 
     it('should populate the room name from the URL and switch to the DeviceSelectionScreen when the displayName is present for the user', () => {

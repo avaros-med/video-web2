@@ -1,3 +1,5 @@
+> **Avaros:** this repository is the video visit room page. Branch `schedule-rewrite` is the build for ehr (see `CLAUDE.md`): it has no token server, Express or Firebase, and the sections below about running a local token server, Twilio CLI deployment, Firebase and Cypress do not apply to it.
+
 # Twilio Video React App
 
 [![CircleCI](https://circleci.com/gh/twilio/twilio-video-app-react.svg?style=svg)](https://circleci.com/gh/twilio/twilio-video-app-react)

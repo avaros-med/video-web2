@@ -2,8 +2,6 @@ import React from 'react'
 import { shallow } from 'enzyme'
 import useLocalAudioToggle from '../../../hooks/useLocalAudioToggle/useLocalAudioToggle'
 
-import MicIcon from '../../../icons/MicIcon'
-import MicOffIcon from '../../../icons/MicOffIcon'
 import ToggleAudioButton, {
     MIC_ALERT_HIDDEN_TOOLTIP,
     MIC_ALERT_TOOLTIP,
@@ -25,15 +23,15 @@ describe('the ToggleAudioButton component', () => {
     it('should render correctly when audio is enabled', () => {
         mockUseLocalAudioToggle.mockImplementation(() => [true, () => {}])
         const wrapper = shallow(<ToggleAudioButton />)
-        expect(wrapper.prop('startIcon')).toEqual(<MicIcon />)
-        expect(wrapper.text()).toBe('Mute')
+        expect(wrapper.prop('icon')).toBe('mic')
+        expect(wrapper.prop('tooltipContent')).toBe('Mute microphone')
     })
 
     it('should render correctly when audio is disabled', () => {
         mockUseLocalAudioToggle.mockImplementation(() => [false, () => {}])
         const wrapper = shallow(<ToggleAudioButton />)
-        expect(wrapper.prop('startIcon')).toEqual(<MicOffIcon />)
-        expect(wrapper.text()).toBe('Unmute')
+        expect(wrapper.prop('icon')).toBe('mic_off')
+        expect(wrapper.prop('tooltipContent')).toBe('Unmute microphone')
     })
 
     it('should render correctly when there are no audio tracks', () => {
@@ -42,8 +40,6 @@ describe('the ToggleAudioButton component', () => {
             localTracks: [{ kind: 'video' }],
         }))
         const wrapper = shallow(<ToggleAudioButton />)
-        expect(wrapper.prop('startIcon')).toEqual(<MicIcon />)
-        expect(wrapper.text()).toBe('No Audio')
         expect(wrapper.prop('disabled')).toEqual(true)
     })
 
@@ -51,7 +47,7 @@ describe('the ToggleAudioButton component', () => {
         const mockFn = jest.fn()
         mockUseLocalAudioToggle.mockImplementation(() => [false, mockFn])
         const wrapper = shallow(<ToggleAudioButton />)
-        wrapper.simulate('click')
+        wrapper.prop('onClick')()
         expect(mockFn).toHaveBeenCalled()
     })
 

@@ -1,15 +1,15 @@
+/** The signed-in provider, as ehr names them from their JWT (`signedInProvider`). */
 export class CurrentUser {
     providerNo!: string
     firstName!: string
     lastName!: string
 
     static deserialize(obj: any): CurrentUser {
-        const model: CurrentUser = {
-            providerNo: obj.provider_no,
-            firstName: obj.first_name,
-            lastName: obj.last_name,
+        return {
+            providerNo: String(obj?.providerNo ?? ''),
+            firstName: obj?.firstName ?? '',
+            lastName: obj?.lastName ?? '',
         }
-        return model
     }
 
     static getFullName(currentUser: CurrentUser): string {

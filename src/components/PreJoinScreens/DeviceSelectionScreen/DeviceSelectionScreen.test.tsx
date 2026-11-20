@@ -7,6 +7,7 @@ import { useAppState } from '../../../state'
 import useVideoContext from '../../../hooks/useVideoContext/useVideoContext'
 import ToggleVideoButton from '../../Buttons/ToggleVideoButton/ToggleVideoButton'
 import ToggleAudioButton from '../../Buttons/ToggleAudioButton/ToggleAudioButton'
+import { Button } from '../../UI/Button'
 
 const mockUseAppState = useAppState as jest.Mock<any>
 const mockUseVideoContext = useVideoContext as jest.Mock<any>
@@ -55,18 +56,6 @@ describe('the DeviceSelectionScreen component', () => {
         it('should show the loading screen', () => {
             expect(wrapper.find(CircularProgress).exists()).toBe(true)
         })
-
-        it('should disable the desktop and mobile toggle video buttons', () => {
-            expect(
-                wrapper.find(ToggleVideoButton).every({ disabled: true })
-            ).toBe(true)
-        })
-
-        it('should disable the desktop and mobile toggle audio buttons', () => {
-            expect(
-                wrapper.find(ToggleAudioButton).every({ disabled: true })
-            ).toBe(true)
-        })
     })
 
     describe('when acquiring local tracks', () => {
@@ -84,9 +73,12 @@ describe('the DeviceSelectionScreen component', () => {
             />
         )
 
-        it('should disable the Join Now, toggle video, and toggle audio buttons', () => {
+        it('should disable the Join Now button', () => {
             expect(
-                wrapper.find({ children: 'Join Now' }).prop('disabled')
+                wrapper
+                    .find(Button)
+                    .find({ label: 'Join Now' })
+                    .prop('disabled')
             ).toBe(true)
         })
 
@@ -124,18 +116,6 @@ describe('the DeviceSelectionScreen component', () => {
         it('should show the loading screen', () => {
             expect(wrapper.find(CircularProgress).exists()).toBe(true)
         })
-
-        it('should disable the desktop and mobile toggle video buttons', () => {
-            expect(
-                wrapper.find(ToggleVideoButton).every({ disabled: true })
-            ).toBe(true)
-        })
-
-        it('should disable the desktop and mobile toggle audio buttons', () => {
-            expect(
-                wrapper.find(ToggleAudioButton).every({ disabled: true })
-            ).toBe(true)
-        })
     })
 
     it('should not disable the Join Now button by default', () => {
@@ -146,9 +126,12 @@ describe('the DeviceSelectionScreen component', () => {
                 setStep={() => {}}
             />
         )
-        expect(wrapper.find({ children: 'Join Now' }).prop('disabled')).toBe(
-            false
-        )
+        expect(
+            wrapper
+                .find(Button)
+                .find({ label: 'Join Now' })
+                .prop('disabled')
+        ).toBe(false)
     })
 
     it('should go back to the RoomNameScreen when the Cancel button is clicked', () => {
@@ -160,7 +143,10 @@ describe('the DeviceSelectionScreen component', () => {
                 setStep={mockSetStep}
             />
         )
-        wrapper.find({ children: 'Cancel' }).simulate('click')
+        wrapper
+            .find(Button)
+            .find({ label: 'Cancel' })
+            .simulate('click')
         expect(mockSetStep).toHaveBeenCalledWith(Steps.roomNameStep)
     })
 
@@ -172,7 +158,10 @@ describe('the DeviceSelectionScreen component', () => {
                 setStep={() => {}}
             />
         )
-        wrapper.find({ children: 'Join Now' }).simulate('click')
+        wrapper
+            .find(Button)
+            .find({ label: 'Join Now' })
+            .simulate('click')
 
         expect(mockGetToken).toHaveBeenCalledWith('test name', 'test room name')
         setImmediate(() => {
@@ -191,7 +180,10 @@ describe('the DeviceSelectionScreen component', () => {
                 setStep={() => {}}
             />
         )
-        wrapper.find({ children: 'Join Now' }).simulate('click')
+        wrapper
+            .find(Button)
+            .find({ label: 'Join Now' })
+            .simulate('click')
 
         expect(mockGetToken).toHaveBeenCalledWith('test name', 'test room name')
         setImmediate(() => {

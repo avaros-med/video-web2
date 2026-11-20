@@ -1,28 +1,23 @@
+/** A patient in the provider's side panel: the visit's, or one found by the search. */
 export class Demographic {
     demographicNo!: number
     firstName!: string
     lastName!: string
-    dob!: string
-    hin!: string
-    hinVersion!: string
-    sex!: string
-    email!: string
+    /** YYYY-MM-DD; only the search answers it. */
+    dateOfBirth?: string | null
+    sex?: string | null
 
     static deserialize(obj: any): Demographic {
-        const model: Demographic = {
-            demographicNo: obj.demographic_no,
-            firstName: obj.first_name,
-            lastName: obj.last_name,
-            dob: obj.dob,
-            hin: obj.hin,
-            hinVersion: obj.hin_version,
-            sex: obj.sex,
-            email: obj.email,
+        return {
+            demographicNo: Number(obj?.demographicNo),
+            firstName: obj?.firstName ?? '',
+            lastName: obj?.lastName ?? '',
+            dateOfBirth: obj?.dateOfBirth ?? null,
+            sex: obj?.sex ?? null,
         }
-        return model
     }
 
     static getFullName(demographic: Demographic): string {
-        return `${demographic.firstName} ${demographic.lastName}`
+        return `${demographic.firstName} ${demographic.lastName}`.trim()
     }
 }

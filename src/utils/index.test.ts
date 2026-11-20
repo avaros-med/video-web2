@@ -43,6 +43,7 @@ describe('the getDeviceInfo function', () => {
     it('should correctly return a list of audio input devices', async () => {
         // @ts-ignore
         navigator.mediaDevices.enumerateDevices = () =>
+            // @ts-ignore
             Promise.resolve(mockDevices)
         const result = await getDeviceInfo()
         expect(result).toMatchInlineSnapshot(`

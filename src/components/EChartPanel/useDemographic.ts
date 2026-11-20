@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Demographic } from '../../services/models/Demographic.model'
 
 export interface DemographicHookState {
@@ -7,10 +7,10 @@ export interface DemographicHookState {
     clearDemographic: () => void
 }
 
-export const useDemographic = () => {
+export const useDemographic = (): DemographicHookState => {
     const [demographic, setDemographic] = useState<Demographic | null>(null)
 
-    const clearDemographic = () => setDemographic(null)
+    const clearDemographic = useCallback(() => setDemographic(null), [])
 
     return { demographic, setDemographic, clearDemographic }
 }
