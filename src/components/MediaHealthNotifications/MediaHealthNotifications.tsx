@@ -13,7 +13,7 @@ interface AlertCopy {
 export const MIC_ALERT_COPY: Record<Exclude<MicStatus, 'ok'>, AlertCopy> = {
     'system-muted': {
         title: 'No one can hear you',
-        message: 'Your computer or another app paused your microphone.',
+        message: 'Your device or another app paused your microphone.',
     },
     ended: {
         title: 'Your microphone disconnected',

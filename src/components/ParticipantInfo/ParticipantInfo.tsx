@@ -26,6 +26,8 @@ import { ParticipantInfoMenu } from './ParticipantInfoMenu'
 import { useIsSpeaking } from './useAudioVolume'
 import useTileAudioAlert from '../../hooks/useTileAudioAlert/useTileAudioAlert'
 import { TONE_COLORS } from '../MediaAlertCallout/MediaAlertCallout'
+import useIsTrackEnabled from '../../hooks/useIsTrackEnabled/useIsTrackEnabled'
+import MutedBadge from '../MutedBadge/MutedBadge'
 
 const borderWidth = 2
 
@@ -140,6 +142,9 @@ const useStyles = makeStyles((theme: Theme) =>
                 fontSize: '0.75rem',
             },
         },
+        identityNoIcon: {
+            paddingLeft: '0.4em',
+        },
         hideParticipant: {
             display: 'none',
         },
@@ -228,6 +233,9 @@ export default function ParticipantInfo({
         | RemoteAudioTrack
         | undefined
     const isSpeaking = useIsSpeaking(audioTrack)
+    // Deliberately muted (the track is disabled). A muted person's own choice wins
+    // over a device problem report: there is nothing for them to fix.
+    const isMuted = !useIsTrackEnabled(audioTrack) && Boolean(audioTrack)
     const isParticipantReconnecting = useParticipantIsReconnecting(participant)
     const audioAlert = useTileAudioAlert(participant, isLocalParticipant)
 
@@ -242,8 +250,10 @@ export default function ParticipantInfo({
                 [classes.cursorPointer]: Boolean(onClick),
                 [classes.dominantSpeaker]: isDominantSpeaker,
                 [classes.galleryView]: isGalleryViewActive,
-                [classes.audioAlertError]: audioAlert?.tone === 'error',
-                [classes.audioAlertInfo]: audioAlert?.tone === 'info',
+                [classes.audioAlertError]:
+                    !isMuted && audioAlert?.tone === 'error',
+                [classes.audioAlertInfo]:
+                    !isMuted && audioAlert?.tone === 'info',
             })}
             onClick={onClick}
             data-cy-participant={participant.identity}
@@ -255,7 +265,8 @@ export default function ParticipantInfo({
             >
                 <NetworkQualityLevel participant={participant} />
                 <div className={classes.infoRowBottom}>
-                    {audioAlert && (
+                    {isMuted && <MutedBadge compact />}
+                    {!isMuted && audioAlert && (
                         <span
                             className={classes.audioAlertBadge}
                             style={{ background: TONE_COLORS[audioAlert.tone] }}
@@ -275,10 +286,14 @@ export default function ParticipantInfo({
                         isLocalParticipant={isLocalParticipant}
                     >
                         <span className={classes.identity}>
-                            <AudioLevelIndicator audioTrack={audioTrack} />
+                            {!isMuted && (
+                                <AudioLevelIndicator audioTrack={audioTrack} />
+                            )}
                             <Typography
                                 variant="body1"
-                                className={classes.typography}
+                                className={clsx(classes.typography, {
+                                    [classes.identityNoIcon]: isMuted,
+                                })}
                                 component="span"
                             >
                                 {participant.identity}

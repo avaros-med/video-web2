@@ -145,3 +145,11 @@ BackgroundBlur.args = {
     personPosters: true,
     blurPreview: true,
 }
+
+// The other participant muted their own microphone.
+export const ParticipantMuted = Template.bind({})
+ParticipantMuted.args = {
+    ...SpeakerView.args,
+    personPosters: true,
+    disableAllAudio: true,
+}

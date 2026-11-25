@@ -10,6 +10,8 @@ export interface TileAudioAlert {
 }
 
 export const LOCAL_MIC_ALERT_LABEL = 'Muted to others'
+// The device (phone, tablet or computer) paused the microphone, not the person.
+export const LOCAL_MIC_PAUSED_LABEL = 'Mic paused by your device'
 export const REMOTE_AUDIO_ALERT_LABEL = 'No audio received'
 
 /*
@@ -27,9 +29,15 @@ export default function useTileAudioAlert(
     if (!audioHealth || !participant) return null
 
     if (isLocalParticipant) {
-        return audioHealth.micStatus !== 'ok'
-            ? { tone: 'error', label: LOCAL_MIC_ALERT_LABEL, icon: 'mic_off' }
-            : null
+        if (audioHealth.micStatus === 'ok') return null
+        return {
+            tone: 'error',
+            label:
+                audioHealth.micStatus === 'system-muted'
+                    ? LOCAL_MIC_PAUSED_LABEL
+                    : LOCAL_MIC_ALERT_LABEL,
+            icon: 'mic_off',
+        }
     }
 
     return audioHealth.remoteAudioAlert?.identity === participant.identity
