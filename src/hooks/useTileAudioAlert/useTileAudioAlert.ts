@@ -15,9 +15,9 @@ export const LOCAL_MIC_PAUSED_LABEL = 'Mic paused by your device'
 export const REMOTE_AUDIO_ALERT_LABEL = 'No audio received'
 // What the other participant's browser reports about its own microphone.
 export const REMOTE_MIC_PROBLEM_LABELS = {
-    'system-muted': 'Mic paused by their device',
-    ended: 'Their mic disconnected',
-    'not-sending': 'Their mic is not sending audio',
+    'system-muted': 'Mic Muted',
+    ended: 'Mic disconnected',
+    'not-sending': 'Mic not sending audio',
 }
 
 /*
