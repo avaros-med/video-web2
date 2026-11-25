@@ -37,7 +37,7 @@ const mockUseAppState = useAppState as jest.Mock<any>
 const participant = { identity: 'Patient', sid: 'PA1' } as any
 const deviceAlert = {
     tone: 'error',
-    label: 'Mic paused by their device',
+    label: 'Mic Muted',
     icon: 'mic_off',
 }
 
