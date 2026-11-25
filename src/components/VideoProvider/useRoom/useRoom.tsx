@@ -3,6 +3,7 @@ import { isMobile } from '../../../utils'
 import Video, { ConnectOptions, LocalTrack, Room } from 'twilio-video'
 import { VideoRoomMonitor } from '@twilio/video-room-monitor'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getMicStatusTrack } from '../useMicStatusSignal/useMicStatusSignal'
 
 // @ts-ignore
 window.TwilioVideo = Video
@@ -28,10 +29,15 @@ export default function useRoom(
             overrides?: Partial<ConnectOptions>
         ): Promise<Room | null> => {
             setIsConnecting(true)
+            // The mic status data track joins with the camera and microphone, so the
+            // other side learns about a device-muted microphone (useMicStatusSignal).
+            const micStatusTrack = getMicStatusTrack()
             return Video.connect(token, {
                 ...optionsRef.current,
                 ...overrides,
-                tracks: localTracks,
+                tracks: micStatusTrack
+                    ? [...localTracks, micStatusTrack]
+                    : localTracks,
             }).then(
                 newRoom => {
                     setRoom(newRoom)

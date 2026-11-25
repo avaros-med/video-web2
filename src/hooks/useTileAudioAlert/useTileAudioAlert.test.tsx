@@ -5,6 +5,7 @@ import useTileAudioAlert, {
     LOCAL_MIC_ALERT_LABEL,
     LOCAL_MIC_PAUSED_LABEL,
     REMOTE_AUDIO_ALERT_LABEL,
+    REMOTE_MIC_PROBLEM_LABELS,
 } from './useTileAudioAlert'
 
 const patient = { identity: 'Patient' } as any
@@ -18,8 +19,13 @@ const alertFor = (context: any, isLocal = false) =>
         ),
     }).result.current
 
-const health = (micStatus: string, remoteAudioAlert: any = null) => ({
+const health = (
+    micStatus: string,
+    remoteAudioAlert: any = null,
+    remoteMicProblems: any = {}
+) => ({
     audioHealth: { micStatus, remoteAudioAlert },
+    remoteMicProblems,
 })
 
 describe('useTileAudioAlert', () => {
@@ -57,5 +63,32 @@ describe('useTileAudioAlert', () => {
         ).toBeNull()
         // Our own microphone problem is not shown on someone else's tile.
         expect(alertFor(health('system-muted'))).toBeNull()
+    })
+
+    it("shows on a remote tile the problem that participant's browser reports", () => {
+        expect(
+            alertFor(health('ok', null, { Patient: 'system-muted' }))
+        ).toEqual({
+            tone: 'error',
+            label: REMOTE_MIC_PROBLEM_LABELS['system-muted'],
+            icon: 'mic_off',
+        })
+        // A report about someone else does not mark this tile.
+        expect(
+            alertFor(health('ok', null, { 'Someone else': 'ended' }))
+        ).toBeNull()
+    })
+
+    it('prefers the reported problem over the no-audio inference', () => {
+        const stalled = { identity: 'Patient', trackSid: 'MT1' }
+        expect(
+            alertFor(health('ok', stalled, { Patient: 'ended' }))?.label
+        ).toBe(REMOTE_MIC_PROBLEM_LABELS.ended)
+    })
+
+    it('never shows a remote report on the local tile', () => {
+        expect(
+            alertFor(health('ok', null, { Patient: 'system-muted' }), true)
+        ).toBeNull()
     })
 })

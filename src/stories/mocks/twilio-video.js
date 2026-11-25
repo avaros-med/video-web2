@@ -224,7 +224,42 @@ class MockParticipant extends EventEmitter {
     }
 }
 
+// The app publishes one data track to report its microphone status. The mock keeps
+// the last report so the `mirrorLocalMicStatus` story arg can play it back as the
+// remote participants' own: a way to watch, in one browser, what the other side of
+// a call would see for whatever state this side's microphone is in.
+let lastLocalMicReport = null
+export class LocalDataTrack {
+    constructor(options = {}) {
+        this.kind = 'data'
+        this.name = options.name || 'data'
+    }
+    send(data) {
+        lastLocalMicReport = data
+    }
+}
+
 let isConnected = false
+let remoteMicProblem = null
+let mirrorLocalMicStatus = false
+// Repeats the simulated report like a real browser's heartbeat would.
+setInterval(() => {
+    const report =
+        mirrorLocalMicStatus && lastLocalMicReport
+            ? lastLocalMicReport
+            : JSON.stringify({
+                  type: 'mic-status',
+                  status: remoteMicProblem || 'ok',
+              })
+    mockRoom.participants.forEach(participant => {
+        mockRoom.emit(
+            'trackMessage',
+            report,
+            { name: 'mic-status' },
+            participant
+        )
+    })
+}, 1000)
 
 export const connect = (...params) => {
     action('Connected to Twilio Video Room')(...params)
@@ -252,6 +287,8 @@ process.env.REACT_APP_DISABLE_TWILIO_CONVERSATIONS = 'true'
 export function decorator(story, { args }) {
     simulateStalledAudio = args.simulateStalledAudio || false
     personPosters = Boolean(args.personPosters)
+    remoteMicProblem = args.remoteMicProblem || null
+    mirrorLocalMicStatus = Boolean(args.mirrorLocalMicStatus)
     // Pre-select background blur so the toolbar button renders in its "on" state.
     try {
         if (args.blurPreview) {

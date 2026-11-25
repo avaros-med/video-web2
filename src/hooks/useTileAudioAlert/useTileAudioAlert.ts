@@ -13,11 +13,18 @@ export const LOCAL_MIC_ALERT_LABEL = 'Muted to others'
 // The device (phone, tablet or computer) paused the microphone, not the person.
 export const LOCAL_MIC_PAUSED_LABEL = 'Mic paused by your device'
 export const REMOTE_AUDIO_ALERT_LABEL = 'No audio received'
+// What the other participant's browser reports about its own microphone.
+export const REMOTE_MIC_PROBLEM_LABELS = {
+    'system-muted': 'Mic paused by their device',
+    ended: 'Their mic disconnected',
+    'not-sending': 'Their mic is not sending audio',
+}
 
 /*
  * Tells a participant tile whether to show an audio problem badge: the local tile
- * when our microphone is not reaching the call, a remote tile when their audio has
- * stopped arriving. Reads the context directly so tiles rendered outside a
+ * when our microphone is not reaching the call, a remote tile when that person's
+ * browser reports its microphone is not working (useMicStatusSignal) or their audio
+ * has stopped arriving. Reads the context directly so tiles rendered outside a
  * VideoProvider (tests, storybook fragments) simply show nothing.
  */
 export default function useTileAudioAlert(
@@ -36,6 +43,16 @@ export default function useTileAudioAlert(
                 audioHealth.micStatus === 'system-muted'
                     ? LOCAL_MIC_PAUSED_LABEL
                     : LOCAL_MIC_ALERT_LABEL,
+            icon: 'mic_off',
+        }
+    }
+
+    // What their browser knows beats what ours can only infer from missing audio.
+    const reported = context?.remoteMicProblems?.[participant.identity]
+    if (reported) {
+        return {
+            tone: 'error',
+            label: REMOTE_MIC_PROBLEM_LABELS[reported],
             icon: 'mic_off',
         }
     }
