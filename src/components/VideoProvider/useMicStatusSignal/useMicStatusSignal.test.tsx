@@ -4,7 +4,6 @@ import useMicStatusSignal, {
     decodeMicStatus,
     encodeMicStatus,
     MIC_STATUS_HEARTBEAT_MS,
-    MIC_STATUS_STALE_MS,
     MIC_STATUS_TRACK_NAME,
     toSignalledStatus,
 } from './useMicStatusSignal'
@@ -123,7 +122,7 @@ describe('useMicStatusSignal', () => {
         expect(result.current).toEqual({})
     })
 
-    it('drops a report when the participant leaves or stops repeating it', () => {
+    it('drops a report when the participant leaves', () => {
         const { result } = renderHook(() => useMicStatusSignal(room, 'ok'))
         act(() => {
             room.emit('trackMessage', report('ended'), track, patient)
@@ -132,21 +131,33 @@ describe('useMicStatusSignal', () => {
             room.emit('participantDisconnected', patient)
         })
         expect(result.current).toEqual({})
+    })
+
+    it('keeps a report through silence: a phone on a call may suspend the page', () => {
+        const { result } = renderHook(() => useMicStatusSignal(room, 'ok'))
+        act(() => {
+            room.emit('trackMessage', report('system-muted'), track, patient)
+        })
+        act(() => {
+            advance(5 * 60 * 1000)
+        })
+        expect(result.current).toEqual({ Patient_1: 'system-muted' })
 
         act(() => {
-            room.emit('trackMessage', report('not-sending'), track, patient)
+            room.emit('trackMessage', report('ok'), track, patient)
         })
-        // Still repeated: kept.
+        expect(result.current).toEqual({})
+    })
+
+    it('forgets every report when the room is left', () => {
+        const { result, rerender } = renderHook(
+            ({ r }) => useMicStatusSignal(r, 'ok'),
+            { initialProps: { r: room as any } }
+        )
         act(() => {
-            advance(MIC_STATUS_STALE_MS - 1000)
-            room.emit('trackMessage', report('not-sending'), track, patient)
-            advance(MIC_STATUS_STALE_MS - 1000)
+            room.emit('trackMessage', report('system-muted'), track, patient)
         })
-        expect(result.current).toEqual({ Patient_1: 'not-sending' })
-        // Gone quiet: dropped.
-        act(() => {
-            advance(MIC_STATUS_STALE_MS + MIC_STATUS_HEARTBEAT_MS)
-        })
+        rerender({ r: null })
         expect(result.current).toEqual({})
     })
 })

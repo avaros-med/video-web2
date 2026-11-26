@@ -26,7 +26,7 @@ import { ParticipantInfoMenu } from './ParticipantInfoMenu'
 import { useIsSpeaking } from './useAudioVolume'
 import useTileAudioAlert from '../../hooks/useTileAudioAlert/useTileAudioAlert'
 import { TONE_COLORS } from '../MediaAlertCallout/MediaAlertCallout'
-import useIsTrackEnabled from '../../hooks/useIsTrackEnabled/useIsTrackEnabled'
+import useIsTrackMuted from '../../hooks/useIsTrackMuted/useIsTrackMuted'
 import MutedBadge from '../MutedBadge/MutedBadge'
 
 const borderWidth = 2
@@ -235,7 +235,7 @@ export default function ParticipantInfo({
     const isSpeaking = useIsSpeaking(audioTrack)
     // Deliberately muted (the track is disabled). A muted person's own choice wins
     // over a device problem report: there is nothing for them to fix.
-    const isMuted = !useIsTrackEnabled(audioTrack) && Boolean(audioTrack)
+    const isMuted = useIsTrackMuted(audioTrack)
     const isParticipantReconnecting = useParticipantIsReconnecting(participant)
     const audioAlert = useTileAudioAlert(participant, isLocalParticipant)
 

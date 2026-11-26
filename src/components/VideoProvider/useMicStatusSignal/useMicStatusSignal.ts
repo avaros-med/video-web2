@@ -13,15 +13,16 @@ import { MicStatus } from '../useAudioHealth/useAudioHealth'
  * with no icon. Here each browser publishes a small data track and reports its own
  * microphone status on it; the far side shows that on the participant's tile.
  *
- * The status is repeated on a heartbeat: a participant who joins later, or whose data
- * channel opened after the first send, catches up within one beat, and the receiver
- * drops a report that stops being repeated (the sender closed the tab or lost its
- * connection, so the report says nothing about now).
+ * The status is repeated on a heartbeat, so a participant who joins later, or whose
+ * data channel opened after the first send, catches up within one beat.
+ *
+ * A report stays until that participant reports 'ok' or leaves the room. Silence is
+ * not treated as recovery: a phone that pauses the microphone for a call may also
+ * suspend the page, which stops the heartbeat exactly while the report is true.
  */
 
 export const MIC_STATUS_TRACK_NAME = 'mic-status'
 export const MIC_STATUS_HEARTBEAT_MS = 3000
-export const MIC_STATUS_STALE_MS = 10000
 
 /** A microphone problem worth showing to other people. 'silent' is not one: a quiet room is normal. */
 export type RemoteMicProblem = 'system-muted' | 'ended' | 'not-sending'
@@ -112,8 +113,6 @@ export default function useMicStatusSignal(
     useEffect(() => {
         if (!room) return
 
-        const lastHeard = new Map<string, number>()
-
         const set = (identity: string, problem: RemoteMicProblem | null) =>
             setRemoteMicProblems(previous => {
                 if ((previous[identity] ?? null) === problem) return previous
@@ -141,29 +140,16 @@ export default function useMicStatusSignal(
             if (track.name !== MIC_STATUS_TRACK_NAME) return
             const status = decodeMicStatus(data)
             if (status === null) return
-            lastHeard.set(participant.identity, Date.now())
             set(participant.identity, status === 'ok' ? null : status)
         }
 
         const onParticipantDisconnected = (participant: RemoteParticipant) => {
-            lastHeard.delete(participant.identity)
             set(participant.identity, null)
         }
-
-        const sweep = setInterval(() => {
-            const now = Date.now()
-            lastHeard.forEach((heardAt, identity) => {
-                if (now - heardAt > MIC_STATUS_STALE_MS) {
-                    lastHeard.delete(identity)
-                    set(identity, null)
-                }
-            })
-        }, MIC_STATUS_HEARTBEAT_MS)
 
         room.on('trackMessage', onMessage)
         room.on('participantDisconnected', onParticipantDisconnected)
         return () => {
-            clearInterval(sweep)
             room.off('trackMessage', onMessage)
             room.off('participantDisconnected', onParticipantDisconnected)
             setRemoteMicProblems({})

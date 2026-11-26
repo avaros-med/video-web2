@@ -4,7 +4,7 @@ import AudioLevelIndicator from '../AudioLevelIndicator/AudioLevelIndicator'
 import MainParticipantInfo from '../MainParticipantInfo/MainParticipantInfo'
 import ParticipantInfo from '../ParticipantInfo/ParticipantInfo'
 import MutedBadge from './MutedBadge'
-import useIsTrackEnabled from '../../hooks/useIsTrackEnabled/useIsTrackEnabled'
+import useIsTrackMuted from '../../hooks/useIsTrackMuted/useIsTrackMuted'
 import usePublications from '../../hooks/usePublications/usePublications'
 import useTileAudioAlert from '../../hooks/useTileAudioAlert/useTileAudioAlert'
 import useTrack from '../../hooks/useTrack/useTrack'
@@ -24,12 +24,12 @@ jest.mock(
 jest.mock('../../hooks/useIsRecording/useIsRecording')
 jest.mock('../../hooks/useTrack/useTrack')
 jest.mock('../../hooks/useVideoContext/useVideoContext')
-jest.mock('../../hooks/useIsTrackEnabled/useIsTrackEnabled')
+jest.mock('../../hooks/useIsTrackMuted/useIsTrackMuted')
 jest.mock('../../hooks/useTileAudioAlert/useTileAudioAlert')
 
 const mockUsePublications = usePublications as jest.Mock<any>
 const mockUseTrack = useTrack as jest.Mock<any>
-const mockUseIsTrackEnabled = useIsTrackEnabled as jest.Mock<any>
+const mockUseIsTrackMuted = useIsTrackMuted as jest.Mock<any>
 const mockUseTileAudioAlert = useTileAudioAlert as jest.Mock<any>
 const mockUseVideoContext = useVideoContext as jest.Mock<any>
 const mockUseAppState = useAppState as jest.Mock<any>
@@ -72,7 +72,7 @@ describe.each(tiles)('%s mute marker', (_name, renderTile) => {
             { trackName: 'mic', kind: 'audio' },
         ])
         mockUseTrack.mockImplementation((publication: any) => publication)
-        mockUseIsTrackEnabled.mockImplementation(() => true)
+        mockUseIsTrackMuted.mockImplementation(() => false)
         mockUseTileAudioAlert.mockImplementation(() => null)
     })
 
@@ -83,21 +83,10 @@ describe.each(tiles)('%s mute marker', (_name, renderTile) => {
     })
 
     it('shows the Muted badge in place of the level meter when the microphone is muted', () => {
-        mockUseIsTrackEnabled.mockImplementation(() => false)
+        mockUseIsTrackMuted.mockImplementation(() => true)
         const wrapper = renderTile()
         expect(wrapper.find(MutedBadge).exists()).toBe(true)
         expect(wrapper.find(AudioLevelIndicator).exists()).toBe(false)
-    })
-
-    it('shows no badge for a participant with no audio track yet', () => {
-        mockUsePublications.mockImplementation(() => [])
-        mockUseTrack.mockImplementation(() => undefined)
-        mockUseIsTrackEnabled.mockImplementation(() => false)
-        expect(
-            renderTile()
-                .find(MutedBadge)
-                .exists()
-        ).toBe(false)
     })
 
     it('shows a reported device problem, unless the person muted themselves', () => {
@@ -106,7 +95,7 @@ describe.each(tiles)('%s mute marker', (_name, renderTile) => {
         expect(wrapper.find('[data-cy-audio-alert-badge]').exists()).toBe(true)
         expect(wrapper.find(MutedBadge).exists()).toBe(false)
 
-        mockUseIsTrackEnabled.mockImplementation(() => false)
+        mockUseIsTrackMuted.mockImplementation(() => true)
         wrapper = renderTile()
         expect(wrapper.find('[data-cy-audio-alert-badge]').exists()).toBe(false)
         expect(wrapper.find(MutedBadge).exists()).toBe(true)

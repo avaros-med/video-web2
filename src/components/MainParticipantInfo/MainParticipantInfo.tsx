@@ -23,7 +23,7 @@ import useScreenShareParticipant from '../../hooks/useScreenShareParticipant/use
 import useTrack from '../../hooks/useTrack/useTrack'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import useTileAudioAlert from '../../hooks/useTileAudioAlert/useTileAudioAlert'
-import useIsTrackEnabled from '../../hooks/useIsTrackEnabled/useIsTrackEnabled'
+import useIsTrackMuted from '../../hooks/useIsTrackMuted/useIsTrackMuted'
 import MutedBadge from '../MutedBadge/MutedBadge'
 import { TONE_COLORS } from '../MediaAlertCallout/MediaAlertCallout'
 
@@ -163,7 +163,7 @@ export default function MainParticipantInfo({
     const isRecording = useIsRecording()
     const audioAlert = useTileAudioAlert(participant, isLocal)
     // Deliberately muted (the track is disabled); shown instead of any device report.
-    const isMuted = !useIsTrackEnabled(audioTrack) && Boolean(audioTrack)
+    const isMuted = useIsTrackMuted(audioTrack)
 
     return (
         <div

@@ -319,8 +319,8 @@ context('A video app user', () => {
         it('should see participant "test1" when they are the dominant speaker', () => {
             cy.task('toggleParticipantAudio', 'test2')
             cy.task('toggleParticipantAudio', 'test3')
-            cy.getParticipant('test2').find('[data-test-audio-mute-icon]')
-            cy.getParticipant('test3').find('[data-test-audio-mute-icon]')
+            cy.getParticipant('test2').find('[data-cy-muted-badge]')
+            cy.getParticipant('test3').find('[data-cy-muted-badge]')
             cy.getParticipant('test1').shouldBeSameVideoAs(
                 '[data-cy-main-participant]'
             )
@@ -329,8 +329,8 @@ context('A video app user', () => {
         it('should see participant "test2" when they are the dominant speaker', () => {
             cy.task('toggleParticipantAudio', 'test1')
             cy.task('toggleParticipantAudio', 'test2')
-            cy.getParticipant('test1').find('[data-test-audio-mute-icon]')
-            cy.getParticipant('test3').find('[data-test-audio-mute-icon]')
+            cy.getParticipant('test1').find('[data-cy-muted-badge]')
+            cy.getParticipant('test3').find('[data-cy-muted-badge]')
             cy.getParticipant('test2').shouldBeSameVideoAs(
                 '[data-cy-main-participant]'
             )
@@ -339,8 +339,8 @@ context('A video app user', () => {
         it('should see participant "test3" when they are the dominant speaker', () => {
             cy.task('toggleParticipantAudio', 'test2')
             cy.task('toggleParticipantAudio', 'test3')
-            cy.getParticipant('test1').find('[data-test-audio-mute-icon]')
-            cy.getParticipant('test2').find('[data-test-audio-mute-icon]')
+            cy.getParticipant('test1').find('[data-cy-muted-badge]')
+            cy.getParticipant('test2').find('[data-cy-muted-badge]')
             cy.getParticipant('test3').shouldBeSameVideoAs(
                 '[data-cy-main-participant]'
             )
@@ -348,9 +348,9 @@ context('A video app user', () => {
 
         it('should see participant "test3" when there is no dominant speaker', () => {
             cy.task('toggleParticipantAudio', 'test3')
-            cy.getParticipant('test1').find('[data-test-audio-mute-icon]')
-            cy.getParticipant('test2').find('[data-test-audio-mute-icon]')
-            cy.getParticipant('test3').find('[data-test-audio-mute-icon]')
+            cy.getParticipant('test1').find('[data-cy-muted-badge]')
+            cy.getParticipant('test2').find('[data-cy-muted-badge]')
+            cy.getParticipant('test3').find('[data-cy-muted-badge]')
             cy.getParticipant('test3').shouldBeSameVideoAs(
                 '[data-cy-main-participant]'
             )
