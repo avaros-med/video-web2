@@ -23,6 +23,8 @@ import useScreenShareParticipant from '../../hooks/useScreenShareParticipant/use
 import useTrack from '../../hooks/useTrack/useTrack'
 import useVideoContext from '../../hooks/useVideoContext/useVideoContext'
 import useTileAudioAlert from '../../hooks/useTileAudioAlert/useTileAudioAlert'
+import useIsTrackMuted from '../../hooks/useIsTrackMuted/useIsTrackMuted'
+import MutedBadge from '../MutedBadge/MutedBadge'
 import { TONE_COLORS } from '../MediaAlertCallout/MediaAlertCallout'
 
 const useStyles = makeStyles((theme: Theme) => ({
@@ -160,6 +162,8 @@ export default function MainParticipantInfo({
 
     const isRecording = useIsRecording()
     const audioAlert = useTileAudioAlert(participant, isLocal)
+    // Deliberately muted (the track is disabled); shown instead of any device report.
+    const isMuted = useIsTrackMuted(audioTrack)
 
     return (
         <div
@@ -172,14 +176,27 @@ export default function MainParticipantInfo({
             <div className={classes.infoContainer}>
                 <div style={{ display: 'flex' }}>
                     <div className={classes.identity}>
-                        <AudioLevelIndicator audioTrack={audioTrack} />
-                        <Typography variant="body1" color="inherit">
+                        {!isMuted && (
+                            <AudioLevelIndicator audioTrack={audioTrack} />
+                        )}
+                        <Typography
+                            variant="body1"
+                            color="inherit"
+                            style={
+                                isMuted ? { paddingLeft: '0.4em' } : undefined
+                            }
+                        >
                             {participant.identity}
                             {isLocal && ' (You)'}
                             {screenSharePublication && ' - Screen'}
                         </Typography>
                     </div>
-                    {audioAlert && (
+                    {isMuted && (
+                        <div style={{ display: 'flex', marginRight: '0.4em' }}>
+                            <MutedBadge />
+                        </div>
+                    )}
+                    {!isMuted && audioAlert && (
                         <div
                             className={classes.identity}
                             style={{

@@ -99,6 +99,11 @@ export default {
             options: [false, 'local', 'remote', 'both'],
         },
         disableAllAudio: { control: { type: 'boolean' } },
+        remoteMicProblem: {
+            control: { type: 'select' },
+            options: [false, 'system-muted', 'ended', 'not-sending'],
+        },
+        mirrorLocalMicStatus: { control: { type: 'boolean' } },
         unpublishAllVideo: { control: { type: 'boolean' } },
         personPosters: { control: { type: 'boolean' } },
         blurPreview: { control: { type: 'boolean' } },
@@ -144,4 +149,32 @@ BackgroundBlur.args = {
     ...SpeakerView.args,
     personPosters: true,
     blurPreview: true,
+}
+
+// The other participant muted their own microphone.
+export const ParticipantMuted = Template.bind({})
+ParticipantMuted.args = {
+    ...SpeakerView.args,
+    personPosters: true,
+    disableAllAudio: true,
+}
+
+// The other participant's device paused their microphone (for example an iPhone
+// taking a call); their browser reports it over the mic status data track.
+export const ParticipantMicPausedByDevice = Template.bind({})
+ParticipantMicPausedByDevice.args = {
+    ...SpeakerView.args,
+    personPosters: true,
+    remoteMicProblem: 'system-muted',
+}
+
+// One-browser view of the whole path: this browser's microphone stops sending, its
+// status report is played back as the remote participant's, and the remote tile
+// shows what the other side of a real call would see.
+export const OwnMicProblemAsOthersSeeIt = Template.bind({})
+OwnMicProblemAsOthersSeeIt.args = {
+    ...SpeakerView.args,
+    personPosters: true,
+    simulateStalledAudio: 'local',
+    mirrorLocalMicStatus: true,
 }

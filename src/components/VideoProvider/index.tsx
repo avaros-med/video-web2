@@ -35,6 +35,9 @@ import useScreenShareToggle, {
 } from './useScreenShareToggle/useScreenShareToggle'
 import useAudioHealth, { AudioHealth } from './useAudioHealth/useAudioHealth'
 import useRoomDiagnostics from './useRoomDiagnostics/useRoomDiagnostics'
+import useMicStatusSignal, {
+    RemoteMicProblems,
+} from './useMicStatusSignal/useMicStatusSignal'
 import useRelayFallback, {
     RelayFallback,
 } from './useRelayFallback/useRelayFallback'
@@ -67,6 +70,8 @@ export interface IVideoContext {
     screenShareNotice: ScreenShareNotice | null
     dismissScreenShareNotice: () => void
     audioHealth: AudioHealth
+    /** Microphone problems the other participants' browsers report, by identity. */
+    remoteMicProblems: RemoteMicProblems
     relayFallback: RelayFallback
     getAudioAndVideoTracks: () => Promise<void>
     isBackgroundSelectionOpen: boolean
@@ -159,6 +164,7 @@ export function VideoProvider({
     useRestartAudioTrackOnDeviceChange(localTracks)
     useRoomDiagnostics(room)
     const audioHealth = useAudioHealth(room, localTracks)
+    const remoteMicProblems = useMicStatusSignal(room, audioHealth.micStatus)
 
     const [isBackgroundSelectionOpen, setIsBackgroundSelectionOpen] = useState(
         false
@@ -190,6 +196,7 @@ export function VideoProvider({
                 screenShareNotice,
                 dismissScreenShareNotice,
                 audioHealth,
+                remoteMicProblems,
                 relayFallback,
                 getAudioAndVideoTracks,
                 isBackgroundSelectionOpen,
